@@ -1,0 +1,42 @@
+# STM32CubeIDE generated build artifacts
+Appli/Debug/
+Appli/Release/
+Boot/Debug/
+Boot/Release/
+ExtMemLoader/Debug/
+ExtMemLoader/Release/
+/.settings/
+.mxproject
+.cproject
+.project
+
+# Object files, executables, and libraries
+*.o
+*.ko
+*.obj
+*.elf
+*.bin
+*.hex
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+
+# Eclipse/IDE specific files (STM32CubeIDE is Eclipse-based)
+.metadata/
+.toolchains/
+.workbench/
+*.launch
+*~
