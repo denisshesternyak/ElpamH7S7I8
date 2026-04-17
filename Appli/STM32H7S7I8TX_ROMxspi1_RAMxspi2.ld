@@ -42,7 +42,7 @@ _Min_Heap_Size = 0x2000; /* required amount of heap */
 _Min_Stack_Size = 0x4000; /* required amount of stack */
 
 __FLASH_BEGIN  = 0x90000000;
-__FLASH_SIZE   = 0x08000000;
+__FLASH_SIZE   = 0x02000000;
 __EXTRAM_BEGIN = 0x70000000;
 __EXTRAM_SIZE  = 0x02000000;
 
