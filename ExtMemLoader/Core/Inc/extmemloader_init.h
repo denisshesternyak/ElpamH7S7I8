@@ -59,4 +59,6 @@ void Error_Handler(void);
 
 /* USER CODE END Private defines */
 
+#define SD_DETECT_Pin GPIO_PIN_1
+#define SD_DETECT_GPIO_Port GPIOG
 #endif /* EXTMEMLOADER_INIT_H */
