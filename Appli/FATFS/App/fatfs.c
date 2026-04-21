@@ -89,7 +89,7 @@ static uint8_t SD_IsDetected (void);
 
 /* USER CODE END 0 */
 
-void MX_FATFS_Init (void)
+void MX_FATFS_Init(void)
 {
   /* USER CODE BEGIN Init */
   /* additional user code for init */

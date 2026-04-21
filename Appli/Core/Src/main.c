@@ -22,6 +22,7 @@
 #include "cmsis_os2.h"
 #include "fatfs.h"
 #include "flash.h"
+#include "gpdma.h"
 #include "i2c.h"
 #include "i2s.h"
 #include "sdmmc.h"
@@ -105,6 +106,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPDMA1_Init();
   MX_FLASH_Init();
   MX_I2C1_Init();
   MX_I2C3_Init();
@@ -115,8 +117,8 @@ int main(void)
   MX_UART4_Init();
   MX_UART5_Init();
   MX_UART7_Init();
-  MX_USART1_UART_Init();
   MX_FATFS_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

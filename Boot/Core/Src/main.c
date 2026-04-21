@@ -20,6 +20,7 @@
 #include "main.h"
 #include "extmem_manager.h"
 #include "flash.h"
+#include "gpdma.h"
 #include "sbs.h"
 #include "usart.h"
 #include "xspi.h"
@@ -101,6 +102,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPDMA1_Init();
   MX_FLASH_Init();
   MX_SBS_Init();
   MX_USART1_UART_Init();
