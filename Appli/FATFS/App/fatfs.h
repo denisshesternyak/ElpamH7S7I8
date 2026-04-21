@@ -39,7 +39,9 @@
 /* Exported functions prototypes ---------------------------------------------*/
 void MX_FATFS_Init(void);
 /* USER CODE BEGIN Prototypes */
-
+extern FATFS SDFatFs;
+extern FIL SDFile;
+extern char SDPath[4];
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
