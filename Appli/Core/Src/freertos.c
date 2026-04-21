@@ -26,8 +26,15 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+//#include "lcd_menu.h"
+//#include "audio_types.h"
+//#include "rs232.h"
+//#include "logger.h"
 
 /* USER CODE END Includes */
+#include <string.h>
+#include <stdio.h>
+#include "events.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
@@ -110,6 +117,11 @@ osMessageQueueId_t xLoggerQueueHandle;
 const osMessageQueueAttr_t xLoggerQueue_attributes = {
   .name = "xLoggerQueue"
 };
+/* Definitions for KeyboardEvent */
+osEventFlagsId_t KeyboardEventHandle;
+const osEventFlagsAttr_t KeyboardEvent_attributes = {
+  .name = "KeyboardEvent"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -186,6 +198,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
+  /* Create the event(s) */
+  /* creation of KeyboardEvent */
+  KeyboardEventHandle = osEventFlagsNew(&KeyboardEvent_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
@@ -278,6 +294,8 @@ void StartKeyboardTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
+    printf("Processing keyboard task: waiting KEYBOARD_EVENT\r\n");
+    osEventFlagsWait(KeyboardEventHandle, KEYBOARD_EVENT, osFlagsWaitAll, osWaitForever);
     osDelay(1);
   }
   /* USER CODE END StartKeyboardTask */
@@ -303,6 +321,14 @@ void StartLoggerTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
+void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
+{
+  switch (GPIO_Pin)
+  {
+    case KEYPAD_INT_Pin:
+      osEventFlagsSet(KeyboardEventHandle, KEYBOARD_EVENT);
+      break;
+  }
+}
 /* USER CODE END Application */
 

@@ -59,6 +59,10 @@ void Error_Handler(void);
 
 /* USER CODE END Private defines */
 
+#define KEYPAD_RST_Pin GPIO_PIN_7
+#define KEYPAD_RST_GPIO_Port GPIOC
 #define SD_DETECT_Pin GPIO_PIN_1
 #define SD_DETECT_GPIO_Port GPIOG
+#define KEYPAD_INT_Pin GPIO_PIN_2
+#define KEYPAD_INT_GPIO_Port GPIOG
 #endif /* EXTMEMLOADER_INIT_H */

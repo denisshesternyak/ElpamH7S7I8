@@ -244,15 +244,15 @@ static uint8_t SD_IsDetected (void)
  * @retval None.
  */
 
-void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
-{
-  if (GPIO_Pin == SD_DETECT_Pin)
-  {
-    if (statusChanged == 0)
-    {
-      statusChanged = 1;
-      osMessageQueuePut(QueueHandle, &CARD_STATUS_CHANGED, 100, 0U);
-    }
-  }
-}
+//void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
+//{
+//  if (GPIO_Pin == SD_DETECT_Pin)
+//  {
+//    if (statusChanged == 0)
+//    {
+//      statusChanged = 1;
+//      osMessageQueuePut(QueueHandle, &CARD_STATUS_CHANGED, 100, 0U);
+//    }
+//  }
+//}
 /* USER CODE END Application */
