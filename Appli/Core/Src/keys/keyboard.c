@@ -63,7 +63,7 @@ void keyboard_init (void)
   TCA8418_EnableKeyInterrupt(KEYBOARD_HANDLER, true);
 }
 
-void keyboard_process (TCA8418_KeyEvent_t *ev)
+void keyboard_process (KeyEvent_t *ev)
 {
   while (TCA8418_GetEventCount(KEYBOARD_HANDLER) > 0)
   {

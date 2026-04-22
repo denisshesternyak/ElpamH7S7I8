@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include "usart.h"
 #include "app_freertos.h"
-#include "FreeRTOS.h"
-#include "cmsis_os2.h"
 
 static LogLevel_t current_log_level = LOG_DEBUG;
 static volatile bool uart_error;
@@ -31,11 +29,11 @@ static void logger_uart_tx_complete_callback (void)
   osSemaphoreRelease(LoggerBinarySemHandle);
 }
 
-static void logger_uart_error_callback (void)
-{
-  uart_error = true;
-  HAL_UART_Abort(&huart1);
-}
+//static void logger_uart_error_callback (void)
+//{
+//  uart_error = true;
+//  HAL_UART_Abort(&huart1);
+//}
 
 void logger_init (void)
 {

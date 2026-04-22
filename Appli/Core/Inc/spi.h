@@ -37,7 +37,12 @@ extern SPI_HandleTypeDef hspi2;
 extern SPI_HandleTypeDef hspi4;
 
 /* USER CODE BEGIN Private defines */
+#define MAX_SPI_INSTANCES 3
 
+typedef void (*spi_callback_t)(void);
+
+void spi_register_tx_callback(SPI_HandleTypeDef *hspi, spi_callback_t callback);
+void spi_unregister_tx_callback(SPI_HandleTypeDef *hspi);
 /* USER CODE END Private defines */
 
 void MX_SPI2_Init(void);

@@ -51,7 +51,7 @@ typedef enum
 } KeyCode_t;
 
 void keyboard_init (void);
-void keyboard_process (TCA8418_KeyEvent_t *ev);
+void keyboard_process (KeyEvent_t *ev);
 const char* ButtonToString (KeyCode_t btn);
 
 #endif /* INC_KEYS_KEYBOARD_H_ */

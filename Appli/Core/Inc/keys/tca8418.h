@@ -35,8 +35,8 @@ typedef struct
   uint8_t row;
   uint8_t col;
   bool pressed;
-  uint8_t keycode;
-} TCA8418_KeyEvent_t;
+  uint8_t button;
+} KeyEvent_t;
 
 HAL_StatusTypeDef TCA8418_Init (I2C_HandleTypeDef *hi2c);
 HAL_StatusTypeDef TCA8418_SetKeypadPin (I2C_HandleTypeDef *hi2c, TCA8418_Pin_t pin, bool enableKeypad);
@@ -45,7 +45,7 @@ HAL_StatusTypeDef TCA8418_EnableKeyInterrupt (I2C_HandleTypeDef *hi2c, bool enab
 HAL_StatusTypeDef TCA8418_ClearInterrupt (I2C_HandleTypeDef *hi2c);
 
 uint8_t TCA8418_GetEventCount (I2C_HandleTypeDef *hi2c);
-HAL_StatusTypeDef TCA8418_ReadKeyEvent (I2C_HandleTypeDef *hi2c, TCA8418_KeyEvent_t *event);
+HAL_StatusTypeDef TCA8418_ReadKeyEvent (I2C_HandleTypeDef *hi2c, KeyEvent_t *event);
 
 #endif /* INC_KEYS_TCA8418_H_ */
 
