@@ -187,6 +187,26 @@ SECTIONS
     KEEP(*(noncacheable_buffer))
     __NONCACHEABLEBUFFER_END = .;  /* create symbol for start of section */
   } > RAM_NONCACHEABLEBUFFER
+  
+   .extram (NOLOAD) :  /* NOLOAD - не инициализировать при старте (сохраняет время) */
+  {
+    . = ALIGN(4);
+    _sextram = .;
+    *(.extram)
+    *(.extram.*)
+    . = ALIGN(4);
+    _eextram = .;
+  } > EXTRAM
+  
+  .extram_bss (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _sextram_bss = .;
+    *(.extram_bss)
+    *(.extram_bss.*)
+    . = ALIGN(4);
+    _eextram_bss = .;
+  } > EXTRAM
 
   /* User_heap_stack section, used to check that there is enough "RAM" Ram  type memory left */
   ._user_heap_stack :

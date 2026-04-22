@@ -22,12 +22,23 @@
 
 /* USER CODE BEGIN 0 */
 #include <stdint.h>
+
+typedef struct {
+    UART_HandleTypeDef *huart;
+    usart_callback_t callback;
+} usart_callback_entry_t;
+
+static usart_callback_entry_t callback_table[MAX_USART_INSTANCES] = {0};
+static uint8_t callback_count = 0;
+
+static void usart_init(void);
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart7;
 UART_HandleTypeDef huart1;
+DMA_HandleTypeDef handle_GPDMA1_Channel2;
 
 /* UART4 init function */
 void MX_UART4_Init(void)
@@ -198,7 +209,7 @@ void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
-
+  usart_init();
   /* USER CODE END USART1_Init 2 */
 
 }
@@ -348,6 +359,37 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    /* USART1 DMA Init */
+    /* GPDMA1_REQUEST_USART1_TX Init */
+    handle_GPDMA1_Channel2.Instance = GPDMA1_Channel2;
+    handle_GPDMA1_Channel2.Init.Request = GPDMA1_REQUEST_USART1_TX;
+    handle_GPDMA1_Channel2.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+    handle_GPDMA1_Channel2.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    handle_GPDMA1_Channel2.Init.SrcInc = DMA_SINC_INCREMENTED;
+    handle_GPDMA1_Channel2.Init.DestInc = DMA_DINC_FIXED;
+    handle_GPDMA1_Channel2.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel2.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel2.Init.Priority = DMA_LOW_PRIORITY_MID_WEIGHT;
+    handle_GPDMA1_Channel2.Init.SrcBurstLength = 1;
+    handle_GPDMA1_Channel2.Init.DestBurstLength = 1;
+    handle_GPDMA1_Channel2.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel2.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+    handle_GPDMA1_Channel2.Init.Mode = DMA_NORMAL;
+    if (HAL_DMA_Init(&handle_GPDMA1_Channel2) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(uartHandle, hdmatx, handle_GPDMA1_Channel2);
+
+    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel2, DMA_CHANNEL_NPRIV) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* USART1 interrupt Init */
+    HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(USART1_IRQn);
   /* USER CODE BEGIN USART1_MspInit 1 */
 
   /* USER CODE END USART1_MspInit 1 */
@@ -427,6 +469,11 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_6);
 
+    /* USART1 DMA DeInit */
+    HAL_DMA_DeInit(uartHandle->hdmatx);
+
+    /* USART1 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(USART1_IRQn);
   /* USER CODE BEGIN USART1_MspDeInit 1 */
 
   /* USER CODE END USART1_MspDeInit 1 */
@@ -436,7 +483,68 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 /* USER CODE BEGIN 1 */
 int _write (int file, char *ptr, int len)
 {
-  HAL_UART_Transmit(&huart1, (uint8_t*) ptr, len, HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart4, (uint8_t*) ptr, len, HAL_MAX_DELAY);
   return len;
+}
+
+static int find_callback_index(UART_HandleTypeDef *huart)
+{
+    for(int i = 0; i < callback_count; i++)
+    {
+        if(callback_table[i].huart == huart)
+            return i;
+    }
+    return -1;
+}
+
+void usart_register_tx_callback(UART_HandleTypeDef *huart, usart_callback_t callback)
+{
+    if(callback_count >= MAX_USART_INSTANCES)
+        return;
+
+    int idx = find_callback_index(huart);
+    if(idx != -1)
+    {
+        callback_table[idx].callback = callback;
+    }
+    else
+    {
+        callback_table[callback_count].huart = huart;
+        callback_table[callback_count].callback = callback;
+        callback_count++;
+    }
+}
+
+void usart_unregister_tx_callback(UART_HandleTypeDef *huart)
+{
+    int idx = find_callback_index(huart);
+    if(idx != -1)
+    {
+        for(int i = idx; i < callback_count - 1; i++)
+        {
+            callback_table[i] = callback_table[i + 1];
+        }
+        callback_count--;
+    }
+}
+
+static void usart_init(void)
+{
+    callback_count = 0;
+    for(int i = 0; i < MAX_USART_INSTANCES; i++)
+    {
+        callback_table[i].huart = NULL;
+        callback_table[i].callback = NULL;
+    }
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    int idx = find_callback_index(huart);
+
+    if(idx != -1 && callback_table[idx].callback != NULL)
+    {
+        callback_table[idx].callback();
+    }
 }
 /* USER CODE END 1 */

@@ -50,6 +50,12 @@ void MX_UART7_Init(void);
 void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+#define MAX_USART_INSTANCES 3
+
+typedef void (*usart_callback_t)(void);
+
+void usart_register_tx_callback(UART_HandleTypeDef *huart, usart_callback_t callback);
+void usart_unregister_tx_callback(UART_HandleTypeDef *huart);
 
 /* USER CODE END Prototypes */
 
