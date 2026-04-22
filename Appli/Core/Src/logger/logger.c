@@ -97,7 +97,7 @@ void logger_msg (LogLevel_t level, const char *fmt, ...)
   logger_format_message(&msg, level, fmt, args);
   va_end(args);
 
-  if (osMessageQueuePut(xLoggerQueueHandle, &msg, 100, 0) != osOK)
+  if (osMessageQueuePut(xLoggerQueueHandle, &msg, 0, 0) != osOK)
   {
     buffer_pool_free(msg.buffer);
     msg.buffer = NULL;

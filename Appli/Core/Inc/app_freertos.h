@@ -10,4 +10,6 @@ extern osMutexId_t LoggerMutexHandle;
 extern osMessageQueueId_t xLCDQueueHandle;
 extern osSemaphoreId_t LcdBinarySemHandle;
 
+extern osMessageQueueId_t xUartQueueHandle;
+
 #endif /* INC_APP_FREERTOS_H_ */

@@ -26,13 +26,22 @@
 typedef struct
 {
   SPI_HandleTypeDef *hspi;
-  spi_callback_t callback;
+  spi_callback_t tx_callback;
+  spi_callback_t rx_callback;
 } spi_callback_entry_t;
+
+typedef enum
+{
+  RX_CALLBACK,
+  TX_CALLBACK
+} SPI_RX_TX_CLBK_t;
 
 static spi_callback_entry_t callback_table[MAX_SPI_INSTANCES] = { 0 };
 static uint8_t callback_count = 0;
 
-static void spi_init (void);
+static void spi_register_callback (SPI_HandleTypeDef *hspi,
+				   spi_callback_t callback,
+				   SPI_RX_TX_CLBK_t rx_tx);
 /* USER CODE END 0 */
 
 SPI_HandleTypeDef hspi2;
@@ -40,7 +49,7 @@ SPI_HandleTypeDef hspi4;
 DMA_HandleTypeDef handle_GPDMA1_Channel1;
 
 /* SPI2 init function */
-void MX_SPI2_Init (void)
+void MX_SPI2_Init(void)
 {
 
   /* USER CODE BEGIN SPI2_Init 0 */
@@ -77,12 +86,12 @@ void MX_SPI2_Init (void)
     Error_Handler();
   }
   /* USER CODE BEGIN SPI2_Init 2 */
-  spi_init();
+
   /* USER CODE END SPI2_Init 2 */
 
 }
 /* SPI4 init function */
-void MX_SPI4_Init (void)
+void MX_SPI4_Init(void)
 {
 
   /* USER CODE BEGIN SPI4_Init 0 */
@@ -124,19 +133,19 @@ void MX_SPI4_Init (void)
 
 }
 
-void HAL_SPI_MspInit (SPI_HandleTypeDef *spiHandle)
+void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
-  if (spiHandle->Instance == SPI2)
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  if(spiHandle->Instance==SPI2)
   {
-    /* USER CODE BEGIN SPI2_MspInit 0 */
+  /* USER CODE BEGIN SPI2_MspInit 0 */
 
-    /* USER CODE END SPI2_MspInit 0 */
+  /* USER CODE END SPI2_MspInit 0 */
 
-    /** Initializes the peripherals clock
-     */
+  /** Initializes the peripherals clock
+  */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SPI23;
     PeriphClkInit.Spi23ClockSelection = RCC_SPI23CLKSOURCE_PLL2P;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -150,9 +159,9 @@ void HAL_SPI_MspInit (SPI_HandleTypeDef *spiHandle)
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOA_CLK_ENABLE();
     /**SPI2 GPIO Configuration
-     PC3     ------> SPI2_MOSI
-     PA12     ------> SPI2_SCK
-     */
+    PC3     ------> SPI2_MOSI
+    PA12     ------> SPI2_SCK
+    */
     GPIO_InitStruct.Pin = GPIO_PIN_3;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -180,7 +189,7 @@ void HAL_SPI_MspInit (SPI_HandleTypeDef *spiHandle)
     handle_GPDMA1_Channel1.Init.Priority = DMA_LOW_PRIORITY_MID_WEIGHT;
     handle_GPDMA1_Channel1.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel1.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel1.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel1.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
     handle_GPDMA1_Channel1.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel1.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel1) != HAL_OK)
@@ -198,18 +207,18 @@ void HAL_SPI_MspInit (SPI_HandleTypeDef *spiHandle)
     /* SPI2 interrupt Init */
     HAL_NVIC_SetPriority(SPI2_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(SPI2_IRQn);
-    /* USER CODE BEGIN SPI2_MspInit 1 */
+  /* USER CODE BEGIN SPI2_MspInit 1 */
 
-    /* USER CODE END SPI2_MspInit 1 */
+  /* USER CODE END SPI2_MspInit 1 */
   }
-  else if (spiHandle->Instance == SPI4)
+  else if(spiHandle->Instance==SPI4)
   {
-    /* USER CODE BEGIN SPI4_MspInit 0 */
+  /* USER CODE BEGIN SPI4_MspInit 0 */
 
-    /* USER CODE END SPI4_MspInit 0 */
+  /* USER CODE END SPI4_MspInit 0 */
 
-    /** Initializes the peripherals clock
-     */
+  /** Initializes the peripherals clock
+  */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SPI45;
     PeriphClkInit.Spi45ClockSelection = RCC_SPI45CLKSOURCE_PCLK2;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -222,38 +231,38 @@ void HAL_SPI_MspInit (SPI_HandleTypeDef *spiHandle)
 
     __HAL_RCC_GPIOE_CLK_ENABLE();
     /**SPI4 GPIO Configuration
-     PE5     ------> SPI4_MISO
-     PE6     ------> SPI4_MOSI
-     PE12     ------> SPI4_SCK
-     */
-    GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_12;
+    PE5     ------> SPI4_MISO
+    PE6     ------> SPI4_MOSI
+    PE12     ------> SPI4_SCK
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF5_SPI4;
     HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-    /* USER CODE BEGIN SPI4_MspInit 1 */
+  /* USER CODE BEGIN SPI4_MspInit 1 */
 
-    /* USER CODE END SPI4_MspInit 1 */
+  /* USER CODE END SPI4_MspInit 1 */
   }
 }
 
-void HAL_SPI_MspDeInit (SPI_HandleTypeDef *spiHandle)
+void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 {
 
-  if (spiHandle->Instance == SPI2)
+  if(spiHandle->Instance==SPI2)
   {
-    /* USER CODE BEGIN SPI2_MspDeInit 0 */
+  /* USER CODE BEGIN SPI2_MspDeInit 0 */
 
-    /* USER CODE END SPI2_MspDeInit 0 */
+  /* USER CODE END SPI2_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_SPI2_CLK_DISABLE();
 
     /**SPI2 GPIO Configuration
-     PC3     ------> SPI2_MOSI
-     PA12     ------> SPI2_SCK
-     */
+    PC3     ------> SPI2_MOSI
+    PA12     ------> SPI2_SCK
+    */
     HAL_GPIO_DeInit(GPIOC, GPIO_PIN_3);
 
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_12);
@@ -263,28 +272,28 @@ void HAL_SPI_MspDeInit (SPI_HandleTypeDef *spiHandle)
 
     /* SPI2 interrupt Deinit */
     HAL_NVIC_DisableIRQ(SPI2_IRQn);
-    /* USER CODE BEGIN SPI2_MspDeInit 1 */
+  /* USER CODE BEGIN SPI2_MspDeInit 1 */
 
-    /* USER CODE END SPI2_MspDeInit 1 */
+  /* USER CODE END SPI2_MspDeInit 1 */
   }
-  else if (spiHandle->Instance == SPI4)
+  else if(spiHandle->Instance==SPI4)
   {
-    /* USER CODE BEGIN SPI4_MspDeInit 0 */
+  /* USER CODE BEGIN SPI4_MspDeInit 0 */
 
-    /* USER CODE END SPI4_MspDeInit 0 */
+  /* USER CODE END SPI4_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_SPI4_CLK_DISABLE();
 
     /**SPI4 GPIO Configuration
-     PE5     ------> SPI4_MISO
-     PE6     ------> SPI4_MOSI
-     PE12     ------> SPI4_SCK
-     */
-    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_12);
+    PE5     ------> SPI4_MISO
+    PE6     ------> SPI4_MOSI
+    PE12     ------> SPI4_SCK
+    */
+    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_12);
 
-    /* USER CODE BEGIN SPI4_MspDeInit 1 */
+  /* USER CODE BEGIN SPI4_MspDeInit 1 */
 
-    /* USER CODE END SPI4_MspDeInit 1 */
+  /* USER CODE END SPI4_MspDeInit 1 */
   }
 }
 
@@ -299,8 +308,9 @@ static int find_callback_index (SPI_HandleTypeDef *hspi)
   return -1;
 }
 
-void spi_register_tx_callback (SPI_HandleTypeDef *hspi,
-			       spi_callback_t callback)
+static void spi_register_callback (SPI_HandleTypeDef *hspi,
+				   spi_callback_t callback,
+				   SPI_RX_TX_CLBK_t rx_tx)
 {
   if (callback_count >= MAX_SPI_INSTANCES)
     return;
@@ -308,14 +318,26 @@ void spi_register_tx_callback (SPI_HandleTypeDef *hspi,
   int idx = find_callback_index(hspi);
   if (idx != -1)
   {
-    callback_table[idx].callback = callback;
+    callback_table[idx].tx_callback = (rx_tx) ? callback : NULL;
+    callback_table[idx].rx_callback = (!rx_tx) ? callback : NULL;
   }
   else
   {
     callback_table[callback_count].hspi = hspi;
-    callback_table[callback_count].callback = callback;
+    callback_table[callback_count].tx_callback = (rx_tx) ? callback : NULL;
+    callback_table[callback_count].rx_callback = (!rx_tx) ? callback : NULL;
     callback_count++;
   }
+}
+
+void spi_register_tx_callback (SPI_HandleTypeDef *hspi, spi_callback_t callback)
+{
+  spi_register_callback(hspi, callback, TX_CALLBACK);
+}
+
+void spi_register_rx_callback (SPI_HandleTypeDef *hspi, spi_callback_t callback)
+{
+  spi_register_callback(hspi, callback, RX_CALLBACK);
 }
 
 void spi_unregister_tx_callback (SPI_HandleTypeDef *hspi)
@@ -323,21 +345,23 @@ void spi_unregister_tx_callback (SPI_HandleTypeDef *hspi)
   int idx = find_callback_index(hspi);
   if (idx != -1)
   {
-    for (int i = idx; i < callback_count - 1; i++)
-    {
-      callback_table[i] = callback_table[i + 1];
-    }
+    spi_callback_entry_t *clbk = &callback_table[idx];
+    clbk->hspi = NULL;
+    clbk->tx_callback = NULL;
+    clbk->rx_callback = NULL;
     callback_count--;
   }
 }
 
-static void spi_init (void)
+void spi_clear_cb (void)
 {
   callback_count = 0;
   for (int i = 0; i < MAX_SPI_INSTANCES; i++)
   {
-    callback_table[i].hspi = NULL;
-    callback_table[i].callback = NULL;
+    spi_callback_entry_t *clbk = &callback_table[i];
+    clbk->hspi = NULL;
+    clbk->tx_callback = NULL;
+    clbk->rx_callback = NULL;
   }
 }
 
@@ -345,9 +369,9 @@ void HAL_SPI_TxCpltCallback (SPI_HandleTypeDef *hspi)
 {
   int idx = find_callback_index(hspi);
 
-  if (idx != -1 && callback_table[idx].callback != NULL)
+  if (idx != -1 && callback_table[idx].tx_callback != NULL)
   {
-    callback_table[idx].callback();
+    callback_table[idx].tx_callback();
   }
 }
 /* USER CODE END 1 */

@@ -1,5 +1,6 @@
 #include "sdfs.h"
 #include "fatfs.h"
+#include "logger.h"
 
 #define ROOT_DIR_PATH 		((TCHAR*)u"/")
 #define ALARMS_DIR_PATH 	((TCHAR*)u"/alarms")
@@ -14,19 +15,19 @@ void sdfs_list_directory (void)
   res = f_mount(&SDFatFs, (TCHAR const*) SDPath, 0);
   if (res != FR_OK)
   {
-    printf("f_mount failed with code: %d\r\n", res);
+    LOG_ERROR("f_mount failed with code: %d\r\n", res);
     return;
   }
 
   res = f_opendir(&dir, MESSAGES_DIR_PATH);
   if (res != FR_OK)
   {
-    printf("f_opendir failed: %d\r\n", res);
+    LOG_ERROR("f_opendir failed: %d\r\n", res);
   }
 
   char ascii_name[FF_MAX_LFN + 1];
 
-  printf("SD card: \r\n");
+  LOG_DEBUG("SD card: \r\n");
 
   for (;;)
   {
@@ -47,9 +48,9 @@ void sdfs_list_directory (void)
       continue;
 
     if (fno.fattrib & AM_DIR)
-      printf(" [DIR]  %s\r\n", ascii_name);
+      LOG_DEBUG(" [DIR]  %s\r\n", ascii_name);
     else
-      printf(" [FILE] %s  (%lu bytes)\r\n", ascii_name, fno.fsize);
+      LOG_DEBUG(" [FILE] %s  (%lu bytes)\r\n", ascii_name, fno.fsize);
   }
   f_closedir(&dir);
 }

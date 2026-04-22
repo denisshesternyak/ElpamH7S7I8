@@ -41,6 +41,7 @@ extern SPI_HandleTypeDef hspi4;
 
 typedef void (*spi_callback_t)(void);
 
+void spi_clear_cb (void);
 void spi_register_tx_callback(SPI_HandleTypeDef *hspi, spi_callback_t callback);
 void spi_unregister_tx_callback(SPI_HandleTypeDef *hspi);
 /* USER CODE END Private defines */

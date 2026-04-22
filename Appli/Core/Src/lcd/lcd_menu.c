@@ -10,7 +10,6 @@
 #include "ff.h"
 #include <string.h>
 #include <stdio.h>
-#include "hx8357d.h"
 #include "lcd_color_rgb565.h"
 #include "Speaker-1_80x74.h"
 #include "m2_80x74.h"
@@ -143,7 +142,7 @@ void RunDriversTest (void);
 void run_clock (void);
 void prepare_clock (void);
 static void menu_init_language (void);
-static void change_volume (void);
+//static void change_volume (void);
 static void increase_volume (void);
 static void decrease_volume (void);
 
@@ -195,10 +194,10 @@ static void BLK_ON ()
 {
   HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_SET);
 }
-static void BLK_OFF ()
-{
-  HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_RESET);
-}
+//static void BLK_OFF ()
+//{
+//  HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_RESET);
+//}
 
 static void clear_position (Menu *menu)
 {
@@ -748,13 +747,13 @@ void menu_init_language (void)
   languageMenu->itemCount = LANG_COUNT;
 }
 
-static void change_volume (void)
-{
+//static void change_volume (void)
+//{
 //  player.volume = player.valid_volume_levels[player.volume_level - 1];
 //  volume_indicator_draw_bar(player.volume_level, player.valid_volume_levels[player.volume_level - 1]);
 
 //  send_audio_notify(AUDIO_VOLUME, AUDIO_NONE);
-}
+//}
 
 static void increase_volume (void)
 {

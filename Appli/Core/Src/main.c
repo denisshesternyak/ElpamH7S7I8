@@ -117,7 +117,8 @@ int main(void)
   MX_FATFS_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  usart_clear_cb();
+  spi_clear_cb();
   /* USER CODE END 2 */
 
   /* Init scheduler */

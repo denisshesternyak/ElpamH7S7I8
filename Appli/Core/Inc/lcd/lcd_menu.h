@@ -1,6 +1,7 @@
 #ifndef INC_SCREENS_LCD_MENU_H_
 #define INC_SCREENS_LCD_MENU_H_
 
+#include "hx8357d.h"
 #include "keyboard.h"
 #include "lcd_lang.h"
 #include "lcd_strings_menu.h"

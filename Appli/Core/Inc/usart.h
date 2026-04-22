@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    usart.h
-  * @brief   This file contains all the function prototypes for
-  *          the usart.c file
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    usart.h
+ * @brief   This file contains all the function prototypes for
+ *          the usart.c file
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2026 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __USART_H__
@@ -50,13 +50,17 @@ void MX_UART7_Init(void);
 void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-#define MAX_USART_INSTANCES 3
+#define MAX_USART_INSTANCES 	4
 
-typedef void (*usart_callback_t)(void);
+typedef void (*usart_callback_t) (void);
 
-void usart_register_tx_callback(UART_HandleTypeDef *huart, usart_callback_t callback);
-void usart_unregister_tx_callback(UART_HandleTypeDef *huart);
+void usart_clear_cb (void);
 
+void usart_register_tx_callback (UART_HandleTypeDef *huart,
+				 usart_callback_t callback);
+void usart_register_rx_callback (UART_HandleTypeDef *huart,
+				 usart_callback_t callback);
+void usart_unregister_callback (UART_HandleTypeDef *huart);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

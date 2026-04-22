@@ -2,7 +2,7 @@
 #define SRC_LCD_LCD_WIDGET_VOLUME_INDICATOR_H_
 
 #include <stdint.h>
-//#include "defines.h"
+#include "defines.h"
 
 #define  VOLUME_BARS_W			396
 #define  VOLUME_BAR_SPACING_X 		3
@@ -12,12 +12,6 @@
 #define  VOLUME_BAR_H			30
 #define  VOLUME_BAR_X			42 //(((480 - VOLUME_BARS_W) / 2) - VOLUME_BAR_W)
 #define  VOLUME_BAR_Y			250
-
-#define NUM_VALID_LEVELS    15
-
-#define NUM_VOLUME_BARS     NUM_VALID_LEVELS   // Number of bars on the indicator
-
-#define MAX_MENU_ITEMS 	25
 
 typedef struct
 {

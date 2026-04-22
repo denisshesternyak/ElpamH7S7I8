@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    usart.c
-  * @brief   This file provides code for the configuration
-  *          of the USART instances.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    usart.c
+ * @brief   This file provides code for the configuration
+ *          of the USART instances.
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2026 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "usart.h"
@@ -23,15 +23,25 @@
 /* USER CODE BEGIN 0 */
 #include <stdint.h>
 
-typedef struct {
-    UART_HandleTypeDef *huart;
-    usart_callback_t callback;
+typedef struct
+{
+  UART_HandleTypeDef *huart;
+  usart_callback_t tx_callback;
+  usart_callback_t rx_callback;
 } usart_callback_entry_t;
 
-static usart_callback_entry_t callback_table[MAX_USART_INSTANCES] = {0};
+typedef enum
+{
+  RX_CALLBACK,
+  TX_CALLBACK
+} UART_RX_TX_CLBK_t;
+
+static usart_callback_entry_t callback_table[MAX_USART_INSTANCES] = { 0 };
 static uint8_t callback_count = 0;
 
-static void usart_init(void);
+static void usart_register_callback (UART_HandleTypeDef *huart,
+				     usart_callback_t callback,
+				     UART_RX_TX_CLBK_t rx_tx);
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart4;
@@ -209,7 +219,7 @@ void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
-  usart_init();
+
   /* USER CODE END USART1_Init 2 */
 
 }
@@ -249,6 +259,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Alternate = GPIO_AF8_UART4;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+    /* UART4 interrupt Init */
+    HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(UART4_IRQn);
   /* USER CODE BEGIN UART4_MspInit 1 */
 
   /* USER CODE END UART4_MspInit 1 */
@@ -413,6 +426,8 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
     */
     HAL_GPIO_DeInit(GPIOD, GPIO_PIN_0|GPIO_PIN_1);
 
+    /* UART4 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(UART4_IRQn);
   /* USER CODE BEGIN UART4_MspDeInit 1 */
 
   /* USER CODE END UART4_MspDeInit 1 */
@@ -481,70 +496,92 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
-int _write (int file, char *ptr, int len)
+static int find_callback_index (UART_HandleTypeDef *huart)
 {
-  HAL_UART_Transmit(&huart4, (uint8_t*) ptr, len, HAL_MAX_DELAY);
-  return len;
+  for (int i = 0; i < callback_count; i++)
+  {
+    if (callback_table[i].huart == huart)
+      return i;
+  }
+  return -1;
 }
 
-static int find_callback_index(UART_HandleTypeDef *huart)
+static void usart_register_callback (UART_HandleTypeDef *huart,
+				     usart_callback_t callback,
+				     UART_RX_TX_CLBK_t rx_tx)
 {
-    for(int i = 0; i < callback_count; i++)
-    {
-        if(callback_table[i].huart == huart)
-            return i;
-    }
-    return -1;
+  if (callback_count >= MAX_USART_INSTANCES)
+    return;
+
+  int idx = find_callback_index(huart);
+  if (idx != -1)
+  {
+    callback_table[idx].tx_callback = (rx_tx) ? callback : NULL;
+    callback_table[idx].rx_callback = (!rx_tx) ? callback : NULL;
+  }
+  else
+  {
+    callback_table[callback_count].huart = huart;
+    callback_table[callback_count].tx_callback = (rx_tx) ? callback : NULL;
+    callback_table[callback_count].rx_callback = (!rx_tx) ? callback : NULL;
+    callback_count++;
+  }
 }
 
-void usart_register_tx_callback(UART_HandleTypeDef *huart, usart_callback_t callback)
+void usart_register_tx_callback (UART_HandleTypeDef *huart,
+				 usart_callback_t callback)
 {
-    if(callback_count >= MAX_USART_INSTANCES)
-        return;
-
-    int idx = find_callback_index(huart);
-    if(idx != -1)
-    {
-        callback_table[idx].callback = callback;
-    }
-    else
-    {
-        callback_table[callback_count].huart = huart;
-        callback_table[callback_count].callback = callback;
-        callback_count++;
-    }
+  usart_register_callback(huart, callback, TX_CALLBACK);
 }
 
-void usart_unregister_tx_callback(UART_HandleTypeDef *huart)
+void usart_register_rx_callback (UART_HandleTypeDef *huart,
+				 usart_callback_t callback)
 {
-    int idx = find_callback_index(huart);
-    if(idx != -1)
-    {
-        for(int i = idx; i < callback_count - 1; i++)
-        {
-            callback_table[i] = callback_table[i + 1];
-        }
-        callback_count--;
-    }
+  usart_register_callback(huart, callback, RX_CALLBACK);
 }
 
-static void usart_init(void)
+void usart_unregister_callback (UART_HandleTypeDef *huart)
 {
-    callback_count = 0;
-    for(int i = 0; i < MAX_USART_INSTANCES; i++)
-    {
-        callback_table[i].huart = NULL;
-        callback_table[i].callback = NULL;
-    }
+  int idx = find_callback_index(huart);
+  if (idx != -1)
+  {
+    usart_callback_entry_t *clbk = &callback_table[idx];
+    clbk->huart = NULL;
+    clbk->tx_callback = NULL;
+    clbk->rx_callback = NULL;
+    callback_count--;
+  }
 }
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+void usart_clear_cb (void)
 {
-    int idx = find_callback_index(huart);
+  callback_count = 0;
+  for (int i = 0; i < MAX_USART_INSTANCES; i++)
+  {
+    usart_callback_entry_t *clbk = &callback_table[i];
+    clbk->huart = NULL;
+    clbk->tx_callback = NULL;
+    clbk->rx_callback = NULL;
+  }
+}
 
-    if(idx != -1 && callback_table[idx].callback != NULL)
-    {
-        callback_table[idx].callback();
-    }
+void HAL_UART_TxCpltCallback (UART_HandleTypeDef *huart)
+{
+  int idx = find_callback_index(huart);
+
+  if (idx != -1 && callback_table[idx].tx_callback != NULL)
+  {
+    callback_table[idx].tx_callback();
+  }
+}
+
+void HAL_UART_RxCpltCallback (UART_HandleTypeDef *huart)
+{
+  int idx = find_callback_index(huart);
+
+  if (idx != -1 && callback_table[idx].rx_callback != NULL)
+  {
+    callback_table[idx].rx_callback();
+  }
 }
 /* USER CODE END 1 */
