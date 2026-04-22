@@ -243,11 +243,12 @@ void MX_FREERTOS_Init (void)
 void StartDefaultTask (void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  uint8_t count = 0;
   /* Infinite loop */
   for (;;)
   {
-    LOG_DEBUG("StartDefaultTask");
-    osDelay(2000);
+    LOG_DEBUG("DefaultTask %d", count++);
+    osDelay(5000);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -359,7 +360,6 @@ void StartLoggerTask (void *argument)
   /* USER CODE BEGIN StartLoggerTask */
   logger_init();
   LogMessage_t msg;
-  LOG_INFO("StartLoggerTask");
   /* Infinite loop */
   for (;;)
   {

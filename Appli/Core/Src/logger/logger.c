@@ -144,9 +144,10 @@ void logger_process (LogMessage_t *msg)
   {
     HAL_UART_Abort(&huart1);
     uart_error = false;
-    buffer_pool_free(msg->buffer);
-    msg->buffer = NULL;
   }
+
+  buffer_pool_free(msg->buffer);
+  msg->buffer = NULL;
 }
 
 static void logger_format_message (LogMessage_t *msg,
@@ -156,7 +157,7 @@ static void logger_format_message (LogMessage_t *msg,
 {
   uint32_t tick = osKernelGetTickCount();
 
-  int len = snprintf(msg->buffer, LOG_BUFFER_SIZE, "%s [%lu] ", level_strings[level], tick);
+  int len = snprintf(msg->buffer, LOG_BUFFER_SIZE, "%s [%lu] ", level_strings[level], tick/1000);
   int msg_len = vsnprintf(msg->buffer + len, LOG_BUFFER_SIZE - len, fmt, args);
   if (msg_len < 0)
     msg_len = 0;
