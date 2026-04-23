@@ -14,4 +14,7 @@ extern osMessageQueueId_t xUartQueueHandle;
 
 extern osMessageQueueId_t xAudioQueueHandle;
 
+extern osEventFlagsId_t KeyboardEventHandle;
+extern osEventFlagsId_t SDEventHandle;
+
 #endif /* INC_APP_FREERTOS_H_ */

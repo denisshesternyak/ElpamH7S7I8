@@ -1,4 +1,5 @@
 #include "tca8418.h"
+#include "logger.h"
 
 static HAL_StatusTypeDef TCA8418_WriteReg (I2C_HandleTypeDef *hi2c,
 					   uint8_t reg,
@@ -107,7 +108,7 @@ HAL_StatusTypeDef TCA8418_ReadKeyEvent (I2C_HandleTypeDef *hi2c,
   if (keycode == 0)
     return HAL_ERROR;
 
-  *code = keycode-1;
+  *code = keycode;
   *pressed = (raw & 0x80) != 0;
 
 //  event->row = keycode / 10;

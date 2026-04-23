@@ -456,17 +456,6 @@ void StartSDTask (void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
-{
-  switch (GPIO_Pin)
-  {
-    case KEYPAD_INT_Pin:
-      osEventFlagsSet(KeyboardEventHandle, KEYBOARD_EVENT);
-      break;
-    case SD_DETECT_Pin:
-      osEventFlagsSet(SDEventHandle, SD_EVENT);
-      break;
-  }
-}
+
 /* USER CODE END Application */
 

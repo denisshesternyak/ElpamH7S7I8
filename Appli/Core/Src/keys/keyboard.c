@@ -45,6 +45,7 @@ const char* ButtonToString (KeyCode_t code)
 
 void keyboard_init (void)
 {
+  HAL_GPIO_WritePin(KEYPAD_RST_GPIO_Port, KEYPAD_RST_Pin, GPIO_PIN_SET);
 
   TCA8418_Init(KEYBOARD_HANDLER);
 
@@ -65,11 +66,15 @@ void keyboard_init (void)
 
 void keyboard_process (KeyEvent_t *ev)
 {
+  uint8_t raw_code;
+  bool pressed;
   while (TCA8418_GetEventCount(KEYBOARD_HANDLER) > 0)
   {
-    if (TCA8418_ReadKeyEvent(KEYBOARD_HANDLER, (uint8_t *)ev->button, (uint8_t *)ev->pressed) == HAL_OK)
+    if (TCA8418_ReadKeyEvent(KEYBOARD_HANDLER, &raw_code, &pressed) == HAL_OK)
     {
-      LOG_DEBUG("btn: %d, ev: %d", ev->button, ev->pressed);
+      LOG_DEBUG("btn: %d, ev: %d", raw_code, pressed);
+      ev->button = (KeyCode_t) raw_code;
+      ev->pressed = pressed;
       // Event press button
     }
   }

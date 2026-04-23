@@ -22,7 +22,8 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "app_freertos.h"
+#include "events.h"
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -158,5 +159,16 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 2 */
-
+void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
+{
+  switch (GPIO_Pin)
+  {
+    case KEYPAD_INT_Pin:
+      osEventFlagsSet(KeyboardEventHandle, KEYBOARD_EVENT);
+      break;
+    case SD_DETECT_Pin:
+      osEventFlagsSet(SDEventHandle, SD_EVENT);
+      break;
+  }
+}
 /* USER CODE END 2 */

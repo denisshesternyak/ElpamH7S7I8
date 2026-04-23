@@ -403,39 +403,39 @@ static void send_audio_notify (AudioEvent_t event, AudioType_t type)
 
 void handle_enter_command (void)
 {
-//  send_btn_notify(BTN_ENTER);
+  send_btn_notify(BTN_ENTER);
 }
 void handle_up_command (void)
 {
-//  send_btn_notify(BTN_UP);
+  send_btn_notify(BTN_UP);
 }
 void handle_down_command (void)
 {
-//  send_btn_notify(BTN_DOWN);
+  send_btn_notify(BTN_DOWN);
 }
 void handle_esc_command (void)
 {
-//  send_btn_notify(BTN_ESC);
+  send_btn_notify(BTN_ESC);
 }
 void handle_cancel_command (void)
 {
-//  send_btn_notify(BTN_CXL);
+  send_btn_notify(BTN_CXL);
 }
 void handle_test_command (void)
 {
-//  send_btn_notify(BTN_TEST);
+  send_btn_notify(BTN_TEST);
 }
 void handle_announc_command (void)
 {
-//  send_btn_notify(BTN_ANNOUNCEMENT);
+  send_btn_notify(BTN_ANNOUNCEMENT);
 }
 void handle_message_command (void)
 {
-//  send_btn_notify(BTN_MESSAGE);
+  send_btn_notify(BTN_MESSAGE);
 }
 void handle_alarm_command (void)
 {
-//  send_btn_notify(BTN_ALARM);
+  send_btn_notify(BTN_ALARM);
 }
 void handle_arm_command (void)
 {
