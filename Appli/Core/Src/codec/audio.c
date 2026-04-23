@@ -1,0 +1,632 @@
+#include <audio.h>
+#include "math.h"
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
+#include "queue.h"
+#include "string.h"
+#include "audio_cmd.h"
+#include "audio_regs.h"
+#include "audio_generate_sin.h"
+//#include "audiofs.h"
+#include "lcd_menu.h"
+#include "system_status.h"
+#include "logger.h"
+#include "i2s.h"
+#include "app_freertos.h"
+
+#define CODEC_I2S_HANDLER	&hi2s6
+
+Audio_Player_t player;
+
+static uint8_t dma_buffer[AUDIO_BUFFER_SIZE] __attribute__((section(".extram")));
+
+// List of acceptable levels
+const uint8_t valid_volume_levels[] = {
+    80,
+    83,
+    86,
+    89,
+    92,
+    95,
+    98,
+    101,
+    104,
+    107,
+    110,
+    113,
+    116,
+    119,
+    122 };
+
+// PROCESS
+static void audio_start (AudioNotify_t *audio_notify);
+static void audio_play (AudioNotify_t *audio_notify);
+static void audio_stop (AudioNotify_t *audio_notify);
+static void audio_prepare_stop (AudioNotify_t *audio_notify);
+static void audio_pause (void);
+static void audio_timer (void);
+static void audio_volume (void);
+
+// SINUS
+static void audio_start_sinus (void);
+static void audio_play_sinus (void);
+static void audio_stop_sinus (void);
+static void audio_prepare_stop_sinus (void);
+
+// SD
+static void audio_start_sd (void);
+static void audio_play_sd (void);
+static void audio_stop_sd (void);
+static void audio_prepare_stop_sd ();
+
+// MIC
+static void audio_start_mic (void);
+static void audio_play_mic (void);
+static void audio_stop_mic (void);
+static void audio_prepare_stop_mic (void);
+
+// MOTOROLA
+static void audio_start_motorola (void);
+static void audio_play_motorola (void);
+static void audio_stop_motorola (void);
+static void audio_prepare_stop_motorola (void);
+
+// DTMF
+static void audio_start_dtmf (void);
+static void audio_play_dtmf (void);
+static void audio_stop_dtmf (void);
+static void audio_prepare_stop_dtmf (void);
+
+static void start_playback (void);
+static void stop_playback (void);
+static void check_progress (void);
+static void send_audio_notify (BufferState_t buff_state);
+
+void audio_init (void)
+{
+  HAL_GPIO_WritePin(CODEC_RESET_GPIO_Port, CODEC_RESET_Pin, GPIO_PIN_SET);
+
+  memset(&player, 0, sizeof(player));
+  memcpy(player.valid_volume_levels, valid_volume_levels, NUM_VALID_LEVELS);
+
+  player.volume_level = 15;
+  if (player.volume_level < 1)
+    player.volume_level = 1;
+  player.volume = player.valid_volume_levels[player.volume_level - 1];
+//    player.volume = DEF_VALUE_VOLUME;
+
+  audio_init_sin_table();
+
+  osDelay(10);
+  audio_cmd_reset();
+  osDelay(50);
+
+  audio_cmd_init_power();
+  audio_cmd_init_playback();
+  audio_cmd_init_record();
+}
+
+void audio_process (AudioNotify_t *audio_notify)
+{
+  switch (audio_notify->event)
+  {
+    case AUDIO_IDLE:
+      break;
+    case AUDIO_START:
+      audio_start(audio_notify);
+      break;
+    case AUDIO_PLAY:
+      audio_play(audio_notify);
+      break;
+    case AUDIO_STOP:
+      audio_stop(audio_notify);
+      break;
+    case AUDIO_PREPARE_STOP:
+      audio_prepare_stop(audio_notify);
+      break;
+    case AUDIO_PAUSE:
+      audio_pause();
+      break;
+    case AUDIO_TIMER:
+      audio_timer();
+      break;
+    case AUDIO_VOLUME:
+      audio_volume();
+      break;
+    default:
+      break;
+  }
+
+  player.event = AUDIO_IDLE;
+}
+
+static void audio_start (AudioNotify_t *audio_notify)
+{
+//	LOG_DEBUG("AUDIO_START");
+  if (audio_notify->priority < player.priority)
+    return;
+  player.priority = audio_notify->priority;
+  player.type = audio_notify->type;
+
+  switch (player.type)
+  {
+    case AUDIO_SIN:
+      audio_start_sinus();
+      break;
+    case AUDIO_SD:
+      audio_start_sd();
+      break;
+    case AUDIO_MIC:
+      audio_start_mic();
+      break;
+    case AUDIO_MOTOROLA:
+      audio_start_motorola();
+      break;
+    case AUDIO_DTMF:
+      audio_start_dtmf();
+      break;
+    default:
+      break;
+  }
+}
+
+static void audio_play (AudioNotify_t *audio_notify)
+{
+//	LOG_DEBUG("AUDIO_PLAY");
+  if (audio_notify->priority < player.priority)
+    return;
+  player.priority = audio_notify->priority;
+  player.type = audio_notify->type;
+
+  switch (player.type)
+  {
+    case AUDIO_SIN:
+      audio_play_sinus();
+      break;
+    case AUDIO_SD:
+      audio_play_sd();
+      break;
+    case AUDIO_MIC:
+      audio_play_mic();
+      break;
+    case AUDIO_MOTOROLA:
+      audio_play_motorola();
+      break;
+    case AUDIO_DTMF:
+      audio_play_dtmf();
+      break;
+    default:
+      break;
+  }
+}
+
+static void audio_stop (AudioNotify_t *audio_notify)
+{
+//	LOG_DEBUG("AUDIO_STOP");
+  if (audio_notify->priority < player.priority)
+    return;
+  player.priority = audio_notify->priority;
+  player.type = audio_notify->type;
+
+  switch (player.type)
+  {
+    case AUDIO_SIN:
+      audio_stop_sinus();
+      break;
+    case AUDIO_SD:
+      audio_stop_sd();
+      break;
+    case AUDIO_MIC:
+      audio_stop_mic();
+      break;
+    case AUDIO_MOTOROLA:
+      audio_stop_motorola();
+      break;
+    case AUDIO_DTMF:
+      audio_stop_dtmf();
+      break;
+    default:
+      break;
+  }
+}
+
+static void audio_prepare_stop (AudioNotify_t *audio_notify)
+{
+//	LOG_DEBUG("AUDIO_PREPARE_STOP");
+  if (audio_notify->priority < player.priority)
+    return;
+  player.priority = audio_notify->priority;
+  player.type = audio_notify->type;
+
+  switch (player.type)
+  {
+    case AUDIO_SIN:
+      audio_prepare_stop_sinus();
+      break;
+    case AUDIO_SD:
+      audio_prepare_stop_sd();
+      break;
+    case AUDIO_MIC:
+      audio_prepare_stop_mic();
+      break;
+    case AUDIO_MOTOROLA:
+      audio_prepare_stop_motorola();
+      break;
+    case AUDIO_DTMF:
+      audio_prepare_stop_dtmf();
+      break;
+    default:
+      break;
+  }
+}
+
+static void audio_pause (void)
+{
+
+}
+
+static void audio_timer (void)
+{
+  if (player.is_arming)
+  {
+    player.last_time_arming++;
+    player.is_arming = player.last_time_arming < ARMING_TIME;
+    if (!player.is_arming)
+    {
+      player.last_time_arming = 0;
+      LOG_DEBUG("ARM time's up");
+    }
+  }
+
+  if (player.is_announcement)
+  {
+    player.last_time_announcement++;
+    player.is_announcement = player.last_time_announcement < ANNOUNCEMENT_TIME;
+    if (!player.is_announcement)
+    {
+      player.last_time_announcement = 0;
+      LOG_DEBUG("ANNOUNCEMENT time's up");
+      LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
+	  .button = BTN_ESC,
+	  .pressed = true } };
+      xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
+    }
+  }
+}
+
+static void audio_volume (void)
+{
+  if (!player.is_playing || !player.is_announcement)
+  {
+    audio_set_volume(player.volume);
+  }
+}
+
+static int audio_find_closest_valid_volume (uint8_t target)
+{
+  if (target <= MIN_VOLUME)
+    return MIN_VOLUME;
+  if (target >= MAX_VOLUME)
+    return MAX_VOLUME;
+
+  for (int i = 0; i < NUM_VOLUME_BARS; i++)
+  {
+    if (player.valid_volume_levels[i] >= target)
+    {
+      player.volume_level = i + 1;
+      return player.valid_volume_levels[i];
+    }
+  }
+  return MAX_VOLUME;
+}
+
+void audio_set_volume (uint8_t level)
+{
+  uint8_t corrected_vol = audio_find_closest_valid_volume(level);
+
+  player.volume = corrected_vol;
+
+  uint8_t vol;
+  if (corrected_vol >= MAX_VOLUME)
+    vol = MAX_VOLUME_CODEC;
+  else if (corrected_vol <= MIN_VOLUME)
+    vol = MIN_VOLUME_CODEC;
+  else
+    vol = CNVR_VOL(corrected_vol);
+
+  audio_cmd_send_volume(vol);
+
+  system_status.max_volume = (corrected_vol == MAX_VOLUME);
+
+  //uint8_t bar_index = find_volume_index(corrected) + 1;
+  //VolumeIndicator_SetLevelSilent(&volumeIndicator, bar_index);
+}
+
+// SINUS
+static void audio_start_sinus (void)
+{
+//	LOG_DEBUG("START SINUS");
+
+  init_generation(player.sin_task);
+  audio_generate_sine(&player, dma_buffer, AUDIO_STEREO_PAIRS_FULL);
+
+  start_playback();
+}
+
+static void audio_play_sinus (void)
+{
+  check_progress();
+
+  if (player.is_prepare_stoped)
+  {
+    player.is_stoped = true;
+    return;
+  }
+
+  uint32_t offset =
+      (player.buff_state == BUFFER_HALF) ? 0 : AUDIO_HALF_BUFFER_SIZE;
+  uint8_t *buf_ptr = dma_buffer + offset;
+
+  audio_generate_sine(&player, buf_ptr, AUDIO_STEREO_PAIRS_HALF);
+
+  player.buff_state = BUFFER_IDLE;
+  player.event = AUDIO_PLAY;
+}
+
+static void audio_stop_sinus (void)
+{
+//	LOG_DEBUG("STOP SINUS");
+
+  stop_playback();
+}
+
+static void audio_prepare_stop_sinus (void)
+{
+//	LOG_DEBUG("PREPARE_STOP");
+
+  if (player.is_playing && !player.is_stoped)
+  {
+    player.event = AUDIO_PLAY;
+    set_fade_stop();
+  }
+}
+
+// SD
+static void audio_start_sd (void)
+{
+  if (!player.file_info.filename)
+    return;
+
+//  bool res = audiofs_read_file_info(&player.file_info);
+//  if (!res)
+//  {
+//    LOG_ERROR("Failure load info: %s", player.file_info.filename);
+//    return;
+//  }
+//
+//  res = audiofs_read_file(&player.file_info, dma_buffer, AUDIO_BUFFER_SIZE);
+//  if (!res)
+//  {
+//    LOG_ERROR("Failure load data: %s", player.file_info.filename);
+//    return;
+//  }
+
+  start_playback();
+}
+
+static void audio_play_sd (void)
+{
+  check_progress();
+
+//  uint32_t offset =
+//      (player.buff_state == BUFFER_HALF) ? 0 : AUDIO_HALF_BUFFER_SIZE;
+//  uint8_t *buf_ptr = dma_buffer + offset;
+
+//  bool res = audiofs_read_file(&player.file_info, buf_ptr, AUDIO_HALF_BUFFER_SIZE);
+//  if (player.file_info.isEnd || !res)
+//  {
+//    player.is_stoped = true;
+//    player.duration = 100;
+//    check_progress();
+//  }
+
+  player.buff_state = BUFFER_IDLE;
+  player.event = AUDIO_PLAY;
+
+  player.duration = (player.file_info.position * 100) / player.file_info.file_size;
+}
+
+static void audio_stop_sd (void)
+{
+//	LOG_DEBUG("STOP SD");
+
+  stop_playback();
+
+//  audiofs_close_file(&player.file_info);
+  memset(&player.file_info, 0, sizeof(player.file_info));
+}
+
+static void audio_prepare_stop_sd (void)
+{
+  if (player.is_playing && !player.is_stoped)
+  {
+    player.event = AUDIO_PLAY;
+    player.is_stoped = true;
+    player.is_fade_stoped = true;
+  }
+}
+
+// MIC
+static void audio_start_mic (void)
+{
+//	LOG_DEBUG("START MIC");
+
+//	audio_cmd_playback_enable();
+  player.last_time_announcement = 0;
+  player.is_announcement = true;
+  audio_cmd_IN1R_enable();
+}
+
+static void audio_play_mic (void)
+{
+
+}
+
+static void audio_stop_mic (void)
+{
+//	LOG_DEBUG("STOP MIC");
+
+//	audio_cmd_playback_disable();
+  player.is_announcement = false;
+  audio_cmd_INR_disable();
+}
+
+static void audio_prepare_stop_mic (void)
+{
+
+}
+
+// MOTOROLA
+static void audio_start_motorola (void)
+{
+  player.is_motorola = true;
+  audio_cmd_IN1R_enable();
+}
+
+static void audio_play_motorola (void)
+{
+
+}
+
+static void audio_stop_motorola (void)
+{
+  player.is_motorola = false;
+  player.event = AUDIO_IDLE;
+  player.priority = AUDIO_PRIORITY_IDLE;
+
+  audio_cmd_INR_disable();
+}
+
+static void audio_prepare_stop_motorola (void)
+{
+
+}
+
+// DTMF
+static void audio_start_dtmf (void)
+{
+
+}
+
+static void audio_play_dtmf (void)
+{
+
+}
+
+static void audio_stop_dtmf (void)
+{
+
+}
+
+static void audio_prepare_stop_dtmf (void)
+{
+
+}
+
+////
+static void start_playback (void)
+{
+//	if (player.priority > player.current_priority && player.is_playing)
+//	{
+//		HAL_I2S_DMAStop(CODEC_I2S_HANDLER);
+//	}
+
+  audio_cmd_playback_enable();
+  audio_cmd_I2S_to_DAC();
+
+  hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
+  HAL_I2S_Init(CODEC_I2S_HANDLER);
+  HAL_I2S_Transmit_DMA(CODEC_I2S_HANDLER, (uint16_t*) dma_buffer, AUDIO_HALF_BUFFER_SIZE);
+
+//	audio_set_volume(player.volume);
+
+  player.is_playing = true;
+  player.is_stoped = false;
+  player.is_prepare_stoped = false;
+  player.is_fade_stoped = false;
+  player.event = AUDIO_PLAY;
+}
+
+static void stop_playback (void)
+{
+  if (!player.is_playing)
+    return;
+  player.is_playing = false;
+  player.is_stoped = true;
+  player.duration = 0;
+  player.event = AUDIO_IDLE;
+  player.buff_state = BUFFER_IDLE;
+  player.priority = AUDIO_PRIORITY_IDLE;
+
+//	LOG_DEBUG("STOP");
+  audio_cmd_playback_disable();
+
+  if (!player.is_fade_stoped)
+  {
+    LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
+	.button = BTN_ESC,
+	.pressed = true } };
+    xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
+  }
+
+  HAL_I2S_DMAStop(CODEC_I2S_HANDLER);
+  hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
+  HAL_I2S_Init(CODEC_I2S_HANDLER);
+}
+
+static void check_progress (void)
+{
+  static uint8_t update_progree = 0;
+  if ((update_progree++ > COUNT_PROGRESS) || player.is_prepare_stoped)
+  {
+    update_progree = 0;
+    LCDTaskEvent_t lcd_event = {
+	.event = LCD_EVENT_PROGRESS,
+	.value = player.duration };
+    xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
+  }
+}
+
+static void send_audio_notify (BufferState_t buff_state)
+{
+  if (!player.is_playing || player.event == AUDIO_STOP)
+    return;
+
+  player.buff_state = buff_state;
+
+  AudioNotify_t audio_notify = {
+      .event = player.is_stoped ? AUDIO_STOP : AUDIO_PLAY,
+      .type = player.type,
+      .priority = player.priority };
+
+  BaseType_t res = xQueueSendFromISR(xAudioQueueHandle, &audio_notify, NULL);
+  if (res != pdPASS)
+  {
+    LOG_WARN("The audio queue is full");
+  }
+}
+
+void HAL_I2S_TxHalfCpltCallback (I2S_HandleTypeDef *hi2s)
+{
+  if (hi2s->Instance != SPI6)
+    return;
+  send_audio_notify(BUFFER_HALF);
+}
+
+void HAL_I2S_TxCpltCallback (I2S_HandleTypeDef *hi2s)
+{
+  if (hi2s->Instance != SPI6)
+    return;
+  send_audio_notify(BUFFER_FULL);
+}
+

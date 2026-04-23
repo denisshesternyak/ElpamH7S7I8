@@ -53,10 +53,10 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, CODEC_RESET_Pin|KEYPAD_RST_Pin|GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4|LCD_PWM_Pin|LCD_DC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, CODEC_CS_Pin|LCD_PWM_Pin|LCD_DC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|CODEC_RESETB15_Pin|GPIO_PIN_4, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOO, GPIO_PIN_1, GPIO_PIN_RESET);
@@ -82,11 +82,11 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PE4 LCD_PWM_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|LCD_PWM_Pin;
+  /*Configure GPIO pins : CODEC_CS_Pin LCD_DC_Pin */
+  GPIO_InitStruct.Pin = CODEC_CS_Pin|LCD_DC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PF9 */
@@ -95,12 +95,19 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB2 PB4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_4;
+  /*Configure GPIO pins : PB2 CODEC_RESETB15_Pin PB4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|CODEC_RESETB15_Pin|GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LCD_PWM_Pin */
+  GPIO_InitStruct.Pin = LCD_PWM_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LCD_PWM_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PO1 */
   GPIO_InitStruct.Pin = GPIO_PIN_1;
@@ -129,6 +136,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SD_DETECT_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : CODEC_INT_Pin */
+  GPIO_InitStruct.Pin = CODEC_INT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(CODEC_INT_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : KEYPAD_INT_Pin */
   GPIO_InitStruct.Pin = KEYPAD_INT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
@@ -141,13 +154,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : LCD_DC_Pin */
-  GPIO_InitStruct.Pin = LCD_DC_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  HAL_GPIO_Init(LCD_DC_GPIO_Port, &GPIO_InitStruct);
 
 }
 

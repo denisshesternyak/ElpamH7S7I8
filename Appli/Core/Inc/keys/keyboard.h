@@ -50,6 +50,12 @@ typedef enum
   BTN_NONE
 } KeyCode_t;
 
+typedef struct
+{
+  bool pressed;
+  KeyCode_t button;
+} KeyEvent_t;
+
 void keyboard_init (void);
 void keyboard_process (KeyEvent_t *ev);
 const char* ButtonToString (KeyCode_t btn);

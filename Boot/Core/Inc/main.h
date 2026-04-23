@@ -59,14 +59,20 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define CODEC_RESET_Pin GPIO_PIN_13
 #define CODEC_RESET_GPIO_Port GPIOC
+#define CODEC_CS_Pin GPIO_PIN_4
+#define CODEC_CS_GPIO_Port GPIOE
 #define LCD_PWM_Pin GPIO_PIN_9
 #define LCD_PWM_GPIO_Port GPIOE
+#define CODEC_RESETB15_Pin GPIO_PIN_15
+#define CODEC_RESETB15_GPIO_Port GPIOB
 #define KEYPAD_RST_Pin GPIO_PIN_7
 #define KEYPAD_RST_GPIO_Port GPIOC
 #define LCD_CS_Pin GPIO_PIN_11
 #define LCD_CS_GPIO_Port GPIOA
 #define SD_DETECT_Pin GPIO_PIN_1
 #define SD_DETECT_GPIO_Port GPIOG
+#define CODEC_INT_Pin GPIO_PIN_7
+#define CODEC_INT_GPIO_Port GPIOD
 #define KEYPAD_INT_Pin GPIO_PIN_2
 #define KEYPAD_INT_GPIO_Port GPIOG
 #define LCD_DC_Pin GPIO_PIN_1

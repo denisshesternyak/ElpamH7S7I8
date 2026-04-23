@@ -96,21 +96,22 @@ uint8_t TCA8418_GetEventCount (I2C_HandleTypeDef *hi2c)
 }
 
 HAL_StatusTypeDef TCA8418_ReadKeyEvent (I2C_HandleTypeDef *hi2c,
-					KeyEvent_t *event)
+					uint8_t *code,
+					bool *pressed)
 {
   uint8_t raw;
   if (TCA8418_ReadReg(hi2c, TCA8418_REG_KEY_EVENT_A, &raw) != HAL_OK)
     return HAL_ERROR;
 
-  event->pressed = (raw & 0x80) != 0;
-
   uint8_t keycode = raw & 0x7F;
   if (keycode == 0)
     return HAL_ERROR;
 
-  event->button = --keycode;
-  event->row = keycode / 10;
-  event->col = keycode % 10;
+  *code = keycode-1;
+  *pressed = (raw & 0x80) != 0;
+
+//  event->row = keycode / 10;
+//  event->col = keycode % 10;
 
   return HAL_OK;
 }

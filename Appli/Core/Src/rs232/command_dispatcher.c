@@ -7,21 +7,21 @@
 #include "defines.h"  // For USE_DEBUG_COMMAND_DISPATCHER
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 //#include "audio_types.h"
 #include "lcd_menu.h"
 #include "usart.h"
 #include "stm32h7rsxx_hal.h"
 #include "logger.h"
+#include "app_freertos.h"
+#include "audio.h"
+#include "keyboard.h"
 
 // Extern UART handler for debug output (optional)
 
-//extern Audio_Player_t player;
-//extern osMessageQueueId_t xAudioQueueHandle;
-//extern osMessageQueueId_t xLCDQueueHandle;
-
-//static void send_audio_notify(AudioEvent_t event, AudioType_t type);
-//static void send_btn_notify(Button_t btn);
-//static void send_screen_notify (MenuType screen);
+static void send_audio_notify (AudioEvent_t event, AudioType_t type);
+static void send_btn_notify(KeyCode_t btn);
+static void send_screen_notify (MenuType screen);
 
 // Buffer for debug messages
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -43,8 +43,8 @@
 void handle_arm (void)
 {
   system_status_set_mode(SYSTEM_MODE_ARMING);
-//  player.last_time_arming = 0;
-//  player.is_arming = true;
+  player.last_time_arming = 0;
+  player.is_arming = true;
   LOG_DEBUG("ARM is started");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -62,12 +62,12 @@ void handle_arm (void)
 void handle_all_clear_1 (void)
 {
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_1);
-//  if (player.is_arming && !player.is_motorola)
-//  {
-//    send_audio_notify(AUDIO_STOP, player.type);
-//    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
-//    send_screen_notify(MENU_TYPE_MOTOROLA);
-//  }
+  if (player.is_arming && !player.is_motorola)
+  {
+    send_audio_notify(AUDIO_STOP, player.type);
+    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
+    send_screen_notify(MENU_TYPE_MOTOROLA);
+  }
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: ALL CLEAR 1\r\n");
@@ -84,12 +84,12 @@ void handle_all_clear_1 (void)
 void handle_all_clear_2 (void)
 {
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_2);
-//  if (player.is_arming && !player.is_motorola)
-//  {
-//    send_audio_notify(AUDIO_STOP, player.type);
-//    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
-//    send_screen_notify(MENU_TYPE_MOTOROLA);
-//  }
+  if (player.is_arming && !player.is_motorola)
+  {
+    send_audio_notify(AUDIO_STOP, player.type);
+    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
+    send_screen_notify(MENU_TYPE_MOTOROLA);
+  }
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: ALL CLEAR 2\r\n");
@@ -106,12 +106,12 @@ void handle_all_clear_2 (void)
 void handle_alarm (void)
 {
   system_status_set_mode(SYSTEM_MODE_ALARM_WAIL);
-//  if (player.is_arming && !player.is_motorola)
-//  {
-//    send_audio_notify(AUDIO_STOP, player.type);
-//    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
-//    send_screen_notify(MENU_TYPE_MOTOROLA);
-//  }
+  if (player.is_arming && !player.is_motorola)
+  {
+    send_audio_notify(AUDIO_STOP, player.type);
+    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
+    send_screen_notify(MENU_TYPE_MOTOROLA);
+  }
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: ALARM (WAIL)\r\n");
@@ -128,12 +128,12 @@ void handle_alarm (void)
 void handle_chemical (void)
 {
   system_status_set_mode(SYSTEM_MODE_CHEMICAL);
-//  if (player.is_arming && !player.is_motorola)
-//  {
-//    send_audio_notify(AUDIO_STOP, player.type);
-//    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
-//    send_screen_notify(MENU_TYPE_MOTOROLA);
-//  }
+  if (player.is_arming && !player.is_motorola)
+  {
+    send_audio_notify(AUDIO_STOP, player.type);
+    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
+    send_screen_notify(MENU_TYPE_MOTOROLA);
+  }
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: CHEMICAL ALARM\r\n");
@@ -150,8 +150,8 @@ void handle_chemical (void)
 void handle_disarm (void)
 {
   system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
-//  player.is_arming = false;
-//	LOG_DEBUG("DISARM");
+  player.is_arming = false;
+  LOG_DEBUG("DISARM");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: DISARM\r\n");
@@ -167,13 +167,13 @@ void handle_disarm (void)
  */
 void handle_cancel (void)
 {
-//  if (player.is_motorola)
-//  {
-//    system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
-//
-//    send_audio_notify(AUDIO_STOP, AUDIO_MOTOROLA);
-//    send_screen_notify(MENU_TYPE_PREVIOUS);
-//  }
+  if (player.is_motorola)
+  {
+    system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
+
+    send_audio_notify(AUDIO_STOP, AUDIO_MOTOROLA);
+    send_screen_notify(MENU_TYPE_PREVIOUS);
+  }
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: CANCEL\r\n");
@@ -288,11 +288,10 @@ void handle_reset (void)
  */
 void volume_up_handler (int value)
 {
+//  system_set_volume(value);
+  player.volume = value;
 
-  //system_set_volume(value);
-//  player.volume = value;
-//
-//  send_audio_notify(AUDIO_VOLUME, AUDIO_NONE);
+  send_audio_notify(AUDIO_VOLUME, AUDIO_NONE);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "VOL UP: %d (now: %d)\r\n", value, system_get_volume());
@@ -309,10 +308,10 @@ void volume_up_handler (int value)
  */
 void volume_down_handler (int value)
 {
-  //system_set_volume(value);
-//  player.volume = value;
-//
-//  send_audio_notify(AUDIO_VOLUME, AUDIO_NONE);
+//  system_set_volume(value);
+  player.volume = value;
+
+  send_audio_notify(AUDIO_VOLUME, AUDIO_NONE);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "VOL DOWN: %d (now: %d)\r\n", value, system_get_volume());
@@ -389,19 +388,18 @@ void handle_unknown_command (void)
 #endif
 }
 
-//static void send_audio_notify (AudioEvent_t event, AudioType_t type)
-//{
-//  AudioNotify_t audio_notify = {
-//      .event = event,
-//      .type = type,
-//      .priority = AUDIO_PRIORITY_HIGH };
-//
-//  BaseType_t res = xQueueSend(xAudioQueueHandle, &audio_notify, pdMS_TO_TICKS(50));
-//  if (res != pdPASS)
-//  {
-//    LOG_WARN("The audio queue is full");
-//  }
-//}
+static void send_audio_notify (AudioEvent_t event, AudioType_t type)
+{
+  AudioNotify_t audio_notify = {
+      .event = event,
+      .type = type,
+      .priority = AUDIO_PRIORITY_HIGH };
+
+  if (osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0) != osOK)
+  {
+    LOG_WARN("The audio queue is full");
+  }
+}
 
 void handle_enter_command (void)
 {
@@ -441,32 +439,30 @@ void handle_alarm_command (void)
 }
 void handle_arm_command (void)
 {
-//  send_btn_notify(BTN_ARM);
+  send_btn_notify(BTN_ARM);
 }
 
-//static void send_btn_notify (Button_t btn)
-//{
-//	player.priority = AUDIO_PRIORITY_LOW;
+static void send_btn_notify (KeyCode_t btn)
+{
+  player.priority = AUDIO_PRIORITY_LOW;
 
-//  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
-//      .action = BA_PRESSED } };
-//  lcd_event.btn.button = btn;
-//
-//  BaseType_t res = xQueueSend(xLCDQueueHandle, &lcd_event, pdMS_TO_TICKS(20));
-//  if (res != pdPASS)
-//  {
-//    LOG_WARN("The lcd queue is full");
-//  }
-//}
+  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
+      .button = btn,
+      .pressed = true } };
 
-//static void send_screen_notify (MenuType screen)
-//{
-//  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN };
-//  lcd_event.screen = screen;
-//
-//  BaseType_t res = xQueueSend(xLCDQueueHandle, &lcd_event, pdMS_TO_TICKS(20));
-//  if (res != pdPASS)
-//  {
-//    LOG_WARN("The lcd queue is full");
-//  }
-//}
+  if (osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0) != osOK)
+  {
+    LOG_WARN("The lcd queue is full");
+  }
+}
+
+static void send_screen_notify (MenuType screen)
+{
+  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN };
+  lcd_event.screen = screen;
+
+  if (osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0) != osOK)
+  {
+    LOG_WARN("The lcd queue is full");
+  }
+}

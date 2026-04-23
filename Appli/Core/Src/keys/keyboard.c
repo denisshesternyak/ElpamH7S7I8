@@ -1,6 +1,6 @@
 #include <keyboard.h>
 #include "i2c.h"
-//#include "logger.h"
+#include "logger.h"
 
 #define KEYBOARD_HANDLER &hi2c1
 
@@ -67,8 +67,9 @@ void keyboard_process (KeyEvent_t *ev)
 {
   while (TCA8418_GetEventCount(KEYBOARD_HANDLER) > 0)
   {
-    if (TCA8418_ReadKeyEvent(KEYBOARD_HANDLER, ev) == HAL_OK)
+    if (TCA8418_ReadKeyEvent(KEYBOARD_HANDLER, (uint8_t *)ev->button, (uint8_t *)ev->pressed) == HAL_OK)
     {
+      LOG_DEBUG("btn: %d, ev: %d", ev->button, ev->pressed);
       // Event press button
     }
   }
