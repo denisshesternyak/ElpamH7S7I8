@@ -328,7 +328,7 @@ void volume_down_handler (int value)
  */
 void system_fill_report ()
 {
-  char response_22[23] = { 0 };
+  char response_22[22] = { 0 };
 
   // Byte 1: Mode (one char)
   response_22[0] = system_status_get_mode_char();

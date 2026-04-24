@@ -3,11 +3,17 @@
 #include <stdio.h>
 #include "usart.h"
 #include "app_freertos.h"
+#include "rtc.h"
 
 static LogLevel_t current_log_level = LOG_DEBUG;
 static volatile bool uart_error;
 
 static char logger_buffer_pool[LOG_QUEUE_SIZE][LOG_BUFFER_SIZE] __attribute__((section(".extram")));
+static char logger_buffer_temp[LOG_BUFFER_SIZE] __attribute__((section(".extram")));
+
+#define TIME_STAMP_SIZE 24
+static const char *TIME_FORMAT = "[%02d/%02d/%02d %02d:%02d:%02d.%03ld] %s %s";
+
 static volatile size_t write_index = 0;
 static volatile size_t read_index = 0;
 static volatile size_t free_count = LOG_QUEUE_SIZE;
@@ -19,10 +25,7 @@ static const char *const level_strings[] = {
     "[ERROR]",
     "[FATAL]" };
 
-static void logger_format_message (LogMessage_t *msg,
-				   LogLevel_t level,
-				   const char *fmt,
-				   va_list args);
+static void logger_format_message (char *temp, LogMessage_t *msg);
 
 static void logger_uart_tx_complete_callback (void)
 {
@@ -85,17 +88,25 @@ void logger_msg (LogLevel_t level, const char *fmt, ...)
     return;
 
   char *buffer = buffer_pool_alloc();
-  if (buffer == NULL)
+  if (!buffer)
   {
     return;
   }
 
-  LogMessage_t msg = { .buffer = buffer };
-
   va_list args;
   va_start(args, fmt);
-  logger_format_message(&msg, level, fmt, args);
+  int msg_len = vsnprintf(buffer, LOG_BUFFER_SIZE, fmt, args);
   va_end(args);
+
+  if (msg_len < 0) msg_len = 0;
+  if (msg_len > LOG_BUFFER_SIZE - 1) msg_len = LOG_BUFFER_SIZE - 1;
+
+  LogMessage_t msg = {
+      .buffer = buffer,
+      .level = level,
+      .len = msg_len,
+      .retry_count = 0
+  };
 
   if (osMessageQueuePut(xLoggerQueueHandle, &msg, 0, 0) != osOK)
   {
@@ -127,6 +138,8 @@ void logger_process (LogMessage_t *msg)
       uart_error = false;
     }
 
+    logger_format_message(logger_buffer_temp, msg);
+
     HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart1, (uint8_t*) msg->buffer, msg->len);
 
     if (status == HAL_OK)
@@ -150,19 +163,20 @@ void logger_process (LogMessage_t *msg)
   msg->buffer = NULL;
 }
 
-static void logger_format_message (LogMessage_t *msg,
-				   LogLevel_t level,
-				   const char *fmt,
-				   va_list args)
+static void logger_format_message (char *temp, LogMessage_t *msg)
 {
-  uint32_t tick = osKernelGetTickCount();
+  RTC_TimeTypeDef sTime = { 0 };
+  RTC_DateTypeDef sDate = { 0 };
 
-  int len = snprintf(msg->buffer, LOG_BUFFER_SIZE, "%s [%lu] ", level_strings[level], tick/1000);
-  int msg_len = vsnprintf(msg->buffer + len, LOG_BUFFER_SIZE - len, fmt, args);
-  if (msg_len < 0)
-    msg_len = 0;
+  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-  size_t total_len = len + msg_len;
+  uint32_t milliseconds = 1000 * (sTime.SecondFraction - sTime.SubSeconds) / (sTime.SecondFraction + 1);
+
+  memcpy(temp, msg->buffer, msg->len);
+  temp[msg->len] = '\0';
+
+  int total_len = snprintf(msg->buffer, LOG_BUFFER_SIZE, TIME_FORMAT, sDate.Date, sDate.Month, sDate.Year, sTime.Hours, sTime.Minutes, sTime.Seconds, milliseconds, level_strings[msg->level], temp);
 
   if (total_len > 0 && msg->buffer[total_len - 1] != '\n')
   {
@@ -179,5 +193,4 @@ static void logger_format_message (LogMessage_t *msg,
   }
 
   msg->len = total_len;
-  msg->retry_count = 0;
 }

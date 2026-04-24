@@ -25,6 +25,7 @@
 #include "gpdma.h"
 #include "i2c.h"
 #include "i2s.h"
+#include "rtc.h"
 #include "sdmmc.h"
 #include "spi.h"
 #include "usart.h"
@@ -116,6 +117,7 @@ int main(void)
   MX_UART7_Init();
   MX_FATFS_Init();
   MX_USART1_UART_Init();
+  MX_RTC_Init();
   /* USER CODE BEGIN 2 */
   usart_clear_cb();
   spi_clear_cb();

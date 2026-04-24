@@ -19,6 +19,7 @@ typedef enum {
 
 typedef struct {
     char *buffer;
+    LogLevel_t level;
     uint16_t len;
     uint8_t retry_count;
 } LogMessage_t;

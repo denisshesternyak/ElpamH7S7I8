@@ -23,39 +23,33 @@
 #include "lcd_widget_motorola.h"
 #include "audio.h"
 #include "app_freertos.h"
-
+#include "rtc.h"
 //#include "analog.h"
 
 //bool isResetPasswordAfterIdle = false;
-//
-//extern QueueHandle_t audioQueue;
 
-//
 static bool isBacklightOn = false;
 
 #define MAX_MENU_POOL 40
 
 static uint32_t lastInteractionTick = 0;
 static Menu menuPool[MAX_MENU_POOL];
-uint8_t menuPoolIndex = 0;
-
-//extern osMessageQueueId_t xAudioQueueHandle;
-//extern RTC_HandleTypeDef hrtc;
+static uint8_t menuPoolIndex = 0;
 
 #define CLOCK_MAX_SYMBOLS		6
 
-//typedef struct
-//{
-//  uint8_t current_symbol;
-//  int8_t change_value;
-//  RTC_TimeTypeDef sTime;
-//  RTC_DateTypeDef sDate;
-//} ClockEdit_t;
-//
-//ClockEdit_t clock;
+typedef struct
+{
+  uint8_t current_symbol;
+  int8_t change_value;
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef sDate;
+} ClockEdit_t;
 
-char listFilenames[MAX_MENU_ITEMS][FF_MAX_LFN];
-const char *selectedFile = NULL;
+static ClockEdit_t clock;
+
+static char listFilenames[MAX_MENU_ITEMS][FF_MAX_LFN] __attribute__((section(".extram")));
+//const char *selectedFile = NULL;
 
 Menu *currentMenu = NULL;
 Menu *idleMenu = NULL;
@@ -194,10 +188,10 @@ static void BLK_ON ()
 {
   HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_SET);
 }
-//static void BLK_OFF ()
-//{
-//  HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_RESET);
-//}
+static void BLK_OFF ()
+{
+  HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_RESET);
+}
 
 static void clear_position (Menu *menu)
 {
@@ -600,16 +594,16 @@ void RunDriversTest (void)
 
 void prepare_clock (void)
 {
-//  HAL_RTC_GetTime(&hrtc, &clock.sTime, RTC_FORMAT_BIN);
-//  HAL_RTC_GetDate(&hrtc, &clock.sDate, RTC_FORMAT_BIN);
+  HAL_RTC_GetTime(&hrtc, &clock.sTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(&hrtc, &clock.sDate, RTC_FORMAT_BIN);
 }
 
 void run_clock (void)
 {
-//  clock.change_value = 0;
-//  clock.current_symbol = 0;
-//  currentMenu = clockMenu;
-//  draw_menuScreen(true);
+  clock.change_value = 0;
+  clock.current_symbol = 0;
+  currentMenu = clockMenu;
+  draw_menuScreen(true);
 }
 
 void MenuLoadSDCardSirens (void)
@@ -873,7 +867,7 @@ void Draw_MENU_TYPE_MESSAGE_PLAY (void)
 
 void draw_menu_clock (void)
 {
-  /*RTC_TimeTypeDef *sTime = &clock.sTime;
+  RTC_TimeTypeDef *sTime = &clock.sTime;
   RTC_DateTypeDef *sDate = &clock.sDate;
 
   if (clock.change_value != 0)
@@ -1003,7 +997,6 @@ void draw_menu_clock (void)
 
     hx8357_write_alignedX_string(baseX + field_offset, y, field_str, font, field_color, field_bg, ALIGN_LEFT);
   }
-  */
 }
 
 static void draw_menu_motorola (void)
@@ -1234,7 +1227,7 @@ void draw_status_bar ()
 
 void update_date_time ()
 {
-  /*if (!isBacklightOn)
+  if (!isBacklightOn)
     return;
 
   if (player.is_motorola)
@@ -1271,7 +1264,6 @@ void update_date_time ()
 
   hx8357_write_alignedX_string(0, TIME_Y_POS, clock_str, &Font_11x18, COLOR_YELLOW, COLOR_BLACK, ALIGN_RIGHT);
   return;
-  */
 }
 
 void update_progress_bar (uint8_t value)
@@ -1669,18 +1661,18 @@ static void clockMenu_handle_button_press (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_ENTER:
-//      clock.current_symbol++;
-//      if (clock.current_symbol >= CLOCK_MAX_SYMBOLS)
-//	clock.current_symbol = 0;
+      clock.current_symbol++;
+      if (clock.current_symbol >= CLOCK_MAX_SYMBOLS)
+	clock.current_symbol = 0;
       draw_menu_clock();
       return;
     case BTN_UP:
-//      clock.change_value = 1;
-//      draw_menu_clock();
+      clock.change_value = 1;
+      draw_menu_clock();
       return;
     case BTN_DOWN:
-//      clock.change_value = -1;
-//      draw_menu_clock();
+      clock.change_value = -1;
+      draw_menu_clock();
       return;
     default:
       break;
