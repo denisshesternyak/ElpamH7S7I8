@@ -24,6 +24,8 @@
 #include "audio.h"
 #include "app_freertos.h"
 #include "rtc.h"
+#include "sdfs.h"
+
 //#include "analog.h"
 
 //bool isResetPasswordAfterIdle = false;
@@ -633,11 +635,11 @@ void MenuLoadSDCardSirens (void)
 //
 //	const uint8_t count = sizeof(list) / sizeof(list[0]);
   uint8_t count = 0;
-//  audiofs_list_alarms(listFilenames, &count);
+  sdfs_list_alarms(listFilenames, &count);
 
   for (uint8_t i = 0; i < count && i < MAX_MENU_ITEMS; ++i)
   {
-//		strncpy(listFilenames[i], list[i], FF_MAX_LFN);
+//    strncpy(listFilenames[i], list[i], FF_MAX_LFN);
 
     MenuItem *item = &sirenMenu->items[i];
     for (uint8_t j = 0; j < LANG_COUNT; j++)
@@ -680,11 +682,11 @@ void MenuLoadSDCardMessages (void)
 //    const uint8_t count = sizeof(dummyFilenames) / sizeof(dummyFilenames[0]);
 
   uint8_t count = 0;
-//  audiofs_list_messages(listFilenames, &count);
+  sdfs_list_messages(listFilenames, &count);
 
   for (uint8_t i = 0; i < count && i < MAX_MENU_ITEMS; ++i)
   {
-//        strncpy(listFilenames[i], dummyFilenames[i], FF_MAX_LFN);
+//    strncpy(listFilenames[i], dummyFilenames[i], FF_MAX_LFN);
 
     MenuItem *item = &messagesMenu->items[i];
     for (uint8_t j = 0; j < LANG_COUNT; j++)

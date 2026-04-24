@@ -7,7 +7,7 @@
 #include "audio_cmd.h"
 #include "audio_regs.h"
 #include "audio_generate_sin.h"
-//#include "audiofs.h"
+#include "sdfs.h"
 #include "lcd_menu.h"
 #include "system_status.h"
 #include "logger.h"
@@ -397,19 +397,19 @@ static void audio_start_sd (void)
   if (!player.file_info.filename)
     return;
 
-//  bool res = audiofs_read_file_info(&player.file_info);
-//  if (!res)
-//  {
-//    LOG_ERROR("Failure load info: %s", player.file_info.filename);
-//    return;
-//  }
-//
-//  res = audiofs_read_file(&player.file_info, dma_buffer, AUDIO_BUFFER_SIZE);
-//  if (!res)
-//  {
-//    LOG_ERROR("Failure load data: %s", player.file_info.filename);
-//    return;
-//  }
+  bool res = sdfs_read_file_info(&player.file_info);
+  if (!res)
+  {
+    LOG_ERROR("Failure load info: %s", player.file_info.filename);
+    return;
+  }
+
+  res = sdfs_read_file(&player.file_info, dma_buffer, AUDIO_BUFFER_SIZE);
+  if (!res)
+  {
+    LOG_ERROR("Failure load data: %s", player.file_info.filename);
+    return;
+  }
 
   start_playback();
 }
@@ -418,17 +418,17 @@ static void audio_play_sd (void)
 {
   check_progress();
 
-//  uint32_t offset =
-//      (player.buff_state == BUFFER_HALF) ? 0 : AUDIO_HALF_BUFFER_SIZE;
-//  uint8_t *buf_ptr = dma_buffer + offset;
+  uint32_t offset =
+      (player.buff_state == BUFFER_HALF) ? 0 : AUDIO_HALF_BUFFER_SIZE;
+  uint8_t *buf_ptr = dma_buffer + offset;
 
-//  bool res = audiofs_read_file(&player.file_info, buf_ptr, AUDIO_HALF_BUFFER_SIZE);
-//  if (player.file_info.isEnd || !res)
-//  {
-//    player.is_stoped = true;
-//    player.duration = 100;
-//    check_progress();
-//  }
+  bool res = sdfs_read_file(&player.file_info, buf_ptr, AUDIO_HALF_BUFFER_SIZE);
+  if (player.file_info.isEnd || !res)
+  {
+    player.is_stoped = true;
+    player.duration = 100;
+    check_progress();
+  }
 
   player.buff_state = BUFFER_IDLE;
   player.event = AUDIO_PLAY;

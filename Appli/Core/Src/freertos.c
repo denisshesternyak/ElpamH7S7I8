@@ -474,12 +474,14 @@ void StartSDTask(void *argument)
     osEventFlagsWait(SDEventHandle, SD_EVENT, osFlagsWaitAll, osWaitForever);
     if (sdfs_is_detected())
     {
-      LOG_DEBUG("SD CONNECTED");
-      sdfs_list_directory();
+      LOG_INFO("SD CONNECTED");
+      sdfs_mount_drive();
+      sdfs_list_messages(NULL, NULL);
     }
     else
     {
-      LOG_DEBUG("SD DISCONNECTED");
+      LOG_INFO("SD DISCONNECTED");
+      sdfs_unmount_drive();
     }
   }
   /* USER CODE END StartSDTask */
