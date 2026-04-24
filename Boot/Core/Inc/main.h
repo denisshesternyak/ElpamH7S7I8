@@ -57,14 +57,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define CODEC_RESET_Pin GPIO_PIN_13
-#define CODEC_RESET_GPIO_Port GPIOC
+#define DISPLAY_RST_Pin GPIO_PIN_13
+#define DISPLAY_RST_GPIO_Port GPIOC
 #define CODEC_CS_Pin GPIO_PIN_4
 #define CODEC_CS_GPIO_Port GPIOE
 #define LCD_PWM_Pin GPIO_PIN_9
 #define LCD_PWM_GPIO_Port GPIOE
-#define CODEC_RESETB15_Pin GPIO_PIN_15
-#define CODEC_RESETB15_GPIO_Port GPIOB
+#define CODEC_RESET_Pin GPIO_PIN_15
+#define CODEC_RESET_GPIO_Port GPIOB
 #define KEYPAD_RST_Pin GPIO_PIN_7
 #define KEYPAD_RST_GPIO_Port GPIOC
 #define LCD_CS_Pin GPIO_PIN_11

@@ -84,6 +84,8 @@ static void send_audio_notify (BufferState_t buff_state);
 
 void audio_init (void)
 {
+  HAL_GPIO_WritePin(CODEC_RESET_GPIO_Port, CODEC_RESET_Pin, GPIO_PIN_RESET);
+  osDelay(5);
   HAL_GPIO_WritePin(CODEC_RESET_GPIO_Port, CODEC_RESET_Pin, GPIO_PIN_SET);
 
   memset(&player, 0, sizeof(player));

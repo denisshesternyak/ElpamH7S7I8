@@ -159,8 +159,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL1.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL1.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL1.PLLM = 2;
-  RCC_OscInitStruct.PLL1.PLLN = 100;
-  RCC_OscInitStruct.PLL1.PLLP = 2;
+  RCC_OscInitStruct.PLL1.PLLN = 50;
+  RCC_OscInitStruct.PLL1.PLLP = 1;
   RCC_OscInitStruct.PLL1.PLLQ = 1;
   RCC_OscInitStruct.PLL1.PLLR = 2;
   RCC_OscInitStruct.PLL1.PLLS = 2;
@@ -170,8 +170,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL2.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL2.PLLM = 2;
   RCC_OscInitStruct.PLL2.PLLN = 50;
-  RCC_OscInitStruct.PLL2.PLLP = 2;
-  RCC_OscInitStruct.PLL2.PLLQ = 2;
+  RCC_OscInitStruct.PLL2.PLLP = 4;
+  RCC_OscInitStruct.PLL2.PLLQ = 4;
   RCC_OscInitStruct.PLL2.PLLR = 2;
   RCC_OscInitStruct.PLL2.PLLS = 3;
   RCC_OscInitStruct.PLL2.PLLT = 2;

@@ -45,7 +45,7 @@ void MX_I2S6_Init(void)
   hi2s6.Init.Standard = I2S_STANDARD_PHILIPS;
   hi2s6.Init.DataFormat = I2S_DATAFORMAT_16B;
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
-  hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_8K;
+  hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_44K;
   hi2s6.Init.CPOL = I2S_CPOL_LOW;
   hi2s6.Init.FirstBit = I2S_FIRSTBIT_MSB;
   hi2s6.Init.WSInversion = I2S_WS_INVERSION_DISABLE;

@@ -333,8 +333,6 @@ void StartUartTask(void *argument)
   {
     if (osMessageQueueGet(xUartQueueHandle, &event, NULL, osWaitForever) == osOK)
     {
-      LOG_ERROR("StartUartTask");
-
       rs232_process(event);
     }
   }
@@ -360,8 +358,6 @@ void StartAudioTask(void *argument)
   {
     if (osMessageQueueGet(xAudioQueueHandle, &audio_notify, NULL, osWaitForever) == osOK)
     {
-      LOG_ERROR("StartAudioTask");
-
       audio_process(&audio_notify);
     }
   }
@@ -381,14 +377,26 @@ void StartLcdTask(void *argument)
   hx8357_init();
   menu_init();
 
+//  osDelay(1000);
+//  AudioNotify_t audio_notify = {
+//        .event = AUDIO_START,
+//        .type = AUDIO_SIN,
+//        .priority = AUDIO_PRIORITY_LOW };
+//
+//  player.sin_task = SINUS_1000HZ_120S;
+//
+//  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
+//  osDelay(5000);
+//
+//  audio_notify.event = AUDIO_STOP;
+//  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
+
   LCDTaskEvent_t lcd_event;
   /* Infinite loop */
   for (;;)
   {
     if (osMessageQueueGet(xLCDQueueHandle, &lcd_event, NULL, osWaitForever) == osOK)
     {
-      LOG_ERROR("StartLcdTask");
-
       switch (lcd_event.event)
       {
 	case LCD_EVENT_BTN:
@@ -425,7 +433,6 @@ void StartKeyboardTask(void *argument)
   for (;;)
   {
     osEventFlagsWait(KeyboardEventHandle, KEYBOARD_EVENT, osFlagsWaitAll, osWaitForever);
-    LOG_ERROR("StartKeyboardTask");
     keyboard_process(&ev);
   }
   /* USER CODE END StartKeyboardTask */

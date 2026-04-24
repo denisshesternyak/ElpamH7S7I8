@@ -51,13 +51,13 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, CODEC_RESET_Pin|KEYPAD_RST_Pin|GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, DISPLAY_RST_Pin|KEYPAD_RST_Pin|GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, CODEC_CS_Pin|LCD_PWM_Pin|LCD_DC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|CODEC_RESETB15_Pin|GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|CODEC_RESET_Pin|GPIO_PIN_4, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOO, GPIO_PIN_1, GPIO_PIN_RESET);
@@ -68,8 +68,8 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_0, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : CODEC_RESET_Pin KEYPAD_RST_Pin */
-  GPIO_InitStruct.Pin = CODEC_RESET_Pin|KEYPAD_RST_Pin;
+  /*Configure GPIO pins : DISPLAY_RST_Pin KEYPAD_RST_Pin */
+  GPIO_InitStruct.Pin = DISPLAY_RST_Pin|KEYPAD_RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -96,8 +96,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB2 CODEC_RESETB15_Pin PB4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|CODEC_RESETB15_Pin|GPIO_PIN_4;
+  /*Configure GPIO pins : PB2 CODEC_RESET_Pin PB4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|CODEC_RESET_Pin|GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
