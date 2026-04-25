@@ -378,18 +378,9 @@ void StartLcdTask(void *argument)
   menu_init();
 
 //  osDelay(1000);
-//  AudioNotify_t audio_notify = {
-//        .event = AUDIO_START,
-//        .type = AUDIO_SIN,
-//        .priority = AUDIO_PRIORITY_LOW };
-//
-//  player.sin_task = SINUS_1000HZ_120S;
-//
-//  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
+//  audio_notify_start_task_low(AUDIO_SIN, SINUS_1000HZ_120S, NULL);
 //  osDelay(5000);
-//
-//  audio_notify.event = AUDIO_STOP;
-//  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
+//  audio_notify_low(AUDIO_PREPARE_STOP, AUDIO_SIN);
 
   LCDTaskEvent_t lcd_event;
   /* Infinite loop */

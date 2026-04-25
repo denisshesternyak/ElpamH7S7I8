@@ -38,6 +38,8 @@ const uint8_t valid_volume_levels[] = {
     119,
     122 };
 
+static void audio_event (AudioNotify_t *audio_notify);
+
 // PROCESS
 static void audio_start (AudioNotify_t *audio_notify);
 static void audio_play (AudioNotify_t *audio_notify);
@@ -48,13 +50,13 @@ static void audio_timer (void);
 static void audio_volume (void);
 
 // SINUS
-static void audio_start_sinus (void);
+static void audio_start_sinus (AudioNotify_t *audio_notify);
 static void audio_play_sinus (void);
 static void audio_stop_sinus (void);
 static void audio_prepare_stop_sinus (void);
 
 // SD
-static void audio_start_sd (void);
+static void audio_start_sd (AudioNotify_t *audio_notify);
 static void audio_play_sd (void);
 static void audio_stop_sd (void);
 static void audio_prepare_stop_sd ();
@@ -80,7 +82,12 @@ static void audio_prepare_stop_dtmf (void);
 static void start_playback (void);
 static void stop_playback (void);
 static void check_progress (void);
-static void send_audio_notify (BufferState_t buff_state);
+static void send_audio_notify_playing (BufferState_t buff_state);
+static osStatus_t send_audio_notify (AudioNotify_t *audio_notify,
+				     AudioEvent_t event,
+				     AudioType_t type,
+				     AudioPriority_t priority,
+				     uint32_t timeout);
 
 void audio_init (void)
 {
@@ -114,6 +121,29 @@ void audio_process (AudioNotify_t *audio_notify)
   {
     case AUDIO_IDLE:
       break;
+    case AUDIO_TIMER:
+      audio_timer();
+      break;
+    case AUDIO_VOLUME:
+      audio_volume();
+      break;
+    default:
+      audio_event(audio_notify);
+      break;
+  }
+
+  player.event = AUDIO_IDLE;
+}
+
+static void audio_event (AudioNotify_t *audio_notify)
+{
+  if (audio_notify->priority < player.priority)
+    return;
+  player.priority = audio_notify->priority;
+  player.type = audio_notify->type;
+
+  switch (audio_notify->event)
+  {
     case AUDIO_START:
       audio_start(audio_notify);
       break;
@@ -129,34 +159,22 @@ void audio_process (AudioNotify_t *audio_notify)
     case AUDIO_PAUSE:
       audio_pause();
       break;
-    case AUDIO_TIMER:
-      audio_timer();
-      break;
-    case AUDIO_VOLUME:
-      audio_volume();
-      break;
     default:
       break;
   }
-
-  player.event = AUDIO_IDLE;
 }
 
 static void audio_start (AudioNotify_t *audio_notify)
 {
 //	LOG_DEBUG("AUDIO_START");
-  if (audio_notify->priority < player.priority)
-    return;
-  player.priority = audio_notify->priority;
-  player.type = audio_notify->type;
 
   switch (player.type)
   {
     case AUDIO_SIN:
-      audio_start_sinus();
+      audio_start_sinus(audio_notify);
       break;
     case AUDIO_SD:
-      audio_start_sd();
+      audio_start_sd(audio_notify);
       break;
     case AUDIO_MIC:
       audio_start_mic();
@@ -175,10 +193,6 @@ static void audio_start (AudioNotify_t *audio_notify)
 static void audio_play (AudioNotify_t *audio_notify)
 {
 //	LOG_DEBUG("AUDIO_PLAY");
-  if (audio_notify->priority < player.priority)
-    return;
-  player.priority = audio_notify->priority;
-  player.type = audio_notify->type;
 
   switch (player.type)
   {
@@ -205,10 +219,6 @@ static void audio_play (AudioNotify_t *audio_notify)
 static void audio_stop (AudioNotify_t *audio_notify)
 {
 //	LOG_DEBUG("AUDIO_STOP");
-  if (audio_notify->priority < player.priority)
-    return;
-  player.priority = audio_notify->priority;
-  player.type = audio_notify->type;
 
   switch (player.type)
   {
@@ -235,10 +245,6 @@ static void audio_stop (AudioNotify_t *audio_notify)
 static void audio_prepare_stop (AudioNotify_t *audio_notify)
 {
 //	LOG_DEBUG("AUDIO_PREPARE_STOP");
-  if (audio_notify->priority < player.priority)
-    return;
-  player.priority = audio_notify->priority;
-  player.type = audio_notify->type;
 
   switch (player.type)
   {
@@ -345,11 +351,11 @@ void audio_set_volume (uint8_t level)
 }
 
 // SINUS
-static void audio_start_sinus (void)
+static void audio_start_sinus (AudioNotify_t *audio_notify)
 {
 //	LOG_DEBUG("START SINUS");
 
-  init_generation(player.sin_task);
+  init_generation(audio_notify->sin_task);
   audio_generate_sine(&player, dma_buffer, AUDIO_STEREO_PAIRS_FULL);
 
   start_playback();
@@ -394,10 +400,12 @@ static void audio_prepare_stop_sinus (void)
 }
 
 // SD
-static void audio_start_sd (void)
+static void audio_start_sd (AudioNotify_t *audio_notify)
 {
-  if (!player.file_info.filename)
+  if (!audio_notify->filename)
     return;
+
+  player.file_info.filename = audio_notify->filename;
 
   bool res = sdfs_read_file_info(&player.file_info);
   if (!res)
@@ -599,36 +607,76 @@ static void check_progress (void)
   }
 }
 
-static void send_audio_notify (BufferState_t buff_state)
-{
-  if (!player.is_playing || player.event == AUDIO_STOP)
-    return;
-
-  player.buff_state = buff_state;
-
-  AudioNotify_t audio_notify = {
-      .event = player.is_stoped ? AUDIO_STOP : AUDIO_PLAY,
-      .type = player.type,
-      .priority = player.priority };
-
-  BaseType_t res = xQueueSendFromISR(xAudioQueueHandle, &audio_notify, NULL);
-  if (res != pdPASS)
-  {
-    LOG_WARN("The audio queue is full");
-  }
-}
-
 void HAL_I2S_TxHalfCpltCallback (I2S_HandleTypeDef *hi2s)
 {
   if (hi2s->Instance != SPI6)
     return;
-  send_audio_notify(BUFFER_HALF);
+  send_audio_notify_playing(BUFFER_HALF);
 }
 
 void HAL_I2S_TxCpltCallback (I2S_HandleTypeDef *hi2s)
 {
   if (hi2s->Instance != SPI6)
     return;
-  send_audio_notify(BUFFER_FULL);
+  send_audio_notify_playing(BUFFER_FULL);
 }
 
+static osStatus_t send_audio_notify (AudioNotify_t *audio_notify,
+				     AudioEvent_t event,
+				     AudioType_t type,
+				     AudioPriority_t priority,
+				     uint32_t timeout)
+{
+  audio_notify->event = event;
+  audio_notify->type = type;
+  audio_notify->priority = priority;
+  return osMessageQueuePut(xAudioQueueHandle, audio_notify, 0, timeout);
+}
+
+static void send_audio_notify_playing (BufferState_t buff_state)
+{
+  if (!player.is_playing || player.event == AUDIO_STOP)
+    return;
+
+  player.buff_state = buff_state;
+
+  AudioNotify_t audio_notify;
+  AudioEvent_t event = player.is_stoped ? AUDIO_STOP : AUDIO_PLAY;
+
+  if (send_audio_notify(&audio_notify, event, player.type, player.priority, 0) != osOK)
+  {
+    LOG_WARN("The audio queue is full");
+  }
+}
+
+void audio_notify_low (AudioEvent_t event, AudioType_t type)
+{
+  AudioNotify_t audio_notify;
+
+  if (send_audio_notify(&audio_notify, event, type, AUDIO_PRIORITY_LOW, 10) != osOK)
+  {
+    LOG_WARN("The event from KEYBOARD cannot be handled. The audio queue is full");
+  }
+}
+
+void audio_notify_start_task_low (AudioType_t type,
+				  SinTask_t task,
+				  const char *name)
+{
+  AudioNotify_t audio_notify = { .sin_task = task, .filename = name };
+
+  if (send_audio_notify(&audio_notify, AUDIO_START, type, AUDIO_PRIORITY_LOW, 10) != osOK)
+  {
+    LOG_WARN("The event from KEYBOARD cannot be handled. The audio queue is full");
+  }
+}
+
+void audio_notify_high (AudioEvent_t event, AudioType_t type)
+{
+  AudioNotify_t audio_notify;
+
+  if (send_audio_notify(&audio_notify, event, type, AUDIO_PRIORITY_HIGH, 10) != osOK)
+  {
+    LOG_WARN("The event from MOTOROLA cannot be handled. The audio queue is full");
+  }
+}

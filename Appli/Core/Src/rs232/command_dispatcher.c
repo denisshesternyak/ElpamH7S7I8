@@ -19,8 +19,7 @@
 
 // Extern UART handler for debug output (optional)
 
-static void send_audio_notify (AudioEvent_t event, AudioType_t type);
-static void send_btn_notify(KeyCode_t btn);
+static void send_btn_notify (KeyCode_t btn);
 static void send_screen_notify (MenuType screen);
 
 // Buffer for debug messages
@@ -64,8 +63,8 @@ void handle_all_clear_1 (void)
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_1);
   if (player.is_arming && !player.is_motorola)
   {
-    send_audio_notify(AUDIO_STOP, player.type);
-    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
+    audio_notify_high(AUDIO_STOP, player.type);
+    audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
     send_screen_notify(MENU_TYPE_MOTOROLA);
   }
 
@@ -86,8 +85,8 @@ void handle_all_clear_2 (void)
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_2);
   if (player.is_arming && !player.is_motorola)
   {
-    send_audio_notify(AUDIO_STOP, player.type);
-    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
+    audio_notify_high(AUDIO_STOP, player.type);
+    audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
     send_screen_notify(MENU_TYPE_MOTOROLA);
   }
 
@@ -108,8 +107,8 @@ void handle_alarm (void)
   system_status_set_mode(SYSTEM_MODE_ALARM_WAIL);
   if (player.is_arming && !player.is_motorola)
   {
-    send_audio_notify(AUDIO_STOP, player.type);
-    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
+    audio_notify_high(AUDIO_STOP, player.type);
+    audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
     send_screen_notify(MENU_TYPE_MOTOROLA);
   }
 
@@ -130,8 +129,8 @@ void handle_chemical (void)
   system_status_set_mode(SYSTEM_MODE_CHEMICAL);
   if (player.is_arming && !player.is_motorola)
   {
-    send_audio_notify(AUDIO_STOP, player.type);
-    send_audio_notify(AUDIO_START, AUDIO_MOTOROLA);
+    audio_notify_high(AUDIO_STOP, player.type);
+    audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
     send_screen_notify(MENU_TYPE_MOTOROLA);
   }
 
@@ -171,7 +170,7 @@ void handle_cancel (void)
   {
     system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
 
-    send_audio_notify(AUDIO_STOP, AUDIO_MOTOROLA);
+    audio_notify_high(AUDIO_STOP, AUDIO_MOTOROLA);
     send_screen_notify(MENU_TYPE_PREVIOUS);
   }
 
@@ -291,7 +290,7 @@ void volume_up_handler (int value)
 //  system_set_volume(value);
   player.volume = value;
 
-  send_audio_notify(AUDIO_VOLUME, AUDIO_NONE);
+  audio_notify_high(AUDIO_VOLUME, AUDIO_NONE);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "VOL UP: %d (now: %d)\r\n", value, system_get_volume());
@@ -311,7 +310,7 @@ void volume_down_handler (int value)
 //  system_set_volume(value);
   player.volume = value;
 
-  send_audio_notify(AUDIO_VOLUME, AUDIO_NONE);
+  audio_notify_high(AUDIO_VOLUME, AUDIO_NONE);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "VOL DOWN: %d (now: %d)\r\n", value, system_get_volume());
@@ -386,19 +385,6 @@ void handle_unknown_command (void)
     LCD_WriteString(LCD_USART_TEXT_X, LCD_USART_TEXT_Y, "                             ", LCD_USART_TEXT_FONT, COLOR_YELLOW, COLOR_BLACK);
     LCD_WriteString(LCD_USART_TEXT_X, LCD_USART_TEXT_Y, "ERR:UNKNOWN", LCD_USART_TEXT_FONT, COLOR_YELLOW, COLOR_BLACK);
 #endif
-}
-
-static void send_audio_notify (AudioEvent_t event, AudioType_t type)
-{
-  AudioNotify_t audio_notify = {
-      .event = event,
-      .type = type,
-      .priority = AUDIO_PRIORITY_HIGH };
-
-  if (osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0) != osOK)
-  {
-    LOG_WARN("The audio queue is full");
-  }
 }
 
 void handle_enter_command (void)

@@ -17,6 +17,10 @@ void audio_init (void);
 void audio_process (AudioNotify_t *audio_notify);
 void audio_set_volume (uint8_t level);
 
+void audio_notify_low (AudioEvent_t event, AudioType_t type);
+void audio_notify_high (AudioEvent_t event, AudioType_t type);
+void audio_notify_start_task_low (AudioType_t type, SinTask_t task, const char *name);
+
 extern Audio_Player_t player;
 
 #endif /* INC_CODEC_AUDIO_H_ */

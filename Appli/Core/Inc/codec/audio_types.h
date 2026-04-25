@@ -60,7 +60,8 @@ typedef enum
   SINUS_ALARM_90S,
   SINUS_ALL_CLEAR_60S,
   SINUS_ALL_CLEAR_120S,
-  SINUS_ABC_120S
+  SINUS_ABC_120S,
+  SINUS_NONE
 } SinTask_t;
 
 typedef struct
@@ -138,6 +139,8 @@ typedef struct
   AudioEvent_t event;
   AudioType_t type;
   AudioPriority_t priority;
+  SinTask_t sin_task;
+  const char *filename;
 } AudioNotify_t;
 
 #endif /* INC_CODEC_AUDIO_TYPES_H_ */

@@ -183,7 +183,6 @@ static void draw_menu_motorola (void);
 static void siren_info_prepare_action (void);
 static void sinus_info_prepare_action (void);
 static void draw_textFilename (void);
-static void send_audio_notify (AudioEvent_t event, AudioType_t type);
 static void check_playing_and_stop ();
 
 static void BLK_ON ()
@@ -748,7 +747,7 @@ static void change_volume (void)
   player.volume = player.valid_volume_levels[player.volume_level - 1];
   volume_indicator_draw_bar(player.volume_level, player.valid_volume_levels[player.volume_level - 1]);
 
-  send_audio_notify(AUDIO_VOLUME, AUDIO_NONE);
+  audio_notify_low(AUDIO_VOLUME, AUDIO_NONE);
 }
 
 static void increase_volume (void)
@@ -780,10 +779,7 @@ static void siren_info_prepare_action (void)
 
   item->submenu->textFilename = item->name[GetLanguage()];
 
-  player.file_info.filename = item->name[GetLanguage()];
-  player.sin_task = (SinTask_t) currentMenu->currentSelection;
-
-  send_audio_notify(AUDIO_START, AUDIO_SD);
+  audio_notify_start_task_low(AUDIO_SD, SINUS_NONE, item->name[GetLanguage()]);
 
   MenuResetProgressBar();
 }
@@ -799,17 +795,14 @@ static void sinus_info_prepare_action (void)
 
   item->submenu->textFilename = item->name[GetLanguage()];
 
-  player.file_info.filename = item->name[GetLanguage()];
-  player.sin_task = (SinTask_t) currentMenu->currentSelection;
-
-  send_audio_notify(AUDIO_START, AUDIO_SIN);
+  audio_notify_start_task_low(AUDIO_SIN, (SinTask_t) currentMenu->currentSelection, item->name[GetLanguage()]);
 
   MenuResetProgressBar();
 }
 
 static void prepare_announcement (void)
 {
-//  send_audio_notify(AUDIO_START, AUDIO_MIC);
+//  audio_notify_low(AUDIO_START, AUDIO_MIC);
 }
 
 void Draw_MENU_TYPE_IDLE ()
@@ -1555,7 +1548,7 @@ static void alarm_info_menu_handler (KeyEvent_t event)
   {
     case BTN_ESC:
       if (player.is_playing)
-	send_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SD);
+	audio_notify_low(AUDIO_PREPARE_STOP, AUDIO_SD);
 
       if (alarm_info_menu->parent == NULL)
 	return;
@@ -1577,7 +1570,7 @@ static void sinus_info_menu_handler (KeyEvent_t event)
   {
     case BTN_ESC:
       if (player.is_playing)
-	send_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SIN);
+	audio_notify_low(AUDIO_PREPARE_STOP, AUDIO_SIN);
 
       if (sinusInfoMenu->parent == NULL)
 	return;
@@ -1599,7 +1592,7 @@ static void message_info_menu_handler (KeyEvent_t event)
   {
     case BTN_ESC:
       if (player.is_playing)
-	send_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SD);
+	audio_notify_low(AUDIO_PREPARE_STOP, AUDIO_SD);
 
       if (messagePlayMenu->parent == NULL)
 	return;
@@ -1645,7 +1638,7 @@ static void volume_control_handler (KeyEvent_t event)
       break;
     case BTN_ESC:
       if (player.is_announcement)
-	send_audio_notify(AUDIO_STOP, AUDIO_MIC);
+	audio_notify_low(AUDIO_STOP, AUDIO_MIC);
 
       currentMenu = currentMenu->parent;
       draw_menuScreen(true);
@@ -1737,24 +1730,11 @@ static void draw_textFilename (void)
 
 }
 
-static void send_audio_notify (AudioEvent_t event, AudioType_t type)
-{
-  AudioNotify_t audio_notify = {
-      .event = event,
-      .type = type,
-      .priority = AUDIO_PRIORITY_LOW };
-
-  if (osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0) != osOK)
-  {
-    LOG_WARN("The audio queue is full");
-  }
-}
-
 static void check_playing_and_stop ()
 {
   if (player.is_playing || player.is_announcement)
   {
-    send_audio_notify(AUDIO_STOP, player.type);
+    audio_notify_low(AUDIO_STOP, player.type);
   }
 }
 
