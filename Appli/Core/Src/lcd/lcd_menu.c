@@ -525,12 +525,12 @@ static void menu_draw_image (Menu *menu)
 
 void RunSilentTest (void)
 {
-//	LOG_DEBUG("12v %dmv, 24v %dmv, cur %d, amp %d, drv %d",
-  //			getRData(1, adc_buff[ADC_12V]),
-  //			getRData(1, adc_buff[ADC_24V]),
-  //			getRData(1, adc_buff[ADC_CURRENT_MEAS]),
-  //			getRData(1, adc_buff[ADC_AMPLIFIER_MEAS]),
-  //			getRData(1, adc_buff[ADC_DRIVER_MEAS]));
+//  LOG_DEBUG("12v %dmv, 24v %dmv, cur %d, amp %d, drv %d",
+//		  getRData(1, get_adc_value(ADC_12V)),
+//		  getRData(1, get_adc_value(ADC_24V)),
+//		  getRData(1, get_adc_value(ADC_CURRENT_MEAS)),
+//		  getRData(1, get_adc_value(ADC_AMPLIFIER_MEAS)),
+//		  getRData(1, get_adc_value(ADC_DRIVER_MEAS)));
 
   currentMenu = batteriesTestMenu;
   clear_position(currentMenu);

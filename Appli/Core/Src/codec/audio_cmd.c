@@ -16,7 +16,7 @@ static void CS_HIGH ()
   HAL_GPIO_WritePin(CODEC_CS_GPIO_Port, CODEC_CS_Pin, GPIO_PIN_SET);
 }
 static void audio_cmd_write_cmd (uint8_t reg, uint8_t value);
-static uint8_t audio_cmd_read_cmd (uint8_t reg);
+//static uint8_t audio_cmd_read_cmd (uint8_t reg);
 
 static void audio_cmd_write_cmd (uint8_t reg, uint8_t value)
 {
@@ -29,19 +29,19 @@ static void audio_cmd_write_cmd (uint8_t reg, uint8_t value)
   CS_HIGH();
 }
 
-static uint8_t audio_cmd_read_cmd (uint8_t reg)
-{
-  uint8_t data_rx[2];
-  uint8_t data_tx[2];
-  data_tx[0] = reg << 1 | 0x01;
-  data_tx[1] = 0xFF;
-
-  CS_LOW();
-  HAL_SPI_TransmitReceive(CODEC_SPI_HANDLER, data_tx, data_rx, 2, 100);
-  CS_HIGH();
-
-  return data_rx[1];
-}
+//static uint8_t audio_cmd_read_cmd (uint8_t reg)
+//{
+//  uint8_t data_rx[2];
+//  uint8_t data_tx[2];
+//  data_tx[0] = reg << 1 | 0x01;
+//  data_tx[1] = 0xFF;
+//
+//  CS_LOW();
+//  HAL_SPI_TransmitReceive(CODEC_SPI_HANDLER, data_tx, data_rx, 2, 100);
+//  CS_HIGH();
+//
+//  return data_rx[1];
+//}
 
 void audio_cmd_reset (void)
 {

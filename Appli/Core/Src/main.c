@@ -20,6 +20,7 @@
 #include "main.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
+#include "adc.h"
 #include "fatfs.h"
 #include "flash.h"
 #include "gpdma.h"
@@ -116,8 +117,9 @@ int main(void)
   MX_UART5_Init();
   MX_UART7_Init();
   MX_FATFS_Init();
-  MX_USART1_UART_Init();
   MX_RTC_Init();
+  MX_ADC1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   usart_clear_cb();
   spi_clear_cb();

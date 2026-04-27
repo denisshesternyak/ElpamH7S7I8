@@ -28,16 +28,12 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdio.h>
-
-//#include "lcd_menu.h"
-//#include "audio_types.h"
-//#include "rs232.h"
-//#include "logger.h"
+#include "fatfs.h"
+#include "usart.h"
+#include "adc.h"
 #include "app_freertos.h"
 #include "events.h"
-#include "fatfs.h"
 #include "sdfs.h"
-#include "usart.h"
 #include "logger.h"
 #include "lcd_menu.h"
 #include "rs232.h"
@@ -45,6 +41,7 @@
 #include "system_status.h"
 #include "audio.h"
 #include "keyboard.h"
+#include "analog.h"
 
 /* USER CODE END Includes */
 
@@ -274,6 +271,8 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  analog_init();
+
   uint8_t count = 0;
   /* Infinite loop */
   for (;;)
