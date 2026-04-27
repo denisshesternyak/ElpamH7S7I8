@@ -272,11 +272,18 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   analog_init();
-
+//  osDelay(1000);
+//  LOG_DEBUG("12v %d, 24v %d, cur %d, amp %d, drv %d",
+//		  getRData(1, get_adc_value(ADC_12V)),
+//		  getRData(1, get_adc_value(ADC_24V)),
+//		  getRData(1, get_adc_value(ADC_CURRENT_MEAS)),
+//		  getRData(1, get_adc_value(ADC_AMPLIFIER_MEAS)),
+//		  getRData(1, get_adc_value(ADC_DRIVER_MEAS)));
   uint8_t count = 0;
   /* Infinite loop */
   for (;;)
   {
+    HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
     LOG_DEBUG("DefaultTask %d", count++);
     osDelay(5000);
   }

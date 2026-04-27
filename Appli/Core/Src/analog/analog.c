@@ -28,10 +28,17 @@ uint16_t get_adc_value (ADC_channel n_ch)
   return adc_buff[n_ch];
 }
 
-bool test_adc_value (ADC_channel n_ch, uint16_t value_mv)
+bool test_adc_value (ADC_channel n_ch, uint16_t value_adc)
 {
   uint16_t val_adc = get_adc_value(n_ch);
-  return cmp_with_delta(val_adc, value_mv, value_mv / 20);
+  return cmp_with_delta(val_adc, value_adc, value_adc / 20);
+}
+
+bool check_voltage (ADC_channel n_ch, uint16_t vDiv, uint16_t task_mv, uint16_t delta_mv)
+{
+  uint16_t val_adc = get_adc_value(n_ch);
+  uint16_t val_mv = getRDataD(vDiv, val_adc);
+  return cmp_with_delta(task_mv, val_mv, delta_mv);
 }
 
 uint16_t getRData (uint16_t vDiv, uint16_t rawData)

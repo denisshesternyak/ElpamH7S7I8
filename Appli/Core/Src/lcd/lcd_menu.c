@@ -25,8 +25,8 @@
 #include "app_freertos.h"
 #include "rtc.h"
 #include "sdfs.h"
-
-//#include "analog.h"
+#include "analog.h"
+#include "system_status.h"
 
 //bool isResetPasswordAfterIdle = false;
 
@@ -537,30 +537,21 @@ void RunSilentTest (void)
   draw_menuScreen(true);
   RunBatteriesTest();
 
-  //for(int i =0; i<2000;i++)
-  {
-    osDelay(2000);
-  }
+  osDelay(2000);
 
   currentMenu = apmplifiresTestMunu;
   clear_position(currentMenu);
   draw_menuScreen(true);
   RunAmplifiresTest();
 
-  //for(int i =0; i<2000;i++)
-  {
-    osDelay(2000);
-  }
+  osDelay(2000);
 
   currentMenu = driversTestMenu;
   clear_position(currentMenu);
   draw_menuScreen(true);
   RunDriversTest();
 
-  //for(int i =0; i<2000;i++)
-  {
-    osDelay(2000);
-  }
+  osDelay(2000);
 
   currentMenu = testMenu; //driversTestMenu->parent;
   clear_position(currentMenu);
@@ -569,28 +560,30 @@ void RunSilentTest (void)
 
 void RunBatteriesTest (void)
 {
-  BatteriesDisplay_SetStatus(0, true);
-  BatteriesDisplay_SetStatus(1, false);
-  BatteriesDisplay_SetStatus(2, true);
+  bool is_12v = check_voltage(ADC_12V, ADC_12V_DIV, ADC_TASK_12V, 500);
+  bool is_24v = check_voltage(ADC_24V, ADC_24V_DIV, ADC_TASK_24V, 1000);
+
+  BatteriesDisplay_SetStatus(0, is_12v && is_24v);
+  BatteriesDisplay_SetStatus(1, IS_UNDER_VO);
+  BatteriesDisplay_SetStatus(2, IS_OVER_VO);
 }
 
 void RunAmplifiresTest (void)
 {
-  TestAmplDisplay_SetStatus(0, true);
-  TestAmplDisplay_SetStatus(1, true);
-  TestAmplDisplay_SetStatus(2, true);
-  TestAmplDisplay_SetStatus(3, true);
-  TestAmplDisplay_SetStatus(4, false);
-  TestAmplDisplay_SetStatus(5, true);
-  TestAmplDisplay_SetStatus(6, true);
-  TestAmplDisplay_SetStatus(7, true);
-  TestAmplDisplay_SetStatus(8, false);
-  TestAmplDisplay_SetStatus(9, true);
+  for(uint8_t i = 0; i < AMP_COUNT; i++)
+  {
+    bool is_amp = check_voltage(ADC_AMPLIFIER_MEAS, ADC_AMP_DIV, ADC_TASK_AMP, 100);
+    TestAmplDisplay_SetStatus(i, is_amp);
+  }
 }
 
 void RunDriversTest (void)
 {
-
+  for(uint8_t i = 0; i < DRV_COUNT; i++)
+  {
+    bool is_drv = check_voltage(ADC_DRIVER_MEAS, ADC_DRV_DIV, ADC_TASK_DRV, 100);
+    TestDrvDisplay_SetStatus(i, is_drv);
+  }
 }
 
 void prepare_clock (void)

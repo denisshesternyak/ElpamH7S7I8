@@ -74,6 +74,16 @@ void HAL_MspInit(void)
   /* Enable the XSPIM_P1 interface */
   HAL_PWREx_EnableXSPIM1();
 
+  /* Enable the XSPIM_P2 interface */
+  HAL_PWREx_EnableXSPIM2();
+
+  /* Enable USB Voltage detector */
+  if(HAL_PWREx_EnableUSBVoltageDetector() != HAL_OK)
+  {
+   /* Initialization error */
+   Error_Handler();
+  }
+
   /* USER CODE BEGIN MspInit 1 */
 
   /* USER CODE END MspInit 1 */
