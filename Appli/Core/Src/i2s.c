@@ -56,7 +56,11 @@ void MX_I2S6_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN I2S6_Init 2 */
-
+  hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
+  if (HAL_I2S_Init(&hi2s6) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE END I2S6_Init 2 */
 
 }

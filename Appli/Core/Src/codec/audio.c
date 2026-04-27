@@ -554,17 +554,17 @@ static void start_playback (void)
   audio_cmd_playback_enable();
   audio_cmd_I2S_to_DAC();
 
-  hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
-  HAL_I2S_Init(CODEC_I2S_HANDLER);
-  HAL_I2S_Transmit_DMA(CODEC_I2S_HANDLER, (uint16_t*) dma_buffer, AUDIO_HALF_BUFFER_SIZE);
-
-//	audio_set_volume(player.volume);
-
   player.is_playing = true;
   player.is_stoped = false;
   player.is_prepare_stoped = false;
   player.is_fade_stoped = false;
   player.event = AUDIO_PLAY;
+
+  hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
+  HAL_I2S_Init(CODEC_I2S_HANDLER);
+  HAL_I2S_Transmit_DMA(CODEC_I2S_HANDLER, (uint16_t*) dma_buffer, AUDIO_HALF_BUFFER_SIZE);
+
+//	audio_set_volume(player.volume);
 }
 
 static void stop_playback (void)
