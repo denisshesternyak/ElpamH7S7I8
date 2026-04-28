@@ -88,12 +88,12 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(BAT_MTS_ACT_GPIO_Port, BAT_MTS_ACT_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : DISPLAY_RST_Pin KEYPAD_RST_Pin */
-  GPIO_InitStruct.Pin = DISPLAY_RST_Pin|KEYPAD_RST_Pin;
+  /*Configure GPIO pin : DISPLAY_RST_Pin */
+  GPIO_InitStruct.Pin = DISPLAY_RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(DISPLAY_RST_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : POW_DET_Pin SOL_DET_Pin OVER_VO_Pin UNDER_VO_Pin
                            PPF_PD0_DOOR_Pin */
@@ -152,7 +152,7 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = EP_WP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(EP_WP_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : CU_RESET_ACT_Pin */
@@ -162,12 +162,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(CU_RESET_ACT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : RS485_DE_Pin */
-  GPIO_InitStruct.Pin = RS485_DE_Pin;
+  /*Configure GPIO pins : KEYPAD_RST_Pin RS485_DE_Pin */
+  GPIO_InitStruct.Pin = KEYPAD_RST_Pin|RS485_DE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  HAL_GPIO_Init(RS485_DE_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LCD_CS_Pin */
   GPIO_InitStruct.Pin = LCD_CS_Pin;
@@ -193,7 +193,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin : SD_DETECT_Pin */
   GPIO_InitStruct.Pin = SD_DETECT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(SD_DETECT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BAT_MTS_ACT_Pin */

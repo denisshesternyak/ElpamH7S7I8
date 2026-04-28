@@ -30,6 +30,7 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 /* USER CODE END Includes */
 
@@ -40,7 +41,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SELFTEST 1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -56,7 +57,6 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MPU_Config(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -68,6 +68,57 @@ int _write (int file, char *ptr, int len)
   HAL_UART_Transmit(&huart1, (uint8_t*) ptr, len, HAL_MAX_DELAY);
   return len;
 }
+
+#ifdef SELFTEST
+uint8_t data_tx[] = "Hello world from H7s7!";
+uint8_t data_rx[60];
+
+static bool test_nor ()
+{
+  size_t len = sizeof(data_tx) - 1;
+  uint32_t nor_base = 0;
+  uint32_t offset = 0x01FFF000;
+
+  EXTMEM_GetMapAddress(EXTMEMORY_1, &nor_base);
+  printf("NOR mapped at 0x%08lX\r\n", nor_base);
+
+  EXTMEM_EraseSector(EXTMEMORY_1, offset, 4096);
+  EXTMEM_Write(EXTMEMORY_1, offset, data_tx, len);
+  EXTMEM_Read(EXTMEMORY_1, offset, data_rx, len);
+
+  EXTMEM_MemoryMappedMode(EXTMEMORY_1, EXTMEM_ENABLE);
+//	memcpy((uint8_t*) nor_base, data_tx, len);
+//	memcpy(data_rx, (uint8_t*) nor_base, len);
+  EXTMEM_MemoryMappedMode(EXTMEMORY_1, EXTMEM_DISABLE);
+
+  uint8_t cmp = memcmp(data_tx, data_rx, len) == 0;
+  printf("NOR write/read test %s\r\n", cmp ? "PASSED" : "FAILED");
+  return cmp;
+}
+
+static bool test_psram ()
+{
+  size_t len = sizeof(data_tx) - 1;
+  uint32_t psram_base = 0;
+  uint32_t offset = 0x01FFF000;
+
+  EXTMEM_GetMapAddress(EXTMEMORY_2, &psram_base);
+  printf("PSRAM mapped at 0x%08lX\r\n", psram_base);
+
+  EXTMEM_MemoryMappedMode(EXTMEMORY_2, EXTMEM_ENABLE);
+
+  uint8_t* psram_ptr = (uint8_t*)(psram_base + offset);
+  memset(psram_ptr, 0, 0x1000);
+  memcpy(psram_ptr, data_tx, len);
+  memcpy(data_rx, psram_ptr, len);
+
+  EXTMEM_MemoryMappedMode(EXTMEMORY_2, EXTMEM_DISABLE);
+
+  uint8_t cmp = memcmp(data_tx, data_rx, len) == 0;
+  printf("PSRAM write/read test %s\r\n", cmp ? "PASSED" : "FAILED");
+  return cmp;
+}
+#endif
 /* USER CODE END 0 */
 
 /**
@@ -80,9 +131,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-
-  /* MPU Configuration--------------------------------------------------------*/
-  MPU_Config();
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -110,6 +158,13 @@ int main(void)
   MX_XSPI2_Init();
   MX_EXTMEM_MANAGER_Init();
   /* USER CODE BEGIN 2 */
+#ifdef SELFTEST
+  if(!(test_nor() && test_psram()))
+  {
+    Error_Handler();
+  }
+#endif
+
   printf("Bootloader running...\r\n");
   /* USER CODE END 2 */
 
@@ -121,11 +176,11 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-    {
+  {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    }
+  }
   /* USER CODE END 3 */
 }
 
@@ -205,66 +260,6 @@ void SystemClock_Config(void)
 
 /* USER CODE END 4 */
 
- /* MPU Configuration */
-
-static void MPU_Config(void)
-{
-  MPU_Region_InitTypeDef MPU_InitStruct = {0};
-
-  /* Disables the MPU */
-  HAL_MPU_Disable();
-
-  /* Disables all MPU regions */
-  for(uint8_t i=0; i<__MPU_REGIONCOUNT; i++)
-  {
-    HAL_MPU_DisableRegion(i);
-  }
-
-  /** Initializes and configures the Region and the memory to be protected
-  */
-  MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-  MPU_InitStruct.Number = MPU_REGION_NUMBER0;
-  MPU_InitStruct.BaseAddress = 0x0;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_4GB;
-  MPU_InitStruct.SubRegionDisable = 0x87;
-  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-  MPU_InitStruct.AccessPermission = MPU_REGION_NO_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-
-  HAL_MPU_ConfigRegion(&MPU_InitStruct);
-
-  /** Initializes and configures the Region and the memory to be protected
-  */
-  MPU_InitStruct.Number = MPU_REGION_NUMBER1;
-  MPU_InitStruct.BaseAddress = 0x90000000;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_32MB;
-  MPU_InitStruct.SubRegionDisable = 0x0;
-  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
-  MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
-
-  HAL_MPU_ConfigRegion(&MPU_InitStruct);
-
-  /** Initializes and configures the Region and the memory to be protected
-  */
-  MPU_InitStruct.Number = MPU_REGION_NUMBER2;
-  MPU_InitStruct.BaseAddress = 0x70000000;
-  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-
-  HAL_MPU_ConfigRegion(&MPU_InitStruct);
-  /* Enables the MPU */
-  HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
-
-}
-
 /**
   * @brief  Period elapsed callback in non blocking mode
   * @note   This function is called  when TIM6 interrupt took place, inside
@@ -296,8 +291,10 @@ void Error_Handler(void)
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
-    {
-    }
+  {
+    HAL_GPIO_TogglePin(LED_3_GPIO_Port, LED_3_Pin);
+    HAL_Delay(200);
+  }
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT

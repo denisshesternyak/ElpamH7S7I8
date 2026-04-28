@@ -42,6 +42,7 @@
 #include "audio.h"
 #include "keyboard.h"
 #include "analog.h"
+#include "tests.h"
 
 /* USER CODE END Includes */
 
@@ -52,7 +53,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SELFTEST
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -284,8 +285,8 @@ void StartDefaultTask(void *argument)
   for (;;)
   {
     HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
-    LOG_DEBUG("DefaultTask %d", count++);
-    osDelay(5000);
+//    LOG_DEBUG("DefaultTask %d", count++);
+    osDelay(500);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -381,7 +382,16 @@ void StartLcdTask(void *argument)
 {
   /* USER CODE BEGIN StartLcdTask */
   hx8357_init();
+
+#ifdef SELFTEST
+  if(!test_board())
+  {
+    Error_Handler();
+  }
+#endif
+
   menu_init();
+
 
 //  osDelay(1000);
 //  audio_notify_start_task_low(AUDIO_SIN, SINUS_1000HZ_120S, NULL);
@@ -478,13 +488,14 @@ void StartSDTask(void *argument)
     osEventFlagsWait(SDEventHandle, SD_EVENT, osFlagsWaitAll, osWaitForever);
     if (sdfs_is_detected())
     {
-      LOG_INFO("SD CONNECTED");
-      sdfs_mount_drive();
-      sdfs_list_messages(NULL, NULL);
+//      LOG_INFO("SD CONNECTED");
+      if(!sdfs_is_mounted())
+	sdfs_mount_drive();
+//      sdfs_list_messages(NULL, NULL);
     }
     else
     {
-      LOG_INFO("SD DISCONNECTED");
+//      LOG_INFO("SD DISCONNECTED");
       sdfs_unmount_drive();
     }
   }

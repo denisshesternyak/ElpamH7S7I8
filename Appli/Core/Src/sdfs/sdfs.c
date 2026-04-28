@@ -23,8 +23,16 @@ static void sdfs_list_directory (const TCHAR *path,
 				 char list[][FF_MAX_LFN],
 				 uint8_t *size);
 
+bool sdfs_is_mounted(void)
+{
+  return isMounted;
+}
+
 FRESULT sdfs_mount_drive (void)
 {
+  if (isMounted)
+    return FR_OK;
+
   res = f_mount(&SDFatFs, (TCHAR const*) ROOT_DIR_PATH, 0);
   if (res != FR_OK)
   {

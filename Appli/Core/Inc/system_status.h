@@ -71,10 +71,12 @@ typedef enum {
 
 typedef enum {
   SYSTEM_PPF_PD0_DOOR,
+  SYSTEM_PPF_PD1_FLOOD,
   SYSTEM_POW_DET,
   SYSTEM_SOL_DET,
-  SYSTEM_OVER_VO,
-  SYSTEM_UNDER_VO
+  SYSTEM_MAINS = 0,
+  SYSTEM_UNDER_VO,
+  SYSTEM_OVER_VO
 } system_in_signals_t;
 
 typedef enum {

@@ -8,6 +8,7 @@
 #include "fatfs.h"
 #include "audio_types.h"
 
+bool sdfs_is_mounted(void);
 FRESULT sdfs_mount_drive (void);
 void sdfs_unmount_drive (void);
 
