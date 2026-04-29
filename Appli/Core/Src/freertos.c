@@ -43,6 +43,7 @@
 #include "keyboard.h"
 #include "analog.h"
 #include "tests.h"
+#include "sdmmc.h"
 
 /* USER CODE END Includes */
 
@@ -53,7 +54,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SELFTEST
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -63,124 +64,127 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+#define SELFTEST
 
+#ifdef SELFTEST
+__IO bool is_selftest = false;
+osThreadId_t TestsTaskHandle;
+const osThreadAttr_t testsTask_attributes = {
+    .name = "testsTask",
+    .stack_size = 512 * 4,
+    .priority = (osPriority_t) osPriorityNormal1, };
+
+void StartTestsTask (void *argument);
+#endif
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
+    .name = "defaultTask",
+    .stack_size = 512 * 4,
+    .priority = (osPriority_t) osPriorityNormal, };
 /* Definitions for UartTask */
 osThreadId_t UartTaskHandle;
 const osThreadAttr_t UartTask_attributes = {
-  .name = "UartTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
+    .name = "UartTask",
+    .stack_size = 512 * 4,
+    .priority = (osPriority_t) osPriorityNormal, };
 /* Definitions for AudioTask */
 osThreadId_t AudioTaskHandle;
 const osThreadAttr_t AudioTask_attributes = {
-  .name = "AudioTask",
-  .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
+    .name = "AudioTask",
+    .stack_size = 1024 * 4,
+    .priority = (osPriority_t) osPriorityNormal, };
 /* Definitions for LcdTask */
 osThreadId_t LcdTaskHandle;
 const osThreadAttr_t LcdTask_attributes = {
-  .name = "LcdTask",
-  .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
+    .name = "LcdTask",
+    .stack_size = 1024 * 4,
+    .priority = (osPriority_t) osPriorityNormal, };
 /* Definitions for KeyboardTask */
 osThreadId_t KeyboardTaskHandle;
 const osThreadAttr_t KeyboardTask_attributes = {
-  .name = "KeyboardTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
+    .name = "KeyboardTask",
+    .stack_size = 512 * 4,
+    .priority = (osPriority_t) osPriorityNormal, };
 /* Definitions for LoggerTask */
 osThreadId_t LoggerTaskHandle;
 const osThreadAttr_t LoggerTask_attributes = {
-  .name = "LoggerTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
+    .name = "LoggerTask",
+    .stack_size = 512 * 4,
+    .priority = (osPriority_t) osPriorityNormal, };
 /* Definitions for SDTask */
 osThreadId_t SDTaskHandle;
 const osThreadAttr_t SDTask_attributes = {
-  .name = "SDTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
+    .name = "SDTask",
+    .stack_size = 512 * 4,
+    .priority = (osPriority_t) osPriorityNormal, };
 /* Definitions for xLCDQueue */
 osMessageQueueId_t xLCDQueueHandle;
-const osMessageQueueAttr_t xLCDQueue_attributes = {
-  .name = "xLCDQueue"
-};
+const osMessageQueueAttr_t xLCDQueue_attributes = { .name = "xLCDQueue" };
 /* Definitions for xAudioQueue */
 osMessageQueueId_t xAudioQueueHandle;
-const osMessageQueueAttr_t xAudioQueue_attributes = {
-  .name = "xAudioQueue"
-};
+const osMessageQueueAttr_t xAudioQueue_attributes = { .name = "xAudioQueue" };
 /* Definitions for xUartQueue */
 osMessageQueueId_t xUartQueueHandle;
-const osMessageQueueAttr_t xUartQueue_attributes = {
-  .name = "xUartQueue"
-};
+const osMessageQueueAttr_t xUartQueue_attributes = { .name = "xUartQueue" };
 /* Definitions for xLoggerQueue */
 osMessageQueueId_t xLoggerQueueHandle;
-const osMessageQueueAttr_t xLoggerQueue_attributes = {
-  .name = "xLoggerQueue"
-};
+const osMessageQueueAttr_t xLoggerQueue_attributes = { .name = "xLoggerQueue" };
 /* Definitions for LoggerMutex */
 osMutexId_t LoggerMutexHandle;
-const osMutexAttr_t LoggerMutex_attributes = {
-  .name = "LoggerMutex"
-};
+const osMutexAttr_t LoggerMutex_attributes = { .name = "LoggerMutex" };
 /* Definitions for LoggerBinarySem */
 osSemaphoreId_t LoggerBinarySemHandle;
-const osSemaphoreAttr_t LoggerBinarySem_attributes = {
-  .name = "LoggerBinarySem"
-};
+const osSemaphoreAttr_t LoggerBinarySem_attributes = { .name = "LoggerBinarySem" };
 /* Definitions for LcdBinarySem */
 osSemaphoreId_t LcdBinarySemHandle;
-const osSemaphoreAttr_t LcdBinarySem_attributes = {
-  .name = "LcdBinarySem"
-};
+const osSemaphoreAttr_t LcdBinarySem_attributes = { .name = "LcdBinarySem" };
 /* Definitions for KeyboardEvent */
 osEventFlagsId_t KeyboardEventHandle;
-const osEventFlagsAttr_t KeyboardEvent_attributes = {
-  .name = "KeyboardEvent"
-};
+const osEventFlagsAttr_t KeyboardEvent_attributes = { .name = "KeyboardEvent" };
 /* Definitions for SDEvent */
 osEventFlagsId_t SDEventHandle;
-const osEventFlagsAttr_t SDEvent_attributes = {
-  .name = "SDEvent"
-};
+const osEventFlagsAttr_t SDEvent_attributes = { .name = "SDEvent" };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef *hrtc)
+{
+#ifdef SELFTEST
+  if(is_selftest)
+    return;
+#endif
 
+  static LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_RTC };
+  osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
+
+  static AudioNotify_t audio_notify = {
+      .event = AUDIO_TIMER,
+      .type = AUDIO_NONE,
+      .priority = AUDIO_PRIORITY_LOW };
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
+
+}
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void *argument);
-void StartUartTask(void *argument);
-void StartAudioTask(void *argument);
-void StartLcdTask(void *argument);
-void StartKeyboardTask(void *argument);
-void StartLoggerTask(void *argument);
-void StartSDTask(void *argument);
+void StartDefaultTask (void *argument);
+void StartUartTask (void *argument);
+void StartAudioTask (void *argument);
+void StartLcdTask (void *argument);
+void StartKeyboardTask (void *argument);
+void StartLoggerTask (void *argument);
+void StartSDTask (void *argument);
 
-void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+void MX_FREERTOS_Init (void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
-void MX_FREERTOS_Init(void) {
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init (void)
+{
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -209,19 +213,21 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of xLCDQueue */
-  xLCDQueueHandle = osMessageQueueNew (16, sizeof(LCDTaskEvent_t), &xLCDQueue_attributes);
+  xLCDQueueHandle = osMessageQueueNew(16, sizeof(LCDTaskEvent_t), &xLCDQueue_attributes);
 
   /* creation of xAudioQueue */
-  xAudioQueueHandle = osMessageQueueNew (16, sizeof(AudioNotify_t), &xAudioQueue_attributes);
+  xAudioQueueHandle = osMessageQueueNew(16, sizeof(AudioNotify_t), &xAudioQueue_attributes);
 
   /* creation of xUartQueue */
-  xUartQueueHandle = osMessageQueueNew (16, sizeof(UartEvent_t), &xUartQueue_attributes);
+  xUartQueueHandle = osMessageQueueNew(16, sizeof(UartEvent_t), &xUartQueue_attributes);
 
   /* creation of xLoggerQueue */
-  xLoggerQueueHandle = osMessageQueueNew (16, sizeof(LogMessage_t), &xLoggerQueue_attributes);
+  xLoggerQueueHandle = osMessageQueueNew(16, sizeof(LogMessage_t), &xLoggerQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+#ifdef SELFTEST
+  TestsTaskHandle = osThreadNew(StartTestsTask, NULL, &testsTask_attributes);
+#endif
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -247,7 +253,7 @@ void MX_FREERTOS_Init(void) {
   SDTaskHandle = osThreadNew(StartSDTask, NULL, &SDTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+
   /* USER CODE END RTOS_THREADS */
 
   /* creation of KeyboardEvent */
@@ -269,7 +275,7 @@ void MX_FREERTOS_Init(void) {
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+void StartDefaultTask (void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   analog_init();
@@ -280,7 +286,7 @@ void StartDefaultTask(void *argument)
 //		  getRData(1, get_adc_value(ADC_CURRENT_MEAS)),
 //		  getRData(1, get_adc_value(ADC_AMPLIFIER_MEAS)),
 //		  getRData(1, get_adc_value(ADC_DRIVER_MEAS)));
-  uint8_t count = 0;
+//  uint8_t count = 0;
   /* Infinite loop */
   for (;;)
   {
@@ -298,7 +304,7 @@ void StartDefaultTask(void *argument)
  * @retval None
  */
 /* USER CODE END Header_StartUartTask */
-void StartUartTask(void *argument)
+void StartUartTask (void *argument)
 {
   /* USER CODE BEGIN StartUartTask */
   rs232_init(&huart4);
@@ -353,7 +359,7 @@ void StartUartTask(void *argument)
  * @retval None
  */
 /* USER CODE END Header_StartAudioTask */
-void StartAudioTask(void *argument)
+void StartAudioTask (void *argument)
 {
   /* USER CODE BEGIN StartAudioTask */
   audio_init();
@@ -378,20 +384,13 @@ void StartAudioTask(void *argument)
  * @retval None
  */
 /* USER CODE END Header_StartLcdTask */
-void StartLcdTask(void *argument)
+void StartLcdTask (void *argument)
 {
   /* USER CODE BEGIN StartLcdTask */
+#ifndef SELFTEST
   hx8357_init();
-
-#ifdef SELFTEST
-  if(!test_board())
-  {
-    Error_Handler();
-  }
 #endif
-
   menu_init();
-
 
 //  osDelay(1000);
 //  audio_notify_start_task_low(AUDIO_SIN, SINUS_1000HZ_120S, NULL);
@@ -431,7 +430,7 @@ void StartLcdTask(void *argument)
  * @retval None
  */
 /* USER CODE END Header_StartKeyboardTask */
-void StartKeyboardTask(void *argument)
+void StartKeyboardTask (void *argument)
 {
   /* USER CODE BEGIN StartKeyboardTask */
   keyboard_init();
@@ -452,7 +451,7 @@ void StartKeyboardTask(void *argument)
  * @retval None
  */
 /* USER CODE END Header_StartLoggerTask */
-void StartLoggerTask(void *argument)
+void StartLoggerTask (void *argument)
 {
   /* USER CODE BEGIN StartLoggerTask */
   logger_init();
@@ -475,7 +474,7 @@ void StartLoggerTask(void *argument)
  * @retval None
  */
 /* USER CODE END Header_StartSDTask */
-void StartSDTask(void *argument)
+void StartSDTask (void *argument)
 {
   /* USER CODE BEGIN StartSDTask */
   if (sdfs_is_detected())
@@ -488,15 +487,36 @@ void StartSDTask(void *argument)
     osEventFlagsWait(SDEventHandle, SD_EVENT, osFlagsWaitAll, osWaitForever);
     if (sdfs_is_detected())
     {
-//      LOG_INFO("SD CONNECTED");
-      if(!sdfs_is_mounted())
+      LOG_INFO("uSD CONNECTED");
+      osDelay(100);
+
+      if (!sdfs_state.is_init)
+      {
+	MX_SDMMC1_SD_Init();
+	sdfs_state.is_init = true;
+      }
+
+      if (!sdfs_state.is_mounted)
+      {
 	sdfs_mount_drive();
-//      sdfs_list_messages(NULL, NULL);
+	sdfs_list_messages(NULL, NULL);
+      }
     }
     else
     {
-//      LOG_INFO("SD DISCONNECTED");
-      sdfs_unmount_drive();
+      LOG_INFO("uSD DISCONNECTED");
+      if (sdfs_state.is_mounted)
+      {
+	  sdfs_unmount_drive();
+      }
+
+      if (sdfs_state.is_init)
+      {
+	  HAL_SD_DeInit(&hsd1);
+	  sdfs_state.is_init = false;
+      }
+
+      FATFS_UnLinkDriver(SDPath);
     }
   }
   /* USER CODE END StartSDTask */
@@ -504,6 +524,43 @@ void StartSDTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+#ifdef SELFTEST
+void StartTestsTask (void *argument)
+{
+  vTaskSuspendAll();
 
+  is_selftest = true;
+
+  osThreadTerminate(UartTaskHandle);
+  osThreadTerminate(AudioTaskHandle);
+  osThreadTerminate(LcdTaskHandle);
+  osThreadTerminate(KeyboardTaskHandle);
+  osThreadTerminate(LoggerTaskHandle);
+  osThreadTerminate(SDTaskHandle);
+
+  xTaskResumeAll();
+
+  HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_SET);
+
+  hx8357_init();
+
+  test_board();
+
+  UartTaskHandle = osThreadNew(StartUartTask, NULL, &UartTask_attributes);
+  AudioTaskHandle = osThreadNew(StartAudioTask, NULL, &AudioTask_attributes);
+  LcdTaskHandle = osThreadNew(StartLcdTask, NULL, &LcdTask_attributes);
+  KeyboardTaskHandle = osThreadNew(StartKeyboardTask, NULL, &KeyboardTask_attributes);
+  LoggerTaskHandle = osThreadNew(StartLoggerTask, NULL, &LoggerTask_attributes);
+  SDTaskHandle = osThreadNew(StartSDTask, NULL, &SDTask_attributes);
+
+  is_selftest = false;
+  osThreadTerminate(TestsTaskHandle);
+
+  /* Infinite loop */
+  for (;;)
+  {
+  }
+}
+#endif
 /* USER CODE END Application */
 

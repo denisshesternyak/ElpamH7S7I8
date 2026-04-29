@@ -178,8 +178,6 @@ void hx8357_reset (void)
 
 void hx8357_init (void)
 {
-  HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_SET);
-
   HAL_GPIO_WritePin(DISPLAY_RST_GPIO_Port, DISPLAY_RST_Pin, GPIO_PIN_SET);
   osDelay(10);
 

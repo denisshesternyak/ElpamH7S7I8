@@ -97,7 +97,7 @@ static bool test_uSD()
   }
   w_path[j] = '\0';
 
-  if(!sdfs_is_mounted())
+  if(!sdfs_state.is_mounted)
     res = f_mount(&SDFatFs, (TCHAR*)u"/", 1);
   else
     res = FR_OK;

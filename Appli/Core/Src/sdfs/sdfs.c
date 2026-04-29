@@ -13,7 +13,6 @@
 static FRESULT res;
 static DIR dir;
 static FILINFO fno;
-static bool isMounted;
 static WCHAR w_path[128];
 static char full_path[128];
 static int pos_path;
@@ -23,14 +22,16 @@ static void sdfs_list_directory (const TCHAR *path,
 				 char list[][FF_MAX_LFN],
 				 uint8_t *size);
 
-bool sdfs_is_mounted(void)
+SDFS_STATE_t sdfs_state;
+
+bool sdfs_is_detected (void)
 {
-  return isMounted;
+  return HAL_GPIO_ReadPin(SD_DETECT_GPIO_Port, SD_DETECT_Pin) == GPIO_PIN_SET;
 }
 
 FRESULT sdfs_mount_drive (void)
 {
-  if (isMounted)
+  if (sdfs_state.is_mounted)
     return FR_OK;
 
   res = f_mount(&SDFatFs, (TCHAR const*) ROOT_DIR_PATH, 0);
@@ -40,22 +41,24 @@ FRESULT sdfs_mount_drive (void)
     return res;
   }
 
-  isMounted = res == FR_OK;
+  sdfs_state.is_mounted = res == FR_OK;
   return res;
 }
 
 void sdfs_unmount_drive (void)
 {
-  res = f_mount(NULL, ROOT_DIR_PATH, 1);
+  res = f_mount(NULL, (TCHAR const*) ROOT_DIR_PATH, 1);
   if (res != FR_OK)
     LOG_ERROR("Unmounting failed: %d", res);
+
+  sdfs_state.is_mounted = false;
 }
 
 static void sdfs_list_directory (const TCHAR *path,
 				 char list[][FF_MAX_LFN],
 				 uint8_t *size)
 {
-  if (!isMounted)
+  if (!sdfs_state.is_mounted)
   {
     LOG_WARN("SD Card is not mounted!");
     return;
@@ -115,10 +118,8 @@ static void sdfs_list_directory (const TCHAR *path,
 
 void sdfs_list_alarms (char list[][FF_MAX_LFN], uint8_t *size)
 {
-  if (!isMounted)
-  {
-    sdfs_mount_drive();
-  }
+  if (!sdfs_state.is_mounted)
+    return;
 
   pos_path = snprintf(full_path, sizeof(full_path), "%s/", (char*) ALARMS_DIR);
 
@@ -127,19 +128,12 @@ void sdfs_list_alarms (char list[][FF_MAX_LFN], uint8_t *size)
 
 void sdfs_list_messages (char list[][FF_MAX_LFN], uint8_t *size)
 {
-  if (!isMounted)
-  {
-    sdfs_mount_drive();
-  }
+  if (!sdfs_state.is_mounted)
+    return;
 
   pos_path = snprintf(full_path, sizeof(full_path), "%s/", (char*) MESSAGES_DIR);
 
   sdfs_list_directory(MESSAGES_DIR_PATH, list, size);
-}
-
-bool sdfs_is_detected (void)
-{
-  return HAL_GPIO_ReadPin(SD_DETECT_GPIO_Port, SD_DETECT_Pin) == GPIO_PIN_RESET;
 }
 
 void sdfs_close_file (AudioFileInfo_t *info)

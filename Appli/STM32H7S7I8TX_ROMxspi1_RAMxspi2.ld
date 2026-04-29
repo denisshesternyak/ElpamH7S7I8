@@ -188,7 +188,7 @@ SECTIONS
     __NONCACHEABLEBUFFER_END = .;  /* create symbol for start of section */
   } > RAM_NONCACHEABLEBUFFER
   
-   .extram (NOLOAD) :  /* NOLOAD - не инициализировать при старте (сохраняет время) */
+   .extram (NOLOAD) :
   {
     . = ALIGN(4);
     _sextram = .;
