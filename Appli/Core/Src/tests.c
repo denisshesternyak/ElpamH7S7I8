@@ -21,24 +21,38 @@
 #include "usart.h"
 
 static void print_msg(const char *msg, bool is_passed);
+static uint8_t msg_rx[20];
+static void uart_complete_callback (void);
+static bool is_rx_tc = false;
 
 static bool test_i2c1()
 {
-  printf("Test Tx keyboard...\r\n");
+  printf("Test keyboard...\r\n");
   osDelay(10);
 
   HAL_GPIO_WritePin(KEYPAD_RST_GPIO_Port, KEYPAD_RST_Pin, GPIO_PIN_SET);
   osDelay(10);
 
-  uint8_t value;
-  HAL_StatusTypeDef res;
-  res = HAL_I2C_Mem_Read(&hi2c1, TCA8418_I2C_ADDR, TCA8418_REG_KP_GPIO_1, I2C_MEMADD_SIZE_8BIT, &value, 1, 100);
+  uint8_t reg = 0x1D;
+  uint8_t data;
+  uint8_t data_rx;
+
+  HAL_StatusTypeDef status;
+
+  status = HAL_I2C_Mem_Read(&hi2c1, 0x68, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+
+  data |= 1;
+
+  status = HAL_I2C_Mem_Write(&hi2c1, 0x68, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+  status = HAL_I2C_Mem_Read(&hi2c1, 0x68, reg, I2C_MEMADD_SIZE_8BIT, &data_rx, 1, 100);
+
+  bool res = (status == HAL_OK) && (data == data_rx);
 
   HAL_GPIO_WritePin(KEYPAD_RST_GPIO_Port, KEYPAD_RST_Pin, GPIO_PIN_RESET);
-  printf("Test Tx keyboard completed: %s\r\n", res == HAL_OK ? "PASSED" : "FAILURE");
+  printf("Test keyboard completed: %s\r\n", res ? "PASSED" : "FAILURE");
   osDelay(10);
 
-  return res == HAL_OK;
+  return res;
 }
 
 static bool test_i2c3()
@@ -77,6 +91,9 @@ static bool test_i2c3()
 
 static bool test_uSD()
 {
+  if(!sdfs_is_detected())
+    return false;
+
   printf("Test uSD...\r\n");
   osDelay(10);
 
@@ -102,7 +119,7 @@ static bool test_uSD()
   else
     res = FR_OK;
 
-  if(sdfs_is_detected() && res == FR_OK)
+  if(res == FR_OK)
   {
     if(f_open(&SDFile, (TCHAR*) w_path, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
     {
@@ -196,54 +213,125 @@ static bool test_codec()
   return cmp;
 }
 
+static void uart_complete_callback (void)
+{
+  is_rx_tc = true;
+}
+
 static bool test_rs232a()
 {
-  printf("Test Tx RS232a...\r\n");
+  printf("Test T/R RS232a...\r\n");
   osDelay(10);
+
+  usart_register_rx_callback(&huart7, uart_complete_callback);
 
   uint8_t msg[] = "Test msg RS232a";
-  HAL_StatusTypeDef status = HAL_UART_Transmit(&huart7, msg, sizeof(msg), HAL_MAX_DELAY);
+  uint16_t len = sizeof(msg);
+  is_rx_tc = false;
+  memset(msg_rx, '\0', 20);
 
-  printf("Send to RS232a: %s\r\n", msg);
-  osDelay(10);
-  printf("Test Tx RS232a completed: %s\r\n", (status == HAL_OK) ? "PASSED" : "FAILURE");
+  HAL_UART_Receive_IT(&huart7, msg_rx, len);
+  HAL_StatusTypeDef status = HAL_UART_Transmit(&huart7, msg, len, HAL_MAX_DELAY);
+
+  printf("Sent message \"%s\" to RS232a\r\n", msg);
+
+  uint8_t i = 100;
+  while(i-- && !is_rx_tc)
+  {
+    osDelay(1);
+  }
+
+  if(is_rx_tc)
+  {
+    printf("Received from RS232a: %s\r\n", msg_rx);
+  }
+
+  bool res = (status == HAL_OK) && (memcmp(msg, msg_rx, len) == 0);
+
+  printf("Test RS232a completed: %s\r\n", res ? "PASSED" : "FAILURE");
   osDelay(10);
 
-  return status == HAL_OK;
+  usart_unregister_callback(&huart5);
+
+  return res;
 }
 
 static bool test_rs232b()
 {
-  printf("Test Tx RS232b...\r\n");
+  printf("Test T/R RS232b...\r\n");
   osDelay(10);
+
+  usart_register_rx_callback(&huart4, uart_complete_callback);
 
   uint8_t msg[] = "Test msg RS232b";
-  HAL_StatusTypeDef status = HAL_UART_Transmit(&huart4, msg, sizeof(msg), HAL_MAX_DELAY);
+  uint16_t len = sizeof(msg);
+  is_rx_tc = false;
+  memset(msg_rx, '\0', 20);
 
-  printf("Send to RS232b: %s\r\n", msg);
-  osDelay(10);
-  printf("Test Tx RS232b completed: %s\r\n", (status == HAL_OK) ? "PASSED" : "FAILURE");
+  HAL_UART_Receive_IT(&huart4, msg_rx, len);
+  HAL_StatusTypeDef status = HAL_UART_Transmit(&huart4, msg, len, HAL_MAX_DELAY);
+
+  printf("Sent message \"%s\" to RS232b\r\n", msg);
+
+  uint8_t i = 100;
+  while(i-- && !is_rx_tc)
+  {
+    osDelay(1);
+  }
+
+  if(is_rx_tc)
+  {
+    printf("Received from RS232b: %s\r\n", msg_rx);
+  }
+
+  bool res = (status == HAL_OK) && (memcmp(msg, msg_rx, len) == 0);
+
+  printf("Test RS232b completed: %s\r\n", res ? "PASSED" : "FAILURE");
   osDelay(10);
 
-  return status == HAL_OK;
+  usart_unregister_callback(&huart5);
+
+  return res;
 }
 
 static bool test_rs485()
 {
-  printf("Test Tx RS485...\r\n");
+  printf("Test T/R RS485...\r\n");
   osDelay(10);
+
+  usart_register_rx_callback(&huart5, uart_complete_callback);
 
   uint8_t msg[] = "Test msg RS485";
+  uint16_t len = sizeof(msg);
+  is_rx_tc = false;
+  memset(msg_rx, '\0', 20);
+
+  HAL_UART_Receive_IT(&huart5, msg_rx, len);
   HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, GPIO_PIN_SET);
-  HAL_StatusTypeDef status = HAL_UART_Transmit(&huart4, msg, sizeof(msg), HAL_MAX_DELAY);
+  HAL_StatusTypeDef status = HAL_UART_Transmit(&huart5, msg, len, HAL_MAX_DELAY);
   HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, GPIO_PIN_RESET);
 
-  printf("Send to RS485: %s\r\n", msg);
-  osDelay(10);
-  printf("Test Tx RS485 completed: %s\r\n", (status == HAL_OK) ? "PASSED" : "FAILURE");
+  printf("Sent message \"%s\" to RS485\r\n", msg);
+
+  uint8_t i = 100;
+  while(i-- && !is_rx_tc)
+  {
+    osDelay(1);
+  }
+
+  if(is_rx_tc)
+  {
+    printf("Received from RS485: %s\r\n", msg_rx);
+  }
+
+  bool res = (status == HAL_OK) && (memcmp(msg, msg_rx, len) == 0);
+
+  printf("Test RS485 completed: %s\r\n", res ? "PASSED" : "FAILURE");
   osDelay(10);
 
-  return status == HAL_OK;
+  usart_unregister_callback(&huart5);
+
+  return res;
 }
 
 bool test_board(void)
@@ -254,16 +342,16 @@ bool test_board(void)
 
   printf("Starting peripheral tests...\r\n");
 
-  print_msg("Memory NOR: ", true);
-  print_msg("Memory PSRAM: ", true);
-  print_msg("I2C3 eeprom: ", test_i2c3());
-  print_msg("SDMMC uSD: ", test_uSD());
+  print_msg("NOR memory: ", true);
+  print_msg("PSRAM memory: ", true);
+  print_msg("EEPROM: ", test_i2c3());
+  print_msg("uSD: ", test_uSD());
   print_msg("RTC: ", test_rtc());
-  print_msg("Tx I2C1 keyboard: ", test_i2c1());
   print_msg("Tx Codec: ", test_codec());
-  print_msg("Tx RS232a: ", test_rs232a());
-  print_msg("Tx RS232b: ", test_rs232b());
-  print_msg("Tx RS485: ", test_rs485());
+  print_msg("T/R keyboard: ", test_i2c1());
+  print_msg("T/R RS232a: ", test_rs232a());
+  print_msg("T/R RS232b: ", test_rs232b());
+  print_msg("T/R RS485: ", test_rs485());
 
   osDelay(10000);
 
