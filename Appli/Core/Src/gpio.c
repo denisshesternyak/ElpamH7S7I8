@@ -30,7 +30,11 @@
 /* Configure GPIO                                                             */
 /*----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
+#define DEBOUNCE_KEY_TIME_MS    50
+#define DEBOUNCE_SD_TIME_MS    50
 
+static uint32_t last_key_event_time = 0;
+static uint32_t last_sd_event_time = 0;
 /* USER CODE END 1 */
 
 /** Configure pins
@@ -193,7 +197,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin : SD_DETECT_Pin */
   GPIO_InitStruct.Pin = SD_DETECT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SD_DETECT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BAT_MTS_ACT_Pin */
@@ -215,18 +219,35 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(KEYPAD_INT_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
 }
 
 /* USER CODE BEGIN 2 */
 void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 {
+  uint32_t now = HAL_GetTick();
+
   switch (GPIO_Pin)
   {
     case KEYPAD_INT_Pin:
-      osEventFlagsSet(KeyboardEventHandle, KEYBOARD_EVENT);
+      if ((now - last_key_event_time) > DEBOUNCE_KEY_TIME_MS)
+      {
+	last_key_event_time = now;
+	osEventFlagsSet(KeyboardEventHandle, KEYBOARD_EVENT);
+      }
       break;
     case SD_DETECT_Pin:
-      osEventFlagsSet(SDEventHandle, SD_EVENT);
+      if ((now - last_sd_event_time) > DEBOUNCE_SD_TIME_MS)
+      {
+	last_sd_event_time = now;
+	osEventFlagsSet(SDEventHandle, SD_EVENT);
+      }
       break;
   }
 }

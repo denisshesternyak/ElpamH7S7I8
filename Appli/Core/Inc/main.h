@@ -107,12 +107,14 @@ void Error_Handler(void);
 #define DRV_ON_ACT_GPIO_Port GPIOG
 #define SD_DETECT_Pin GPIO_PIN_1
 #define SD_DETECT_GPIO_Port GPIOG
+#define SD_DETECT_EXTI_IRQn EXTI1_IRQn
 #define BAT_MTS_ACT_Pin GPIO_PIN_13
 #define BAT_MTS_ACT_GPIO_Port GPIOM
 #define CODEC_INT_Pin GPIO_PIN_7
 #define CODEC_INT_GPIO_Port GPIOD
 #define KEYPAD_INT_Pin GPIO_PIN_2
 #define KEYPAD_INT_GPIO_Port GPIOG
+#define KEYPAD_INT_EXTI_IRQn EXTI2_IRQn
 #define LED_3_Pin GPIO_PIN_0
 #define LED_3_GPIO_Port GPIOF
 #define AMP_T4_ACT_Pin GPIO_PIN_1

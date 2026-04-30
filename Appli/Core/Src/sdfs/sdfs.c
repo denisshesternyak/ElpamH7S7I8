@@ -26,7 +26,7 @@ SDFS_STATE_t sdfs_state;
 
 bool sdfs_is_detected (void)
 {
-  return HAL_GPIO_ReadPin(SD_DETECT_GPIO_Port, SD_DETECT_Pin) == GPIO_PIN_SET;
+  return HAL_GPIO_ReadPin(SD_DETECT_GPIO_Port, SD_DETECT_Pin) == GPIO_PIN_RESET;
 }
 
 FRESULT sdfs_mount_drive (void)

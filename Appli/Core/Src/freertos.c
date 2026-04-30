@@ -64,8 +64,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-#define SELFTEST
-
+//#define SELFTEST
 #ifdef SELFTEST
 __IO bool is_selftest = false;
 osThreadId_t TestsTaskHandle;
@@ -485,10 +484,11 @@ void StartSDTask (void *argument)
   for (;;)
   {
     osEventFlagsWait(SDEventHandle, SD_EVENT, osFlagsWaitAll, osWaitForever);
+    osDelay(50);
+
     if (sdfs_is_detected())
     {
       LOG_INFO("uSD CONNECTED");
-      osDelay(100);
 
       if (!sdfs_state.is_init)
       {
@@ -507,13 +507,13 @@ void StartSDTask (void *argument)
       LOG_INFO("uSD DISCONNECTED");
       if (sdfs_state.is_mounted)
       {
-	  sdfs_unmount_drive();
+	sdfs_unmount_drive();
       }
 
       if (sdfs_state.is_init)
       {
-	  HAL_SD_DeInit(&hsd1);
-	  sdfs_state.is_init = false;
+	HAL_SD_DeInit(&hsd1);
+	sdfs_state.is_init = false;
       }
 
       FATFS_UnLinkDriver(SDPath);
