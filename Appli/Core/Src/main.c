@@ -116,7 +116,7 @@ int main(void)
   MX_I2C1_Init();
   MX_I2C3_Init();
   MX_I2S6_Init();
-  MX_SDMMC1_SD_Init();
+//  MX_SDMMC1_SD_Init();
   MX_SPI2_Init();
   MX_SPI4_Init();
   MX_UART4_Init();

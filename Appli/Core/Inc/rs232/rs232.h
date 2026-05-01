@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "stm32h7rsxx_hal.h"
+#include "usart.h"
 
 #define CMD_LENGTH 			7	// Command length — 7 characters
 #define ACTIVATION_CMD_TIMEOUT  	10
@@ -39,10 +40,10 @@ typedef enum
   UART_EVENT_ARM_BTN
 } UartEvent_t;
 
-typedef void (*rs232_cmd_handler_t) (void);
+typedef void (*rs232_cmd_handler_t) (UART_HandleTypeDef *huart);
 typedef void (*rs232_volume_handler_t) (int step);
 
-void rs232_init (UART_HandleTypeDef *huart);
+void rs232_init ();
 void rs232_process (UartEvent_t event);
 
 // Functions for registering handlers

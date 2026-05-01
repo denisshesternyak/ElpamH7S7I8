@@ -64,7 +64,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-//#define SELFTEST
+#define SELFTEST
 #ifdef SELFTEST
 __IO bool is_selftest = false;
 osThreadId_t TestsTaskHandle;
@@ -151,7 +151,7 @@ const osEventFlagsAttr_t SDEvent_attributes = { .name = "SDEvent" };
 void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef *hrtc)
 {
 #ifdef SELFTEST
-  if(is_selftest)
+  if (is_selftest)
     return;
 #endif
 
@@ -306,7 +306,7 @@ void StartDefaultTask (void *argument)
 void StartUartTask (void *argument)
 {
   /* USER CODE BEGIN StartUartTask */
-  rs232_init(&huart4);
+  rs232_init();
 
   // === Register all handlers from  command_dispatcher ===
   rs232_register_arm(handle_arm);

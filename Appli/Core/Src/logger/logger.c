@@ -11,6 +11,8 @@ static volatile bool uart_error;
 static char logger_buffer_pool[LOG_QUEUE_SIZE][LOG_BUFFER_SIZE] __attribute__((section(".extram")));
 static char logger_buffer_temp[LOG_BUFFER_SIZE] __attribute__((section(".extram")));
 
+#define LOGGER_HANDLER	&huart1
+
 #define TIME_STAMP_SIZE 24
 static const char *TIME_FORMAT = "[%02d/%02d/%02d %02d:%02d:%02d.%03ld] %s %s";
 
@@ -27,7 +29,7 @@ static const char *const level_strings[] = {
 
 static void logger_format_message (char *temp, LogMessage_t *msg);
 
-static void logger_uart_tx_complete_callback (void)
+static void logger_uart_tx_complete_callback (UART_HandleTypeDef *huart)
 {
   osSemaphoreRelease(LoggerBinarySemHandle);
 }
@@ -35,12 +37,12 @@ static void logger_uart_tx_complete_callback (void)
 //static void logger_uart_error_callback (void)
 //{
 //  uart_error = true;
-//  HAL_UART_Abort(&huart1);
+//  HAL_UART_Abort(LOGGER_HANDLER);
 //}
 
 void logger_init (void)
 {
-  usart_register_tx_callback(&huart1, logger_uart_tx_complete_callback);
+  usart_register_tx_callback(LOGGER_HANDLER, logger_uart_tx_complete_callback);
 
   uart_error = false;
 }
@@ -134,13 +136,13 @@ void logger_process (LogMessage_t *msg)
   {
     if (osSemaphoreAcquire(LoggerBinarySemHandle, 1000) != osOK || uart_error)
     {
-      HAL_UART_Abort(&huart1);
+      HAL_UART_Abort(LOGGER_HANDLER);
       uart_error = false;
     }
 
     logger_format_message(logger_buffer_temp, msg);
 
-    HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart1, (uint8_t*) msg->buffer, msg->len);
+    HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(LOGGER_HANDLER, (uint8_t*) msg->buffer, msg->len);
 
     if (status == HAL_OK)
     {
@@ -155,7 +157,7 @@ void logger_process (LogMessage_t *msg)
 
   if (msg->retry_count >= LOG_MAX_RETRIES)
   {
-    HAL_UART_Abort(&huart1);
+    HAL_UART_Abort(LOGGER_HANDLER);
     uart_error = false;
   }
 

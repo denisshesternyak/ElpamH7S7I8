@@ -98,25 +98,28 @@ static void hx8357_push_color (uint16_t color, uint32_t pixels)
 
   uint8_t hi = color >> 8;
   uint8_t lo = color & 0xFF;
-  uint32_t len = 0;
 
-  while (pixels > 0)
+  uint32_t bytes_to_send = pixels * 2;
+  uint32_t remaining = bytes_to_send;
+
+  uint32_t i = 0;
+  while (i < HX8357_BUFFER_SIZE && remaining > 0)
   {
-    uint32_t chunk =
-	(pixels > HX8357_BUFFER_HALF_SIZE) ? HX8357_BUFFER_HALF_SIZE : pixels;
+      dma_buffer[i++] = hi;
+      dma_buffer[i++] = lo;
+      remaining -= 2;
+  }
 
-    for (uint32_t j = 0; j < chunk; j++)
-    {
-      dma_buffer[len++] = hi;
-      dma_buffer[len++] = lo;
-    }
+  while (bytes_to_send > 0)
+  {
+    uint32_t chunk = (bytes_to_send > HX8357_BUFFER_SIZE) ?
+                                   HX8357_BUFFER_SIZE : bytes_to_send;
 
-    HAL_SPI_Transmit_DMA(HSPI_HANDLER, dma_buffer, len);
+    HAL_SPI_Transmit_DMA(HSPI_HANDLER, dma_buffer, chunk);
 
     osSemaphoreAcquire(LcdBinarySemHandle, HX8357_SEMAPHORE_WAIT);
 
-    pixels -= chunk;
-    len = 0;
+    bytes_to_send -= chunk;
   }
 
   CS_HIGH();
@@ -451,31 +454,28 @@ void hx8357_draw_image (uint16_t x,
   DC_DATA();
   CS_LOW();
 
-  uint32_t size = w * h;
-  uint32_t len = 0;
+  uint32_t remaining = w * h * 2;
 
-  while (size > 0)
+  while (remaining > 0)
   {
-    uint32_t chunk =
-	(size > HX8357_BUFFER_HALF_SIZE) ? HX8357_BUFFER_HALF_SIZE : size;
+      uint32_t chunk = (remaining > HX8357_BUFFER_HALF_SIZE) ?
+			     HX8357_BUFFER_HALF_SIZE : remaining;
 
-    for (uint32_t j = 0; j < chunk; j++)
-    {
-      uint16_t color = data[j];
-      uint8_t r = (color >> 11) & 0x1F;
-      uint8_t g = (color >> 5) & 0x3F;
-      uint8_t b = color & 0x1F;
+      uint32_t words_in_chunk = chunk >> 1;
 
-      dma_buffer[len++] = r << 3 | g >> 3;
-      dma_buffer[len++] = g << 3 | b;
-    }
+      for (uint32_t i = 0; i < words_in_chunk; i++)
+      {
+	  uint16_t color = data[i];
+	  dma_buffer[i*2]     = color >> 8;
+	  dma_buffer[i*2 + 1] = color & 0xFF;
+      }
 
-    HAL_SPI_Transmit_DMA(HSPI_HANDLER, dma_buffer, len);
+      HAL_SPI_Transmit_DMA(HSPI_HANDLER, dma_buffer, chunk);
 
-    osSemaphoreAcquire(LcdBinarySemHandle, HX8357_SEMAPHORE_WAIT);
+      osSemaphoreAcquire(LcdBinarySemHandle, HX8357_SEMAPHORE_WAIT);
 
-    size -= chunk;
-    len = 0;
+      data += words_in_chunk;
+      remaining -= chunk;
   }
 
   CS_HIGH();

@@ -7,8 +7,9 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include "queue.h"
-#include "usart.h"
 #include "defines.h"
+
+#define RS232_HANDLER	&huart7
 
 static uint8_t rx_byte;
 static char rx_buffer[8];
@@ -44,7 +45,7 @@ static rs232_cmd_handler_t handler_message = NULL;
 static rs232_cmd_handler_t handler_almbtn = NULL;
 static rs232_cmd_handler_t handle_armbtn = NULL;
 
-static void rs232a_rx_complete_callback (void);
+static void rs232a_rx_complete_callback (UART_HandleTypeDef *huart);
 static void call_or_default (rs232_cmd_handler_t h);
 static void call_or_default_unknown (void);
 static void process_command (char *cmd);
@@ -52,7 +53,7 @@ static void process_command (char *cmd);
 static uint16_t volume_value;
 static bool sent_unknown;
 
-static void rs232a_rx_complete_callback (void)
+static void rs232a_rx_complete_callback (UART_HandleTypeDef *huart)
 {
   static uint32_t last_rx_time = 0;
   uint32_t now = osKernelGetTickCount();
@@ -92,14 +93,14 @@ static void rs232a_rx_complete_callback (void)
     rx_count = 0;
   }
 
-  HAL_UART_Receive_IT(&huart4, &rx_byte, 1);
+  HAL_UART_Receive_IT(RS232_HANDLER, &rx_byte, 1);
 }
 
-void rs232_init (UART_HandleTypeDef *huart)
+void rs232_init ()
 {
-  usart_register_rx_callback(huart, rs232a_rx_complete_callback);
+  usart_register_rx_callback(RS232_HANDLER, rs232a_rx_complete_callback);
 
-  HAL_UART_Receive_IT(huart, &rx_byte, 1);
+  HAL_UART_Receive_IT(RS232_HANDLER, &rx_byte, 1);
   reception_active = 1;
 }
 
@@ -322,17 +323,17 @@ static void process_command (char *cmd)
 static void call_or_default (rs232_cmd_handler_t h)
 {
   if (h)
-    h();
+    h(RS232_HANDLER);
   else
-    HAL_UART_Transmit(&huart4, (uint8_t*) "NO HANDLER\r\n", 12, HAL_MAX_DELAY);
+    HAL_UART_Transmit(RS232_HANDLER, (uint8_t*) "NO HANDLER\r\n", 12, HAL_MAX_DELAY);
 }
 
 static void call_or_default_unknown (void)
 {
   if (handler_unknown)
-    handler_unknown();
+    handler_unknown(RS232_HANDLER);
   else
-    HAL_UART_Transmit(&huart4, (uint8_t*) "ERR:UNKNOWN\r\n", 13, HAL_MAX_DELAY);
+    HAL_UART_Transmit(RS232_HANDLER, (uint8_t*) "ERR:UNKNOWN\r\n", 13, HAL_MAX_DELAY);
   rx_count = 0;
 }
 

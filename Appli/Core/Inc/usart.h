@@ -52,7 +52,7 @@ void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN Prototypes */
 #define MAX_USART_INSTANCES 	4
 
-typedef void (*usart_callback_t) (void);
+typedef void (*usart_callback_t) (UART_HandleTypeDef *huart);
 
 void usart_clear_cb (void);
 
