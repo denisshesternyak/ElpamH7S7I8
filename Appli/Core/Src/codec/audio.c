@@ -92,8 +92,9 @@ static osStatus_t send_audio_notify (AudioNotify_t *audio_notify,
 void audio_init (void)
 {
   HAL_GPIO_WritePin(CODEC_RESET_GPIO_Port, CODEC_RESET_Pin, GPIO_PIN_RESET);
-  osDelay(5);
+  osDelay(10);
   HAL_GPIO_WritePin(CODEC_RESET_GPIO_Port, CODEC_RESET_Pin, GPIO_PIN_SET);
+  osDelay(10);
 
   memset(&player, 0, sizeof(player));
   memcpy(player.valid_volume_levels, valid_volume_levels, NUM_VALID_LEVELS);

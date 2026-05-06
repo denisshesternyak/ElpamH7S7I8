@@ -28,11 +28,11 @@ static void DC_DATA ()
 }
 static void RST_LOW ()
 {
-  HAL_GPIO_WritePin(CODEC_RESET_GPIO_Port, CODEC_RESET_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DISPLAY_RST_GPIO_Port, DISPLAY_RST_Pin, GPIO_PIN_RESET);
 }
 static void RST_HIGH ()
 {
-  HAL_GPIO_WritePin(CODEC_RESET_GPIO_Port, CODEC_RESET_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DISPLAY_RST_GPIO_Port, DISPLAY_RST_Pin, GPIO_PIN_SET);
 }
 
 static void hx8357_set_rotation (ScreenRotation_t rotation);
@@ -181,9 +181,6 @@ void hx8357_reset (void)
 
 void hx8357_init (void)
 {
-  HAL_GPIO_WritePin(DISPLAY_RST_GPIO_Port, DISPLAY_RST_Pin, GPIO_PIN_SET);
-  osDelay(10);
-
   spi_register_tx_callback(HSPI_HANDLER, hx8357_spi_tx_complete_callback);
 
   hx8357_reset();
