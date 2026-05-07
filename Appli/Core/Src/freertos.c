@@ -64,7 +64,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-#define SELFTEST
+//#define SELFTEST
 #ifdef SELFTEST
 __IO bool is_selftest = false;
 osThreadId_t TestsTaskHandle;

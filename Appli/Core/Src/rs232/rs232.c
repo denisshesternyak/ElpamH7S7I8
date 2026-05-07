@@ -9,7 +9,7 @@
 #include "queue.h"
 #include "defines.h"
 
-#define RS232_HANDLER	&huart7
+#define RS232_HANDLER	&huart4
 
 static uint8_t rx_byte;
 static char rx_buffer[8];
