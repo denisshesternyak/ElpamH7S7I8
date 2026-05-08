@@ -499,7 +499,7 @@ void StartSDTask (void *argument)
       if (!sdfs_state.is_mounted)
       {
 	sdfs_mount_drive();
-	sdfs_list_messages(NULL, NULL);
+//	sdfs_list_messages(NULL, NULL);
       }
     }
     else

@@ -31,7 +31,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-
+#include "fw_update.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,7 +41,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SELFTEST 1
+//#define SELFTEST
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -63,12 +63,6 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int _write (int file, char *ptr, int len)
-{
-  HAL_UART_Transmit(&huart1, (uint8_t*) ptr, len, HAL_MAX_DELAY);
-  return len;
-}
-
 #ifdef SELFTEST
 uint8_t data_tx[] = "Hello world from H7s7!";
 uint8_t data_rx[60];
@@ -156,6 +150,9 @@ int main(void)
   MX_USART1_UART_Init();
   MX_XSPI1_Init();
   MX_XSPI2_Init();
+  MX_UART5_Init();
+  MX_UART7_Init();
+  MX_UART4_Init();
   MX_EXTMEM_MANAGER_Init();
   /* USER CODE BEGIN 2 */
 #ifdef SELFTEST
@@ -165,7 +162,10 @@ int main(void)
   }
 #endif
 
-  printf("Bootloader running...\r\n");
+  fw_update_process();
+
+//  printf("Bootloader running...\r\n");
+
   /* USER CODE END 2 */
 
   /* Launch the application */
@@ -259,27 +259,6 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
-
-/**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM6 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim TIM handle
-  * @retval None
-  */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  /* USER CODE BEGIN Callback 0 */
-
-  /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM6) {
-    HAL_IncTick();
-  }
-  /* USER CODE BEGIN Callback 1 */
-
-  /* USER CODE END Callback 1 */
-}
 
 /**
   * @brief  This function is executed in case of error occurrence.
