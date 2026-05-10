@@ -439,6 +439,14 @@ void StartKeyboardTask (void *argument)
   {
     osEventFlagsWait(KeyboardEventHandle, KEYBOARD_EVENT, osFlagsWaitAll, osWaitForever);
     keyboard_process(&ev);
+
+    if(ev.pressed)
+    {
+      LCDTaskEvent_t lcd_event = {.event = LCD_EVENT_BTN, .btn = ev};
+      osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 100);
+    }
+
+    ev.pressed = false;
   }
   /* USER CODE END StartKeyboardTask */
 }

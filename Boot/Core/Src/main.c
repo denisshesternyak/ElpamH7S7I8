@@ -162,7 +162,7 @@ int main(void)
   }
 #endif
 
-  fw_update_process();
+//  fw_update_process();
 
 //  printf("Bootloader running...\r\n");
 

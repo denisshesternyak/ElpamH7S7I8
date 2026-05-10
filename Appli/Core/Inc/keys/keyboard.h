@@ -5,22 +5,26 @@
 #include <stdbool.h>
 #include "tca8418.h"
 
-#define KEYBOARD_ROW 	4
-#define KEYBOARD_COL	4
+#define KEYBOARD_ROW 	5
+#define KEYBOARD_COL	6
 
-//      Col0  Col1  Col2  Col3
-// Row0:  0     1     2     3
-// Row1:  4     5     6     7
-// Row2:  8     9    10    11
-// Row3: 12    13    14    15
+//      Col0  Col1  Col2  Col3  Col4  Col5
+// Row0:  1     2     3      4     5     6
+// Row1:  7     8     9     10    11    12
+// Row2: 13    14    15     16    17    18
+// Row3: 19    20    21     22    23    19
+// Row4: 25    26    27     28    29    30
+
 typedef enum
 {
-  BTN_UP,
-  BTN_DOWN,
-  BTN_LEFT,
-  BTN_RIGHT,
-  BTN_ENTER,
-  BTN_ESC,
+  BTN_RIGHT = 3,
+  BTN_LEFT = 4,
+  BTN_ARM = 5,
+  BTN_CXL = 6,
+  BTN_ESC = 13,
+  BTN_UP = 14,
+  BTN_DOWN = 15,
+  BTN_ENTER = 16,
 
   BTN_A,
   BTN_B,
@@ -30,8 +34,6 @@ typedef enum
   BTN_ANNOUNCEMENT,
   BTN_MESSAGE,
   BTN_ALARM,
-  BTN_CXL,
-  BTN_ARM,
 
   //------------------------
   BTN_0,

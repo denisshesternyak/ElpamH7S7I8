@@ -66,16 +66,15 @@ void keyboard_init (void)
 
 void keyboard_process (KeyEvent_t *ev)
 {
-  uint8_t raw_code;
+  uint8_t code;
   bool pressed;
   while (TCA8418_GetEventCount(KEYBOARD_HANDLER) > 0)
   {
-    if (TCA8418_ReadKeyEvent(KEYBOARD_HANDLER, &raw_code, &pressed) == HAL_OK)
+    if (TCA8418_ReadKeyEvent(KEYBOARD_HANDLER, &code, &pressed) == HAL_OK)
     {
-      LOG_DEBUG("btn: %d, ev: %d", raw_code, pressed);
-      ev->button = (KeyCode_t) raw_code;
+      LOG_DEBUG("code: %d, evt: %d", code, pressed);
+      ev->button = (KeyCode_t) code;
       ev->pressed = pressed;
-      // Event press button
     }
   }
 
