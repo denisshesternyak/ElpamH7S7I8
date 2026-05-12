@@ -20,7 +20,6 @@
 #include "main.h"
 #include "extmem_manager.h"
 #include "flash.h"
-#include "gpdma.h"
 #include "sbs.h"
 #include "usart.h"
 #include "xspi.h"
@@ -31,6 +30,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "fw_update.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -145,7 +146,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_GPDMA1_Init();
   MX_FLASH_Init();
   MX_SBS_Init();
   MX_USART1_UART_Init();
@@ -164,7 +164,7 @@ int main(void)
 #endif
 
   printf("Bootloader running...\r\n");
-
+  fw_update_process();
   /* USER CODE END 2 */
 
   /* Launch the application */
