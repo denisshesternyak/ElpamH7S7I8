@@ -9,19 +9,25 @@
 
 #define FW_UPDATE_HANDLER	&huart4
 
+#define FW_SALT "Elpam1234"
+#define SALT_LEN 9
+#define MAGIC_NUMBER 0xDEADBEEF
+#define MAGIC_SIZE 4
+
 static const uint32_t FW_SOF = 0xAAAAAAAA;
 static const uint32_t FW_EOF = 0x55555555;
 
-uint8_t flash_buffer[EXT_FLASH_SECTOR_SIZE];
-uint32_t buffer_index;
-uint32_t current_addr_offset;
+static uint8_t flash_buffer[EXT_FLASH_SECTOR_SIZE];
+static uint32_t buffer_index;
+static uint32_t current_addr_offset;
+static uint32_t total_decrypted_bytes = 0;
+static bool is_header;
 
 typedef struct
 {
+  uint32_t magic_number;
   uint32_t total_size;
-  uint16_t total_crc;
-  uint16_t packet_size;
-  bool is_header;
+  uint32_t total_crc;
 } FW_Header_t;
 
 static FW_Header_t header;
@@ -48,8 +54,14 @@ static FW_STATUS fw_update_receive_packet (uint8_t *cmd,
 					   uint32_t timeout_ms);
 static void fw_update_callback (UART_HandleTypeDef *huart);
 static void fw_metadata_write (const uint8_t *data, uint16_t len);
-static void fw_metadata_finish_write (uint32_t size, uint16_t crc);
-static bool fw_update_get_header (void);
+static void fw_metadata_finish_write ();
+
+typedef enum
+{
+  MAGIC_CHECK_NOT_STARTED = 0,
+  MAGIC_CHECK_PASSED = 1,
+  MAGIC_CHECK_FAILED = 2
+} MAGIC_STATUS;
 
 static void fw_metadata_write (const uint8_t *data, uint16_t len)
 {
@@ -74,7 +86,7 @@ static void fw_metadata_write (const uint8_t *data, uint16_t len)
   }
 }
 
-static void fw_metadata_finish_write (uint32_t size, uint16_t crc)
+static void fw_metadata_finish_write ()
 {
   if (buffer_index > 0)
   {
@@ -100,6 +112,14 @@ static uint16_t fw_update_CRC16 (const uint8_t *data, uint16_t length)
     }
   }
   return crc;
+}
+
+void xor_decrypt_inline (uint8_t *data, uint16_t data_len)
+{
+  for (uint16_t i = 0; i < data_len; i++)
+  {
+    data[i] ^= FW_SALT[(total_decrypted_bytes + i) % SALT_LEN];
+  }
 }
 
 static void fw_update_send_packet (uint8_t cmd,
@@ -189,30 +209,57 @@ static FW_STATUS fw_update_receive_packet (uint8_t *cmd,
   return FW_OK;
 }
 
-static bool fw_update_get_header (void)
+static bool fw_update_check_cmd (uint8_t cmd, uint8_t *data, uint16_t len)
 {
-  if(header.is_header) return true;
-
-  uint8_t cmd;
-  uint16_t len;
-  FW_STATUS status;
-
-  status = fw_update_receive_packet(&cmd, (uint8_t*) &header, &len, 1000);
-
-  if (status != FW_OK || cmd != CMD_START_UPDATE)
+  switch (cmd)
   {
-    bytes_received = 0;
-//    printf("Timeout or wrong command %d\r\n", status);
-    return false;
+    case CMD_DATA_PACKET:
+      packet_count++;
+      total_bytes_received += len;
+
+      xor_decrypt_inline(data, len);
+      total_decrypted_bytes += len;
+
+      if (!is_header)
+      {
+	uint16_t header_len = sizeof(FW_Header_t);
+	if (len < header_len)
+	{
+	  printf("Error: Packet too small for header\r\n");
+	  return false;
+	}
+	memcpy(&header, data, header_len);
+
+	if (header.magic_number != MAGIC_NUMBER)
+	{
+	  fw_update_send_packet(CMD_NMAGIC, NULL, 0);
+	  printf("Firmware is invalid, magic number: 0x%lx\r\n", header.magic_number);
+	  break;
+	}
+
+	printf("Size FW %ld, CRC 0x%04lx\r\n", header.total_size, header.total_crc);
+
+	fw_metadata_write(&data[header_len], len - header_len);
+	is_header = true;
+      }
+      else
+      {
+	fw_metadata_write(data, len);
+      }
+
+      fw_update_send_packet(CMD_ACK, NULL, 0);
+      break;
+
+    case CMD_END_UPDATE:
+      fw_metadata_finish_write();
+      fw_update_send_packet(CMD_ACK, NULL, 0);
+      return false;
+
+    default:
+      error_count++;
+      total_error_count++;
+      fw_update_send_packet(CMD_NACK, NULL, 0);
   }
-
-  error_count = 0;
-  fw_update_send_packet(CMD_ACK, NULL, 0);
-
-  header.is_header = true;
-  printf("Size FW %ld, CRC 0x%04x\r\n", header.total_size, header.total_crc);
-
-//  printf("Start update received\r\n");
   return true;
 }
 
@@ -235,14 +282,6 @@ void fw_update_process (void)
 
   while (error_count < MAX_ERROR_COUNT)
   {
-    if (!fw_update_get_header())
-    {
-      bytes_received = 0;
-      error_count++;
-      total_error_count++;
-      continue;
-    }
-
     status = fw_update_receive_packet(&cmd, data, &len, 3000);
 
     if (status != 0)
@@ -255,31 +294,9 @@ void fw_update_process (void)
       continue;
     }
 
-    if (cmd == CMD_DATA_PACKET)
+    if (!fw_update_check_cmd(cmd, data, len))
     {
-      packet_count++;
-      total_bytes_received += len;
-
-      fw_metadata_write(data, len);
-
-      fw_update_send_packet(CMD_ACK, NULL, 0);
-
-//      if (packet_count % 20 == 0)
-//	printf("Packets: %lu\r\n", packet_count);
-    }
-    else if (cmd == CMD_END_UPDATE)
-    {
-      fw_metadata_finish_write(header.total_size, header.total_crc);
-
-//      printf("End of update received\r\n");
-      fw_update_send_packet(CMD_ACK, NULL, 0);
       break;
-    }
-    else
-    {
-      error_count++;
-      total_error_count++;
-      fw_update_send_packet(CMD_NACK, NULL, 0);
     }
   }
 

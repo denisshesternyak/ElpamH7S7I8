@@ -6,6 +6,7 @@
 #define CMD_DATA_PACKET     0x11
 #define CMD_END_UPDATE      0x12
 #define CMD_STATISTIC       0x13
+#define CMD_NMAGIC          0x14
 #define CMD_ACK             0xFF
 #define CMD_NACK            0xEE
 
