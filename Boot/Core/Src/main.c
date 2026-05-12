@@ -31,7 +31,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "fw_update.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,7 +40,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-//#define SELFTEST
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -63,6 +62,8 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+//#define SELFTEST
+
 #ifdef SELFTEST
 uint8_t data_tx[] = "Hello world from H7s7!";
 uint8_t data_rx[60];
@@ -162,9 +163,7 @@ int main(void)
   }
 #endif
 
-//  fw_update_process();
-
-//  printf("Bootloader running...\r\n");
+  printf("Bootloader running...\r\n");
 
   /* USER CODE END 2 */
 

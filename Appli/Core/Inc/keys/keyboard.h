@@ -26,29 +26,29 @@ typedef enum
   BTN_DOWN = 15,
   BTN_ENTER = 16,
 
+  //------------------------
+  BTN_TEST = 33,
+  BTN_ANNOUNCEMENT = 34,
+  BTN_MESSAGE = 35,
+  BTN_ALARM = 26,
+
+  //------------------------
+  BTN_0 = 31,
+  BTN_2 = 1,
+  BTN_3 = 2,
+  BTN_5 = 11,
+  BTN_6 = 12,
+  BTN_8 = 21,
+  BTN_9 = 22,
+  BTN_HASH = 32, // #
+
+  BTN_1 = 99,
+  BTN_4,
+  BTN_7,
+  BTN_ASTERISK, // *
+
   BTN_A,
   BTN_B,
-
-  //------------------------
-  BTN_TEST,
-  BTN_ANNOUNCEMENT,
-  BTN_MESSAGE,
-  BTN_ALARM,
-
-  //------------------------
-  BTN_0,
-  BTN_1,
-  BTN_2,
-  BTN_3,
-  BTN_4,
-  BTN_5,
-  BTN_6,
-  BTN_7,
-  BTN_8,
-  BTN_9,
-  BTN_HASH, // #
-  BTN_START, // *
-
   BTN_NONE
 } KeyCode_t;
 

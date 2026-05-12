@@ -36,6 +36,30 @@ const char* ButtonToString (KeyCode_t code)
       return "BTN_CXL";
     case BTN_ARM:
       return "BTN_ARM";
+    case BTN_0:
+      return "BTN_0";
+    case BTN_1:
+      return "BTN_1";
+    case BTN_2:
+      return "BTN_2";
+    case BTN_3:
+      return "BTN_3";
+    case BTN_4:
+      return "BTN_4";
+    case BTN_5:
+      return "BTN_5";
+    case BTN_6:
+      return "BTN_6";
+    case BTN_7:
+      return "BTN_7";
+    case BTN_8:
+      return "BTN_8";
+    case BTN_9:
+      return "BTN_9";
+    case BTN_HASH:
+      return "BTN_HASH";
+    case BTN_ASTERISK:
+      return "BTN_ASTERISK";
     case BTN_NONE:
       return "BTN_NONE";
     default:
@@ -72,7 +96,7 @@ void keyboard_process (KeyEvent_t *ev)
   {
     if (TCA8418_ReadKeyEvent(KEYBOARD_HANDLER, &code, &pressed) == HAL_OK)
     {
-      LOG_DEBUG("code: %d, evt: %d", code, pressed);
+//      LOG_DEBUG("%s, code: %d, evt: %d", ButtonToString(code), code, pressed);
       ev->button = (KeyCode_t) code;
       ev->pressed = pressed;
     }
