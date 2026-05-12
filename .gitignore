@@ -1,11 +1,14 @@
 # STM32CubeIDE generated build artifacts
 Appli/Debug/
 Appli/Release/
+Appli/.settings/
 Boot/Debug/
 Boot/Release/
+Boot/.settings/
 ExtMemLoader/Debug/
 ExtMemLoader/Release/
-/.settings/
+ExtMemLoader/.settings/
+.settings/
 .mxproject
 .cproject
 .project
