@@ -19,6 +19,7 @@ void sdfs_unmount_drive (void);
 
 void sdfs_list_alarms (char list[][FF_MAX_LFN], uint8_t *size);
 void sdfs_list_messages (char list[][FF_MAX_LFN], uint8_t *size);
+void sdfs_list_firmware (char list[][FF_MAX_LFN], uint8_t *size);
 
 bool sdfs_read_file_info (AudioFileInfo_t *info);
 bool sdfs_read_file (AudioFileInfo_t *info,

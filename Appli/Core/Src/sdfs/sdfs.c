@@ -5,10 +5,12 @@
 #define ROOT_DIR 		"/"
 #define ALARMS_DIR 		"/alarms"
 #define MESSAGES_DIR 		"/messages"
+#define FIRMWARE_DIR 		"/firmware"
 
 #define ROOT_DIR_PATH 		((TCHAR*)u"/")
 #define ALARMS_DIR_PATH 	((TCHAR*)u"/alarms")
 #define MESSAGES_DIR_PATH 	((TCHAR*)u"/messages")
+#define FIRMWARE_DIR_PATH 	((TCHAR*)u"/firmware")
 
 static FRESULT res;
 static DIR dir;
@@ -134,6 +136,16 @@ void sdfs_list_messages (char list[][FF_MAX_LFN], uint8_t *size)
   pos_path = snprintf(full_path, sizeof(full_path), "%s/", (char*) MESSAGES_DIR);
 
   sdfs_list_directory(MESSAGES_DIR_PATH, list, size);
+}
+
+void sdfs_list_firmware (char list[][FF_MAX_LFN], uint8_t *size)
+{
+  if (!sdfs_state.is_mounted)
+    return;
+
+  pos_path = snprintf(full_path, sizeof(full_path), "%s/", (char*) FIRMWARE_DIR);
+
+  sdfs_list_directory(FIRMWARE_DIR_PATH, list, size);
 }
 
 void sdfs_close_file (AudioFileInfo_t *info)

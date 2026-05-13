@@ -164,7 +164,7 @@ int main(void)
 #endif
 
   printf("Bootloader running...\r\n");
-  fw_update_process();
+//  fw_update_process();
   /* USER CODE END 2 */
 
   /* Launch the application */

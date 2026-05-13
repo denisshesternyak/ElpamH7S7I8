@@ -249,7 +249,7 @@ void MX_FREERTOS_Init (void)
   LoggerTaskHandle = osThreadNew(StartLoggerTask, NULL, &LoggerTask_attributes);
 
   /* creation of SDTask */
-//  SDTaskHandle = osThreadNew(StartSDTask, NULL, &SDTask_attributes);
+  SDTaskHandle = osThreadNew(StartSDTask, NULL, &SDTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 

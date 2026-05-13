@@ -69,6 +69,7 @@ Menu *alarm_info_menu = NULL;
 Menu *maintenanceMenu = NULL;
 Menu *clockMenu = NULL;
 Menu *languageMenu = NULL;
+Menu *softwareMenu = NULL;
 Menu *sinusMenu = NULL;
 Menu *sinusInfoMenu = NULL;
 Menu *motorolaInfoMenu = NULL;
@@ -147,6 +148,7 @@ static bool hot_key_handle_button (KeyEvent_t event);
 static void handle_button_press (KeyEvent_t event);
 static void clockMenu_handle_button_press (KeyEvent_t event);
 static void languageMenu_handle_button_press (KeyEvent_t event);
+static void softwareMenu_handle_button_press (KeyEvent_t event);
 //static void sinus_info_menu_handler(KeyEvent_t event);
 static void alarm_info_menu_handler (KeyEvent_t event);
 static void message_info_menu_handler (KeyEvent_t event);
@@ -175,6 +177,7 @@ static void display_menu_item (uint8_t visualIndex,
 static void menu_draw_image (Menu *m);
 static void MenuLoadSDCardMessages (void);
 static void MenuLoadSDCardSirens (void);
+static void MenuLoadSDCardSoftWare (void);
 static void prepare_announcement (void);
 static void prepare_sinuse_items (void);
 static void draw_menu_clock (void);
@@ -288,6 +291,7 @@ void menu_init (void)
   maintenanceMenu = &menuPool[menuPoolIndex++];
   clockMenu = &menuPool[menuPoolIndex++];
   languageMenu = &menuPool[menuPoolIndex++];
+  softwareMenu = &menuPool[menuPoolIndex++];
   sinusMenu = &menuPool[menuPoolIndex++];
   sinusInfoMenu = &menuPool[menuPoolIndex++];
   motorolaInfoMenu = &menuPool[menuPoolIndex++];
@@ -480,6 +484,12 @@ void menu_init (void)
 	      get_maintenance_menu_items_str(STR_LANGUAGES, LANG_HE) },
 	  .prepareAction = &menu_init_language,
 	  .submenu = languageMenu };
+  maintenanceMenu->items[2] = (MenuItem ) {
+	  .name = {
+	      get_maintenance_menu_items_str(STR_SOFTWARE_UPDATE, LANG_EN),
+	      get_maintenance_menu_items_str(STR_SOFTWARE_UPDATE, LANG_HE) },
+	  .prepareAction = &MenuLoadSDCardSoftWare,
+	  .submenu = softwareMenu };
   maintenanceMenu->itemCount = MAINTENCE_MENU_ITEM_COUNT;
 
   clockMenu->parent = maintenanceMenu;
@@ -493,6 +503,12 @@ void menu_init (void)
   languageMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_LANGUAGES, LANG_HE);
   languageMenu->type = MENU_TYPE_LIST;
   languageMenu->buttonHandler = languageMenu_handle_button_press;
+
+  softwareMenu->parent = maintenanceMenu;
+  softwareMenu->type = MENU_TYPE_LIST;
+  softwareMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_SOFTWARE, LANG_EN);
+  softwareMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_SOFTWARE, LANG_HE);
+  softwareMenu->buttonHandler = softwareMenu_handle_button_press;
 
   motorolaInfoMenu->parent = rootMenu;
   motorolaInfoMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MOTOROLA, LANG_EN);
@@ -643,6 +659,30 @@ void MenuLoadSDCardSirens (void)
   }
 
   sirenMenu->itemCount = count;
+}
+
+void MenuLoadSDCardSoftWare (void)
+{
+  if (!softwareMenu)
+    return;
+
+  clear_menu(softwareMenu);
+
+  uint8_t count = 0;
+  sdfs_list_firmware(listFilenames, &count);
+
+  for (uint8_t i = 0; i < count && i < MAX_MENU_ITEMS; ++i)
+  {
+    MenuItem *item = &softwareMenu->items[i];
+    for (uint8_t j = 0; j < LANG_COUNT; j++)
+    {
+      item->name[j] = listFilenames[i];
+    }
+    item->submenu = softwareMenu;
+//    item->prepareAction = &siren_info_prepare_action;
+  }
+
+  softwareMenu->itemCount = count;
 }
 
 void MenuLoadSDCardMessages (void)
@@ -1027,7 +1067,7 @@ static void display_menu_item (uint8_t visualIndex,
   FontDef *font = &Font_16x26;
   size_t len = (hx8357_get_width() - (MENU_BASE_X * 2)) / font->width;
 
-  if (currentMenu == languageMenu || currentMenu == maintenanceMenu || lang == LANG_EN)
+  if (currentMenu == languageMenu || lang == LANG_EN)
   {
     snprintf(upd_text, len, "%d. %s", index + 1, text);
     align = ALIGN_LEFT;
@@ -1214,14 +1254,20 @@ void draw_menuScreen (bool forceFullRedraw)
 //	LCD_WriteString(10, DEBUG_INFO_Y, debugInfo, &Font_7x10, COLOR_WHITE, COLOR_DARKGRAY);
 //}
 
-void draw_status_bar ()
+void draw_serial()
 {
   char serialStr[20];
+  const char* serial_str = get_service_str(STR_SERVICE_SERIAL_STR, GetLanguage());
+  snprintf(serialStr, sizeof(serialStr), "%s: %s", serial_str, SERIAL_NUMBER);
+  hx8357_write_alignedX_string(0, SERIAL_Y_POS, serialStr, &Font_11x18, COLOR_YELLOW, COLOR_BLACK, ALIGN_RIGHT);
+}
+
+void draw_status_bar ()
+{
 //	hx8357_fill_rect(0, 0, hx8357_get_width(), STATUS_BAR_LINE_Y_POS, COLOR_BLACK);
   hx8357_write_alignedX_string(0, LOGO_Y_POS, "EES-3000", &Font_16x26, COLOR_WHITE, COLOR_BLACK, ALIGN_LEFT);
 
-  snprintf(serialStr, sizeof(serialStr), "Serial: %s", SERIAL_NUMBER);
-  hx8357_write_alignedX_string(0, SERIAL_Y_POS, serialStr, &Font_11x18, COLOR_YELLOW, COLOR_BLACK, ALIGN_RIGHT);
+  draw_serial();
 
   hx8357_fill_rect(0, STATUS_BAR_LINE_Y_POS - 1, hx8357_get_width(), 1, COLOR_GRAY);
 }
@@ -1691,6 +1737,27 @@ static void languageMenu_handle_button_press (KeyEvent_t event)
     case BTN_ENTER:
       SetLanguage((Language) languageMenu->currentSelection);
       menu_init_language();
+      draw_serial();
+      draw_menuScreen(false);
+      return;
+    default:
+      break;
+  }
+  handle_button_press(event);
+}
+
+static void softwareMenu_handle_button_press (KeyEvent_t event)
+{
+  if (!softwareMenu || softwareMenu->itemCount == 0)
+    return;
+
+  switch (event.button)
+  {
+    case BTN_ENTER:
+//      SetLanguage((Language) softwareMenu->currentSelection);
+//      menu_init_language();
+//      draw_serial();
+      printf("softwareMenu_handle_button_press\r\n");
       draw_menuScreen(false);
       return;
     default:

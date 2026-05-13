@@ -5,7 +5,7 @@
 #include "cmsis_os.h"
 #include "app_freertos.h"
 #include "spi.h"
-
+#include <stdio.h>
 #define HSPI_HANDLER &hspi2
 
 static uint8_t dma_buffer[HX8357_BUFFER_SIZE] __attribute__((section(".extram")));
@@ -367,7 +367,7 @@ void hx8357_write_char (uint16_t x,
   osSemaphoreRelease(LcdBinarySemHandle);
 }
 
-void hx8357_write_string (uint16_t x,
+static void hx8357_write_string_ (uint16_t x,
 			  uint16_t y,
 			  const char *str,
 			  FontDef *font,
@@ -380,6 +380,50 @@ void hx8357_write_string (uint16_t x,
     x += font->width;
     str++;
   }
+}
+
+#include <string.h>
+
+static inline int is_hebrew_cp862(char c) {
+    unsigned char uc = (unsigned char)c;
+	//return (uc >= 0x80 && uc <= 0x9A) || uc == 0x9B || uc == 0x9C || uc == 0x9D || uc == 0x9E;
+    return (uc >= 0x80 && uc <= 0x9A);
+}
+
+static void reverse_string(char *start, int len) {
+    for (int i = 0; i < len/2; i++) {
+        char tmp = start[i];
+        start[i] = start[len-1-i];
+        start[len-1-i] = tmp;
+    }
+}
+
+static void reverse_hebrew_runs(char *s) {
+    int i = 0;
+    while (s[i]) {
+        if (is_hebrew_cp862(s[i])) {
+            int start = i;
+            while (s[i] && is_hebrew_cp862(s[i])) {
+                i++;
+            }
+            reverse_string(s + start, i - start);
+        } else {
+            i++;
+        }
+    }
+}
+
+void hx8357_write_string(uint16_t x, uint16_t y, const char *str,
+                            FontDef *font, uint16_t color, uint16_t bgcolor) {
+    if (!str) return;
+
+    char buf[64];
+    strncpy(buf, str, sizeof(buf)-1);
+    buf[sizeof(buf)-1] = '\0';
+
+    reverse_hebrew_runs(buf);
+
+    hx8357_write_string_(x, y, buf, font, color, bgcolor);
 }
 
 void hx8357_writeN_string (uint16_t x,
