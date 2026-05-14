@@ -453,7 +453,7 @@ static void audio_stop_sd (void)
 
   stop_playback();
 
-//  audiofs_close_file(&player.file_info);
+  sdfs_close_file(&player.file_info);
   memset(&player.file_info, 0, sizeof(player.file_info));
 }
 
