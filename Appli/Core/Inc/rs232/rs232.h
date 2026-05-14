@@ -37,7 +37,21 @@ typedef enum
   UART_EVENT_ANNOUNCEMENT_BTN,
   UART_EVENT_MESSAGE_BTN,
   UART_EVENT_ALARM_BTN,
-  UART_EVENT_ARM_BTN
+  UART_EVENT_ARM_BTN,
+
+  UART_EVENT_AMP1_BTN,
+  UART_EVENT_AMP2_BTN,
+  UART_EVENT_AMP3_BTN,
+  UART_EVENT_AMP4_BTN,
+  UART_EVENT_AMP5_BTN,
+  UART_EVENT_AMP6_BTN,
+  UART_EVENT_AMP7_BTN,
+  UART_EVENT_AMP8_BTN,
+  UART_EVENT_AMP9_BTN,
+  UART_EVENT_AMP10_BTN,
+  UART_EVENT_AMP_ON_BTN,
+  UART_EVENT_DRV_ON_BTN,
+  UART_EVENT_AMP_ST_BTN
 } UartEvent_t;
 
 typedef void (*rs232_cmd_handler_t) (UART_HandleTypeDef *huart);
@@ -75,5 +89,19 @@ void rs232_register_announc (rs232_cmd_handler_t handler);
 void rs232_register_message (rs232_cmd_handler_t handler);
 void rs232_register_almbtn (rs232_cmd_handler_t handler);
 void rs232_register_armbtn (rs232_cmd_handler_t handler);
+
+void rs232_register_amp_t1 (rs232_cmd_handler_t h);
+void rs232_register_amp_t2 (rs232_cmd_handler_t h);
+void rs232_register_amp_t3 (rs232_cmd_handler_t h);
+void rs232_register_amp_t4 (rs232_cmd_handler_t h);
+void rs232_register_amp_t5 (rs232_cmd_handler_t h);
+void rs232_register_amp_t6 (rs232_cmd_handler_t h);
+void rs232_register_amp_t7 (rs232_cmd_handler_t h);
+void rs232_register_amp_t8 (rs232_cmd_handler_t h);
+void rs232_register_amp_t9 (rs232_cmd_handler_t h);
+void rs232_register_amp_t10 (rs232_cmd_handler_t h);
+void rs232_register_amp_on (rs232_cmd_handler_t h);
+void rs232_register_drv_on (rs232_cmd_handler_t h);
+void rs232_register_amp_st (rs232_cmd_handler_t h);
 
 #endif /* INC_RS232_RS232_H_ */

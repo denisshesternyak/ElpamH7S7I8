@@ -36,4 +36,18 @@ void handle_message_command (UART_HandleTypeDef *huart);
 void handle_alarm_command (UART_HandleTypeDef *huart);
 void handle_arm_command (UART_HandleTypeDef *huart);
 
+void handle_amp_t1_command (UART_HandleTypeDef *huart);
+void handle_amp_t2_command (UART_HandleTypeDef *huart);
+void handle_amp_t3_command (UART_HandleTypeDef *huart);
+void handle_amp_t4_command (UART_HandleTypeDef *huart);
+void handle_amp_t5_command (UART_HandleTypeDef *huart);
+void handle_amp_t6_command (UART_HandleTypeDef *huart);
+void handle_amp_t7_command (UART_HandleTypeDef *huart);
+void handle_amp_t8_command (UART_HandleTypeDef *huart);
+void handle_amp_t9_command (UART_HandleTypeDef *huart);
+void handle_amp_t10_command (UART_HandleTypeDef *huart);
+void handle_amp_on_command (UART_HandleTypeDef *huart);
+void handle_drv_on_command (UART_HandleTypeDef *huart);
+void handle_amp_st_command (UART_HandleTypeDef *huart);
+
 #endif /* INC_RS232_COMMAND_DISPATCHER_H_ */

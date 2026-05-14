@@ -338,6 +338,20 @@ void StartUartTask (void *argument)
   rs232_register_almbtn(handle_alarm_command);
   rs232_register_armbtn(handle_arm_command);
 
+  rs232_register_amp_t1(handle_amp_t1_command);
+  rs232_register_amp_t2(handle_amp_t2_command);
+  rs232_register_amp_t3(handle_amp_t3_command);
+  rs232_register_amp_t4(handle_amp_t4_command);
+  rs232_register_amp_t5(handle_amp_t5_command);
+  rs232_register_amp_t6(handle_amp_t6_command);
+  rs232_register_amp_t7(handle_amp_t7_command);
+  rs232_register_amp_t8(handle_amp_t8_command);
+  rs232_register_amp_t9(handle_amp_t9_command);
+  rs232_register_amp_t10(handle_amp_t10_command);
+  rs232_register_amp_on(handle_amp_on_command);
+  rs232_register_drv_on(handle_drv_on_command);
+  rs232_register_amp_st(handle_amp_st_command);
+
   system_status_init();
   UartEvent_t event;
   /* Infinite loop */

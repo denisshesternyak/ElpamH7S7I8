@@ -45,6 +45,20 @@ static rs232_cmd_handler_t handler_message = NULL;
 static rs232_cmd_handler_t handler_almbtn = NULL;
 static rs232_cmd_handler_t handle_armbtn = NULL;
 
+static rs232_cmd_handler_t handle_amp_t1 = NULL;
+static rs232_cmd_handler_t handle_amp_t2 = NULL;
+static rs232_cmd_handler_t handle_amp_t3 = NULL;
+static rs232_cmd_handler_t handle_amp_t4 = NULL;
+static rs232_cmd_handler_t handle_amp_t5 = NULL;
+static rs232_cmd_handler_t handle_amp_t6 = NULL;
+static rs232_cmd_handler_t handle_amp_t7 = NULL;
+static rs232_cmd_handler_t handle_amp_t8 = NULL;
+static rs232_cmd_handler_t handle_amp_t9 = NULL;
+static rs232_cmd_handler_t handle_amp_t10 = NULL;
+static rs232_cmd_handler_t handle_amp_on = NULL;
+static rs232_cmd_handler_t handle_drv_on = NULL;
+static rs232_cmd_handler_t handle_amp_st = NULL;
+
 static void rs232a_rx_complete_callback (UART_HandleTypeDef *huart);
 static void call_or_default (rs232_cmd_handler_t h);
 static void call_or_default_unknown (void);
@@ -190,6 +204,46 @@ void rs232_process (UartEvent_t event)
     case UART_EVENT_ARM_BTN:
       call_or_default(handle_armbtn);
       break;
+
+    case UART_EVENT_AMP1_BTN:
+      call_or_default(handle_amp_t1);
+      break;
+    case UART_EVENT_AMP2_BTN:
+      call_or_default(handle_amp_t2);
+      break;
+    case UART_EVENT_AMP3_BTN:
+      call_or_default(handle_amp_t3);
+      break;
+    case UART_EVENT_AMP4_BTN:
+      call_or_default(handle_amp_t4);
+      break;
+    case UART_EVENT_AMP5_BTN:
+      call_or_default(handle_amp_t5);
+      break;
+    case UART_EVENT_AMP6_BTN:
+      call_or_default(handle_amp_t6);
+      break;
+    case UART_EVENT_AMP7_BTN:
+      call_or_default(handle_amp_t7);
+      break;
+    case UART_EVENT_AMP8_BTN:
+      call_or_default(handle_amp_t8);
+      break;
+    case UART_EVENT_AMP9_BTN:
+      call_or_default(handle_amp_t9);
+      break;
+    case UART_EVENT_AMP10_BTN:
+      call_or_default(handle_amp_t10);
+      break;
+    case UART_EVENT_AMP_ON_BTN:
+      call_or_default(handle_amp_on);
+      break;
+    case UART_EVENT_DRV_ON_BTN:
+      call_or_default(handle_drv_on);
+      break;
+    case UART_EVENT_AMP_ST_BTN:
+      call_or_default(handle_amp_st);
+      break;
   }
 }
 
@@ -294,7 +348,58 @@ static void process_command (char *cmd)
   {
     event = UART_EVENT_ARM_BTN;
   }
-
+  else if (strncmp(cmd, "*AMP_T1", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP1_BTN;
+  }
+  else if (strncmp(cmd, "*AMP_T2", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP2_BTN;
+  }
+  else if (strncmp(cmd, "*AMP_T3", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP3_BTN;
+  }
+  else if (strncmp(cmd, "*AMP_T4", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP4_BTN;
+  }
+  else if (strncmp(cmd, "*AMP_T5", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP5_BTN;
+  }
+  else if (strncmp(cmd, "*AMP_T6", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP6_BTN;
+  }
+  else if (strncmp(cmd, "*AMP_T7", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP7_BTN;
+  }
+  else if (strncmp(cmd, "*AMP_T8", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP8_BTN;
+  }
+  else if (strncmp(cmd, "*AMP_T9", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP9_BTN;
+  }
+  else if (strncmp(cmd, "*AMPT10", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP10_BTN;
+  }
+  else if (strncmp(cmd, "*AMP_ON", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP_ON_BTN;
+  }
+  else if (strncmp(cmd, "*DRV_ON", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_DRV_ON_BTN;
+  }
+  else if (strncmp(cmd, "*AMP_ST", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_AMP_ST_BTN;
+  }
   else if (strncmp(cmd, "*VOL", 4) == 0)
   {
     int d1 = (cmd[4] == ' ') ? 0 : (cmd[4] - '0');
@@ -450,4 +555,55 @@ void rs232_register_armbtn (rs232_cmd_handler_t h)
 {
   handle_armbtn = h;
 }
-
+void rs232_register_amp_t1 (rs232_cmd_handler_t h)
+{
+  handle_amp_t1 = h;
+}
+void rs232_register_amp_t2 (rs232_cmd_handler_t h)
+{
+  handle_amp_t2 = h;
+}
+void rs232_register_amp_t3 (rs232_cmd_handler_t h)
+{
+  handle_amp_t3 = h;
+}
+void rs232_register_amp_t4 (rs232_cmd_handler_t h)
+{
+  handle_amp_t4 = h;
+}
+void rs232_register_amp_t5 (rs232_cmd_handler_t h)
+{
+  handle_amp_t5 = h;
+}
+void rs232_register_amp_t6 (rs232_cmd_handler_t h)
+{
+  handle_amp_t6 = h;
+}
+void rs232_register_amp_t7 (rs232_cmd_handler_t h)
+{
+  handle_amp_t7 = h;
+}
+void rs232_register_amp_t8 (rs232_cmd_handler_t h)
+{
+  handle_amp_t8 = h;
+}
+void rs232_register_amp_t9 (rs232_cmd_handler_t h)
+{
+  handle_amp_t9 = h;
+}
+void rs232_register_amp_t10 (rs232_cmd_handler_t h)
+{
+  handle_amp_t10 = h;
+}
+void rs232_register_amp_on (rs232_cmd_handler_t h)
+{
+  handle_amp_on = h;
+}
+void rs232_register_drv_on (rs232_cmd_handler_t h)
+{
+  handle_drv_on = h;
+}
+void rs232_register_amp_st (rs232_cmd_handler_t h)
+{
+  handle_amp_st = h;
+}
