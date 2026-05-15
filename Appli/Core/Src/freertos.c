@@ -44,6 +44,7 @@
 #include "analog.h"
 #include "tests.h"
 #include "sdmmc.h"
+#include "metadata.h"
 
 /* USER CODE END Includes */
 
@@ -285,10 +286,18 @@ void StartDefaultTask (void *argument)
 //		  getRData(1, get_adc_value(ADC_CURRENT_MEAS)),
 //		  getRData(1, get_adc_value(ADC_AMPLIFIER_MEAS)),
 //		  getRData(1, get_adc_value(ADC_DRIVER_MEAS)));
-//  uint8_t count = 0;
+
+  uint8_t flag = 0;
+  const uint32_t last_time = osKernelGetTickCount();
   /* Infinite loop */
   for (;;)
   {
+    if (!flag && (osKernelGetTickCount() - last_time) > FW_SUCCESS_TIMEOUT)
+    {
+      metadata_status(FW_SUCCESS_UPDATE);
+      flag = 1;
+    }
+
     HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
 //    LOG_DEBUG("DefaultTask %d", count++);
     osDelay(500);

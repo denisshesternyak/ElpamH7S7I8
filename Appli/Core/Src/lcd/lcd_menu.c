@@ -27,6 +27,7 @@
 #include "sdfs.h"
 #include "analog.h"
 #include "system_status.h"
+#include "metadata.h"
 
 //bool isResetPasswordAfterIdle = false;
 
@@ -1754,10 +1755,25 @@ static void softwareMenu_handle_button_press (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_ENTER:
-//      SetLanguage((Language) softwareMenu->currentSelection);
-//      menu_init_language();
-//      draw_serial();
-      printf("softwareMenu_handle_button_press\r\n");
+//      softwareMenu->currentSelection;
+
+      MenuItem *item = &softwareMenu->items[softwareMenu->currentSelection];
+      if (!item || !item->submenu)
+        return;
+
+      const char *fw_src = item->name[softwareMenu->currentSelection];
+
+      if(!sdfs_prepare_to_update(fw_src, UPDATE_FILE))
+      {
+	printf("Copy failed with error\r\n");
+	return;
+      }
+      if(!metadata_update(UPDATE_FILE))
+      {
+	printf("Write metadata status failed\r\n");
+	return;
+      }
+
       draw_menuScreen(false);
       return;
     default:
@@ -1800,7 +1816,6 @@ static void draw_textFilename (void)
 
     hx8357_write_alignedX_string(0, TEXT_Y_POS, buffer, font, COLOR_MAGENTA, COLOR_BLACK, ALIGN_CENTER);
   }
-
 }
 
 static void check_playing_and_stop ()

@@ -1,16 +1,19 @@
 #include "sdfs.h"
 #include "logger.h"
 #include "defines.h"
+#include "i2c.h"
 
 #define ROOT_DIR 		"/"
 #define ALARMS_DIR 		"/alarms"
 #define MESSAGES_DIR 		"/messages"
 #define FIRMWARE_DIR 		"/firmware"
+#define BOOT_DIR 		"/boot"
 
 #define ROOT_DIR_PATH 		((TCHAR*)u"/")
 #define ALARMS_DIR_PATH 	((TCHAR*)u"/alarms")
 #define MESSAGES_DIR_PATH 	((TCHAR*)u"/messages")
 #define FIRMWARE_DIR_PATH 	((TCHAR*)u"/firmware")
+#define BOOT_DIR_PATH 		((TCHAR*)u"/boot")
 
 static FRESULT res;
 static DIR dir;
@@ -19,6 +22,16 @@ static WCHAR w_path[128];
 static char full_path[128];
 static int pos_path;
 static uint8_t temp_mono_buf[AUDIO_HALF_BUFFER_SIZE] __attribute__((section(".extram")));
+static BYTE buffer_copy[512] __attribute__((section(".extram")));
+static WCHAR w_src_path[128];
+static WCHAR w_dest_path[128];
+
+typedef struct
+{
+  uint32_t magic_number;
+  uint32_t total_size;
+  uint32_t total_crc;
+} FW_Header_t;
 
 static void sdfs_list_directory (const TCHAR *path,
 				 char list[][FF_MAX_LFN],
@@ -188,17 +201,22 @@ static bool sdfs_read_wav_header (AudioFileInfo_t *info)
   return true;
 }
 
+static void sdfs_convert_eom2uni(char *src, WCHAR *dest)
+{
+  int j = 0;
+  while (src[j] != 0 && j < 128)
+  {
+    dest[j] = ff_oem2uni(src[j], FF_CODE_PAGE);
+    j++;
+  }
+  dest[j] = '\0';
+}
+
 bool sdfs_read_file_info (AudioFileInfo_t *info)
 {
   snprintf(full_path + pos_path, sizeof(full_path) - pos_path, "%s", info->filename);
 
-  int j = 0;
-  while (full_path[j] != 0 && j < 128)
-  {
-    w_path[j] = ff_oem2uni(full_path[j], FF_CODE_PAGE);
-    j++;
-  }
-  w_path[j] = '\0';
+  sdfs_convert_eom2uni(full_path, w_path);
 
   res = f_open(&SDFile, (TCHAR*) w_path, FA_READ);
   if (res != FR_OK)
@@ -266,3 +284,61 @@ bool sdfs_read_file (AudioFileInfo_t *info,
 
   return true;
 }
+
+static FRESULT sdfs_copy_file (const WCHAR *src_path, const WCHAR *dst_path)
+{
+    FIL src_file, dst_file;
+    UINT bytes_read, bytes_written;
+    FRESULT res;
+
+    res = f_open(&src_file, src_path, FA_READ);
+    if (res != FR_OK)
+    {
+        return res;
+    }
+
+    res = f_open(&dst_file, dst_path, FA_WRITE | FA_CREATE_ALWAYS);
+    if (res != FR_OK)
+    {
+        f_close(&src_file);
+        return res;
+    }
+
+    while (1)
+    {
+        res = f_read(&src_file, buffer_copy, sizeof(buffer_copy), &bytes_read);
+        if (res != FR_OK || bytes_read == 0)
+            break;
+
+        res = f_write(&dst_file, buffer_copy, bytes_read, &bytes_written);
+        if (res != FR_OK || bytes_written != bytes_read)
+        {
+            res = FR_DISK_ERR;
+            break;
+        }
+    }
+
+    f_close(&src_file);
+    f_close(&dst_file);
+
+    return res;
+}
+
+bool sdfs_prepare_to_update (const char *src, const char *dest)
+{
+  char temp_path[64];
+
+  f_mkdir((const TCHAR*)BOOT_DIR_PATH);
+
+  snprintf(temp_path, sizeof(temp_path), "%s/%s", FIRMWARE_DIR, src);
+  sdfs_convert_eom2uni(temp_path, w_src_path);
+  snprintf(temp_path, sizeof(temp_path), "%s/%s", BOOT_DIR, dest);
+  sdfs_convert_eom2uni(temp_path, w_dest_path);
+
+//  f_unlink(w_dest_path);
+
+  res = sdfs_copy_file(w_src_path, w_dest_path);
+
+  return res == FR_OK;
+}
+
