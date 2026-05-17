@@ -20,7 +20,10 @@
 #include "main.h"
 #include "extmem_manager.h"
 #include "flash.h"
+#include "gpdma.h"
+#include "i2c.h"
 #include "sbs.h"
+#include "sdmmc.h"
 #include "usart.h"
 #include "xspi.h"
 #include "gpio.h"
@@ -146,6 +149,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPDMA1_Init();
   MX_FLASH_Init();
   MX_SBS_Init();
   MX_USART1_UART_Init();
@@ -154,6 +158,8 @@ int main(void)
   MX_UART5_Init();
   MX_UART7_Init();
   MX_UART4_Init();
+  MX_SDMMC1_SD_Init();
+  MX_I2C3_Init();
   MX_EXTMEM_MANAGER_Init();
   /* USER CODE BEGIN 2 */
 #ifdef SELFTEST
@@ -164,7 +170,7 @@ int main(void)
 #endif
 
   printf("Bootloader running...\r\n");
-//  fw_update_process();
+  fw_process();
   /* USER CODE END 2 */
 
   /* Launch the application */

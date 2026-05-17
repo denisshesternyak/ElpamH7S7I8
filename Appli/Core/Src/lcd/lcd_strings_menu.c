@@ -18,7 +18,7 @@ static const char* menu_header_str[][LANG_COUNT] = {
   { "### Maintenance ###", "### š‡†…—„ ###" },
   { "### Time and Date ###", "### ™’„ …š€˜‰Š ###" },
   { "### Language ###", "### ™”„ ###" },
-  { "### Software update ###", "### ’ƒ‹… „š…‹„ ###" },
+  { "### SW update v%d.%d ###", "### v%d.%d ’ƒ‹… „š…‹„ ###" },
   { "### Motorola ###", "### …ˆ…˜…Œ„ ###" }
 };
 const uint8_t MENU_HEADER_ITEM_COUNT = ARRAY_SIZE(menu_header_str);

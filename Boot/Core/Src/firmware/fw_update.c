@@ -1,331 +1,322 @@
-#include <firmware/fw_update.h>
-#include "usart.h"
-#include <string.h>
+#include "fw_update.h"
+#include "ff.h"
+#include "main.h"
+#include "sd_diskio.h"
 #include <stdio.h>
-#include <stdint.h>
+#include <string.h>
 #include <stdbool.h>
-#include "stm32_extmem.h"
-#include "stm32_extmem_conf.h"
-
-#define FW_UPDATE_HANDLER	&huart4
-
-#define FW_SALT "Elpam1234"
-#define SALT_LEN 9
-#define MAGIC_NUMBER 0xDEADBEEF
-#define MAGIC_SIZE 4
-
-static const uint32_t FW_SOF = 0xAAAAAAAA;
-static const uint32_t FW_EOF = 0x55555555;
-
-static uint8_t flash_buffer[EXT_FLASH_SECTOR_SIZE];
-static uint32_t buffer_index;
-static uint32_t current_addr_offset;
-static uint32_t total_decrypted_bytes = 0;
-static bool is_header;
+#include "extmem_manager.h"
+#include "i2c.h"
+#include "metadata.h"
 
 typedef struct
 {
   uint32_t magic_number;
   uint32_t total_size;
   uint32_t total_crc;
+  uint16_t ver_major;
+  uint16_t ver_minor;
 } FW_Header_t;
 
+#define FW_SALT 		"Elpam1234"
+#define MAGIC_NUMBER 		0xDEADBEEF
+#define SALT_SIZE 		(sizeof(FW_SALT) - 1)
+#define MAGIC_SIZE 		sizeof(MAGIC_NUMBER)
+
+#define FW_SLOT_OFFSET		0x01000000
+
+#define EXT_FLASH_SECTOR_SIZE  	0x1000U
+
+#define ROOT_DIR 		((TCHAR const*)"/")
+#define FIRMWARE_DIR 		((TCHAR const*)"/boot")
+#define FIRMWARE_BIN 		((TCHAR const*)"/boot/firmware.bin")
+
+static bool fw_erase_flash (uint32_t sectrors, uint32_t addr);
+static bool fw_write_flash (const uint8_t *data, uint32_t addr);
+static bool fw_read_flash (uint8_t *data, uint32_t addr);
+static bool fw_copy_flash (FW_slot_t slot);
+
+static FRESULT res;
+static FATFS SDFatFs;
+static FIL SDFile;
+char SDPath[4]; /* SD logical drive path */
+
+static TCHAR fw_path[64];
+static uint8_t flash_buffer[EXT_FLASH_SECTOR_SIZE];
+
 static FW_Header_t header;
+static uint32_t decrypt_offset = 0;
 
-static uint32_t packet_count = 0;
-static uint32_t error_count = 0;
-static uint32_t total_error_count = 0;
-static uint32_t total_bytes_received = 0;
-
-static uint8_t temp_byte;
-static uint8_t rx_buffer[RX_BUFFER_SIZE];
-static uint8_t tx_buffer[RX_BUFFER_SIZE];
-
-static bool is_received_packet;
-static uint16_t bytes_received = 0;
-
-static uint16_t fw_update_CRC16 (const uint8_t *data, uint16_t length);
-static void fw_update_send_packet (uint8_t cmd,
-				   const uint8_t *data,
-				   uint16_t len);
-static FW_STATUS fw_update_receive_packet (uint8_t *cmd,
-					   uint8_t *data,
-					   uint16_t *len,
-					   uint32_t timeout_ms);
-static void fw_update_callback (UART_HandleTypeDef *huart);
-static void fw_metadata_write (const uint8_t *data, uint16_t len);
-static void fw_metadata_finish_write ();
-
-typedef enum
+static void fw_update_xor_decrypt (uint8_t *data, uint16_t data_len)
 {
-  MAGIC_CHECK_NOT_STARTED = 0,
-  MAGIC_CHECK_PASSED = 1,
-  MAGIC_CHECK_FAILED = 2
-} MAGIC_STATUS;
+  const char *salt = FW_SALT;
+  uint8_t salt_len = SALT_SIZE;
 
-static void fw_metadata_write (const uint8_t *data, uint16_t len)
-{
-  while (len > 0)
-  {
-    uint16_t space_left = EXT_FLASH_SECTOR_SIZE - buffer_index;
-    uint16_t bytes_to_copy = (len < space_left) ? len : space_left;
-
-    memcpy(&flash_buffer[buffer_index], data, bytes_to_copy);
-    buffer_index += bytes_to_copy;
-    data += bytes_to_copy;
-    len -= bytes_to_copy;
-
-    if (buffer_index >= EXT_FLASH_SECTOR_SIZE)
-    {
-      EXTMEM_EraseSector(EXTMEMORY_1, current_addr_offset, EXT_FLASH_SECTOR_SIZE);
-      EXTMEM_Write(EXTMEMORY_1, current_addr_offset, flash_buffer, EXT_FLASH_SECTOR_SIZE);
-
-      current_addr_offset += EXT_FLASH_SECTOR_SIZE;
-      buffer_index = 0;
-    }
-  }
-}
-
-static void fw_metadata_finish_write ()
-{
-  if (buffer_index > 0)
-  {
-    EXTMEM_EraseSector(EXTMEMORY_1, current_addr_offset, EXT_FLASH_SECTOR_SIZE);
-    EXTMEM_Write(EXTMEMORY_1, current_addr_offset, flash_buffer, EXT_FLASH_SECTOR_SIZE);
-  }
-
-  current_addr_offset = 0;
-}
-
-static uint16_t fw_update_CRC16 (const uint8_t *data, uint16_t length)
-{
-  uint16_t crc = 0xFFFF;
-  for (uint16_t i = 0; i < length; i++)
-  {
-    crc ^= data[i];
-    for (uint8_t j = 0; j < 8; j++)
-    {
-      if (crc & 0x0001)
-	crc = (crc >> 1) ^ 0xA001;
-      else
-	crc >>= 1;
-    }
-  }
-  return crc;
-}
-
-void xor_decrypt_inline (uint8_t *data, uint16_t data_len)
-{
   for (uint16_t i = 0; i < data_len; i++)
   {
-    data[i] ^= FW_SALT[(total_decrypted_bytes + i) % SALT_LEN];
+    data[i] ^= salt[(decrypt_offset + i) % salt_len];
   }
+
+  decrypt_offset += data_len;
 }
 
-static void fw_update_send_packet (uint8_t cmd,
-				   const uint8_t *data,
-				   uint16_t len)
+static bool fw_erase_flash (uint32_t sectrors, uint32_t addr)
 {
-  uint16_t crc;
-  uint16_t idx = 0;
-
-  memcpy(&tx_buffer[idx], &FW_SOF, 4);
-  idx += 4;
-
-  tx_buffer[idx++] = cmd;
-  tx_buffer[idx++] = len & 0xFF;
-  tx_buffer[idx++] = (len >> 8) & 0xFF;
-
-  if (data && len > 0)
-  {
-    memcpy(&tx_buffer[idx], data, len);
-    idx += len;
-  }
-
-  crc = fw_update_CRC16(tx_buffer, idx);
-  tx_buffer[idx++] = crc & 0xFF;
-  tx_buffer[idx++] = (crc >> 8) & 0xFF;
-
-  memcpy(&tx_buffer[idx], &FW_EOF, 4);
-  idx += 4;
-
-//  HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, GPIO_PIN_SET);
-  HAL_UART_Transmit(FW_UPDATE_HANDLER, tx_buffer, idx, 100);
-//  HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, GPIO_PIN_RESET);
+  return EXTMEM_EraseSector(EXTMEMORY_1, addr, sectrors * EXT_FLASH_SECTOR_SIZE) == EXTMEM_OK;
 }
 
-//[FW_SOF:4] [CMD] [LEN:2] [DATA] [CRC16:2] [FW_EOF:4]
-static FW_STATUS fw_update_receive_packet (uint8_t *cmd,
-					   uint8_t *data,
-					   uint16_t *len,
-					   uint32_t timeout_ms)
+static bool fw_write_flash (const uint8_t *data, uint32_t addr)
 {
-  uint32_t start = HAL_GetTick();
-  uint16_t packet_len;
+  return EXTMEM_Write(EXTMEMORY_1, addr, data, EXT_FLASH_SECTOR_SIZE) == EXTMEM_OK;
+}
 
-  memset(rx_buffer, 0, RX_BUFFER_SIZE);
+static bool fw_read_flash (uint8_t *data, uint32_t addr)
+{
+  return EXTMEM_Read(EXTMEMORY_1, addr, data, EXT_FLASH_SECTOR_SIZE) == EXTMEM_OK;
+}
 
-  is_received_packet = false;
-
-  while (HAL_GetTick() - start < timeout_ms && !is_received_packet)
-  {
-    HAL_Delay(1);
-  }
-
-//  printf("Recived data:\r\n");
-//  for(int i = 0; i < bytes_received; i++)
+//static void sdfs_list_directory ()
+//{
+//  DIR dir;
+//  FILINFO fno;
+//  res = f_opendir(&dir, FIRMWARE_DIR);
+//  if (res != FR_OK)
 //  {
-//    printf("0x%02x ", rx_buffer[i]);
+//    return;
 //  }
-//  printf("\r\n");
+//
+//  for (uint8_t item = 0; item < 10; item++)
+//  {
+//    res = f_readdir(&dir, &fno);
+//    if (res != FR_OK || fno.fname[0] == 0)
+//      break;
+//
+//    if (fno.fname[0] == '.' || strcmp(fno.fname, "System Volume Information") == 0)
+//      continue;
+//
+//    if (fno.fattrib & AM_DIR)
+//    {
+//      printf(" [DIR]  %s\r\n", fno.fname);
+//    }
+//    else
+//    {
+//      printf(" [FILE] %s  (%lu bytes)\r\n", fno.fname, fno.fsize);
+//    }
+//  }
+//  f_closedir(&dir);
+//}
 
-  if (!is_received_packet)
-    return FW_NSIZE;
-
-  if (memcmp(rx_buffer, &FW_SOF, 4) != 0)
-    return FW_NSOF;
-
-  packet_len = rx_buffer[5] | (rx_buffer[6] << 8);
-  if (packet_len > MAX_PACKET_DATA)
-    return FW_NSIZE;
-
-  if (memcmp(&rx_buffer[bytes_received - 4], &FW_EOF, 4) != 0)
-    return FW_NEOF;
-
-  uint16_t received_crc = rx_buffer[bytes_received - 6] | (rx_buffer[bytes_received - 5] << 8);
-  uint16_t calc_crc = fw_update_CRC16(rx_buffer, bytes_received - 6);
-
-  if (calc_crc != received_crc)
-    return FW_NCRC;
-
-  *cmd = rx_buffer[4];
-  *len = packet_len;
-  if (packet_len > 0 && data != NULL)
-    memcpy(data, &rx_buffer[7], packet_len);
-
-  bytes_received = 0;
-  error_count = 0;
-
-  return FW_OK;
-}
-
-static bool fw_update_check_cmd (uint8_t cmd, uint8_t *data, uint16_t len)
+static bool fw_read_header ()
 {
-  switch (cmd)
-  {
-    case CMD_DATA_PACKET:
-      packet_count++;
-      total_bytes_received += len;
+  uint16_t len = sizeof(FW_Header_t);
+  uint16_t bytes_read = 0;
+  decrypt_offset = 0;
 
-      xor_decrypt_inline(data, len);
-      total_decrypted_bytes += len;
+  res = f_read(&SDFile, &header, (UINT) len, (UINT*) &bytes_read);
+  if (res != FR_OK)
+    return false;
 
-      if (!is_header)
-      {
-	uint16_t header_len = sizeof(FW_Header_t);
-	if (len < header_len)
-	{
-	  printf("Error: Packet too small for header\r\n");
-	  return false;
-	}
-	memcpy(&header, data, header_len);
+  fw_update_xor_decrypt((uint8_t*) &header, len);
 
-	if (header.magic_number != MAGIC_NUMBER)
-	{
-	  fw_update_send_packet(CMD_NMAGIC, NULL, 0);
-	  printf("Firmware is invalid, magic number: 0x%lx\r\n", header.magic_number);
-	  break;
-	}
+  if (header.magic_number != MAGIC_NUMBER)
+    return false;
 
-	printf("Size FW %ld, CRC 0x%04lx\r\n", header.total_size, header.total_crc);
+  decrypt_offset = sizeof(FW_Header_t);
+  printf("MN: 0x%04lx, size: 0x%lx, ver %d.%d\r\n", header.magic_number, header.total_size, header.ver_major, header.ver_minor);
 
-	fw_metadata_write(&data[header_len], len - header_len);
-	is_header = true;
-      }
-      else
-      {
-	fw_metadata_write(data, len);
-      }
-
-      fw_update_send_packet(CMD_ACK, NULL, 0);
-      break;
-
-    case CMD_END_UPDATE:
-      fw_metadata_finish_write();
-      fw_update_send_packet(CMD_ACK, NULL, 0);
-      return false;
-
-    default:
-      error_count++;
-      total_error_count++;
-      fw_update_send_packet(CMD_NACK, NULL, 0);
-  }
   return true;
 }
 
-void fw_update_process (void)
+static bool fw_update_fw (void)
 {
-  uint8_t cmd;
-  uint16_t len;
-  uint8_t data[MAX_PACKET_DATA];
-  FW_STATUS status;
+  uint16_t bytes_read = 0;
+  uint32_t total_bytes = 0;
+  uint32_t addr_offset_write = 0;
 
-  usart_register_rx_callback(FW_UPDATE_HANDLER, fw_update_callback);
-  HAL_UART_Receive_IT(FW_UPDATE_HANDLER, &temp_byte, 1);
+  printf("Start writing to external flash...\r\n");
 
-  current_addr_offset = 0;
-  buffer_index = 0;
+  uint32_t sectrors = (header.total_size / EXT_FLASH_SECTOR_SIZE) + 1;
+  if (!fw_erase_flash(sectrors, addr_offset_write))
+    return false;
 
-  memset(&header, 0, sizeof(header));
-
-  fw_update_send_packet(CMD_READY, NULL, 0);
-
-  while (error_count < MAX_ERROR_COUNT)
+  while (1)
   {
-    status = fw_update_receive_packet(&cmd, data, &len, 3000);
+    res = f_read(&SDFile, flash_buffer, EXT_FLASH_SECTOR_SIZE, (UINT*) &bytes_read);
+    if (res != FR_OK)
+      return false;
 
-    if (status != 0)
-    {
-      bytes_received = 0;
-      error_count++;
-      total_error_count++;
-      fw_update_send_packet(CMD_NACK, NULL, 0);
-      printf("Packet receive error: %d\r\n", status);
-      continue;
-    }
-
-    if (!fw_update_check_cmd(cmd, data, len))
-    {
+    if (bytes_read == 0)
       break;
-    }
+
+    fw_update_xor_decrypt(flash_buffer, bytes_read);
+
+    if (bytes_read < EXT_FLASH_SECTOR_SIZE)
+      memset(flash_buffer + bytes_read, 0xFF, EXT_FLASH_SECTOR_SIZE - bytes_read);
+
+    if (!fw_write_flash(flash_buffer, addr_offset_write))
+      return false;
+
+    addr_offset_write += EXT_FLASH_SECTOR_SIZE;
+    total_bytes += bytes_read;
+
+    printf("Written: %lu / %lu bytes\r\n", total_bytes, header.total_size);
   }
 
-  uint8_t stats[12];
-  memcpy(&stats[0], &packet_count, 4);
-  memcpy(&stats[4], &total_error_count, 4);
-  memcpy(&stats[8], &total_bytes_received, 4);
-
-  fw_update_send_packet(CMD_STATISTIC, stats, 12);
-
-  printf("Update finished. Packets: %lu, Errors: %lu, Bytes: %lu\r\n", packet_count, total_error_count, total_bytes_received);
+  return true;
 }
 
-static void fw_update_callback (UART_HandleTypeDef *huart)
+static bool fw_copy_flash (FW_slot_t slot)
 {
-  rx_buffer[bytes_received++] = temp_byte;
+  uint32_t total_bytes = 0;
+  uint32_t addr_offset_read = 0;
+  uint32_t addr_offset_write = 0;
 
-  if (bytes_received == 4 && memcmp(rx_buffer, &FW_SOF, 4) != 0)
+  uint32_t total_size = 0;
+  uint32_t total_crc = 0;
+
+  switch (slot)
   {
-    bytes_received = 0;
-  }
-  else if (bytes_received >= 8 && memcmp(&rx_buffer[bytes_received - 4], &FW_EOF, 4) == 0)
-  {
-    is_received_packet = true;
-  }
-  else if (bytes_received >= RX_BUFFER_SIZE)
-  {
-    bytes_received = 0;
+    case FROM_A_TO_B:
+      addr_offset_write = FW_SLOT_OFFSET;
+      total_size = header.total_size;
+      total_crc = header.total_crc;
+      eeprom.total_size_slot_b = total_size;
+      eeprom.crc_slot_b = total_crc;
+      break;
+    case FROM_B_TO_A:
+      addr_offset_read = FW_SLOT_OFFSET;
+      total_size = eeprom.total_size_slot_b;
+      total_crc = eeprom.crc_slot_b;
+      eeprom.total_size_slot_a = total_size;
+      eeprom.crc_slot_a = total_crc;
+      break;
   }
 
-  HAL_UART_Receive_IT(FW_UPDATE_HANDLER, &temp_byte, 1);
+  uint32_t sectrors = (total_size / EXT_FLASH_SECTOR_SIZE) + 1;
+  if (!fw_erase_flash(sectrors, addr_offset_write))
+    return false;
+
+  printf("Start copy to flash...\r\n");
+
+  while (total_bytes < total_size)
+  {
+    uint32_t bytes_to_copy = EXT_FLASH_SECTOR_SIZE;
+    if (total_bytes + bytes_to_copy > total_size)
+      bytes_to_copy = total_size - total_bytes;
+
+    if (!fw_read_flash(flash_buffer, addr_offset_read))
+      return false;
+
+    if (!fw_write_flash(flash_buffer, addr_offset_write))
+      return false;
+
+    addr_offset_read += EXT_FLASH_SECTOR_SIZE;
+    addr_offset_write += EXT_FLASH_SECTOR_SIZE;
+    total_bytes += bytes_to_copy;
+
+    printf("Written: %lu / %lu bytes\r\n", total_bytes, total_size);
+  }
+
+  return true;
 }
+
+void fw_process ()
+{
+  if (!metadata_read())
+  {
+      snprintf(fw_path, sizeof(fw_path), "%s", FIRMWARE_BIN);
+  }
+  else
+  {
+      snprintf(fw_path, sizeof(fw_path), "%s/%.12s", FIRMWARE_DIR, eeprom.name);
+  }
+
+  fw_path[sizeof(fw_path) - 1] = '\0';
+
+  printf("Firmware path: '%s'\r\n", fw_path);
+
+  switch (eeprom.flag)
+  {
+    case FW_NO_UPDATES:
+    case FW_SUCCESS_UPDATE:
+      printf("No need for updating\r\n");
+      return;
+    case FW_UPDATED:
+    case FW_BAD_UPDATE:
+      if (!fw_copy_flash(FROM_B_TO_A))
+      {
+	eeprom.flag = (uint32_t) FW_NO_UPDATES;
+	metadata_write();
+	printf("FW rollback failed\r\n");
+	return;
+      }
+
+      eeprom.flag = (uint32_t) FW_UPDATED;
+      eeprom.len = 0;
+      memset(eeprom.name, 0, sizeof(eeprom.name));
+      metadata_write();
+
+      printf("FW rollback success\r\n");
+      return;
+  }
+
+  if (HAL_GPIO_ReadPin(SD_DETECT_GPIO_Port, SD_DETECT_Pin) == GPIO_PIN_RESET)
+  {
+    printf("SD not detected\r\n");
+    return;
+  }
+
+  if (FATFS_LinkDriver(&SD_Driver, SDPath))
+  {
+    printf("Failed FATFS_LinkDriver\r\n");
+    return;
+  }
+
+  if (f_mount(&SDFatFs, SDPath, 1) != FR_OK)
+  {
+    printf("Failed mounting\r\n");
+    return;
+  }
+
+//  sdfs_list_directory();
+
+  res = f_open(&SDFile, fw_path, FA_READ);
+  if (res != FR_OK)
+  {
+    printf("Failed open\r\n");
+    return;
+  }
+
+  if (!fw_read_header())
+  {
+    printf("Failed read header\r\n");
+    f_close(&SDFile);
+    return;
+  }
+
+  if (!fw_copy_flash(FROM_A_TO_B))
+  {
+    printf("FW reserve copy failed\r\n");
+  }
+
+  if (!fw_update_fw())
+  {
+    eeprom.flag = (uint32_t) FW_BAD_UPDATE;
+    printf("FW update failure\r\n");
+  }
+  else
+  {
+    eeprom.flag = (uint32_t) FW_UPDATED;
+    printf("FW updated success!\r\n");
+  }
+
+  eeprom.len = 0;
+  memset(eeprom.name, 0, sizeof(eeprom.name));
+  metadata_write();
+
+  f_unlink(fw_path);
+
+  f_close(&SDFile);
+  f_mount(NULL, SDPath, 1);
+}
+

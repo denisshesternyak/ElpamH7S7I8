@@ -1,19 +1,19 @@
+# python fw_protect.py ElpamH7S7I8_Appli.bin Elpam1234
+# python fw_protect.py ..\Appli\Debug\ElpamH7S7I8_Appli.bin Elpam1234 -o ElpamH7S7I8_Appli_protected.bin
+
 import argparse
 import struct
-import crcmod
+import zlib
 
 MAGIC_NUMBER = 0xDEADBEEF
-
-crc16_func = crcmod.mkCrcFun(0x18005, rev=True, initCrc=0xFFFF, xorOut=0x0000)
+VER_MAJOR = 1
+VER_MINOR = 8
 
 def generate_key(salt: bytes, length: int) -> bytes:
     key = bytearray()
     while len(key) < length:
         key.extend(salt)
     return key[:length]
-    
-def calc_crc(data: bytes) -> int:
-        return crc16_func(data)
 
 def protect_firmware(input_file: str, output_file: str, salt: str):
     salt_bytes = salt.encode('utf-8')
@@ -22,10 +22,10 @@ def protect_firmware(input_file: str, output_file: str, salt: str):
         firmware = f.read()
     
     total_size = len(firmware)
-    fw_crc16 = calc_crc(firmware)
-
-    print(f"File: {total_size/1024:.1f} KB | CRC16 = 0x{fw_crc16:04X}\n")
-    header = struct.pack('<III', MAGIC_NUMBER, total_size, fw_crc16)
+    fw_crc32 = zlib.crc32(firmware) & 0xFFFFFFFF
+  
+    print(f"File: {total_size/1024:.1f} KB | CRC16 = 0x{fw_crc32:04X}\n")
+    header = struct.pack('<IIIHH', MAGIC_NUMBER, total_size, fw_crc32, VER_MAJOR, VER_MINOR)
     
     data_with_magic = header + firmware
     

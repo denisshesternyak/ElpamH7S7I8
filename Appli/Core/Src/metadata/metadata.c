@@ -2,6 +2,7 @@
 #include "i2c.h"
 #include <string.h>
 #include <stdio.h>
+#include "defines.h"
 
 #define EEPROM_HANDLER		&hi2c3
 #define EEPROM_ADDR		0xA0
@@ -41,6 +42,8 @@ bool metadata_status(FW_status_t status)
   if(eeprom.flag == status)
     return false;
 
+  printf("Confirmed and run version %d.%d\r\n", VER_MAJOR, VER_MINOR);
+
   eeprom.flag = (uint32_t)status;
   eeprom.len = 0;
   memset(eeprom.name, 0, sizeof(eeprom.name));
@@ -60,9 +63,20 @@ bool metadata_update(const char *dest)
   eeprom.len = strlen(dest);
   memcpy(eeprom.name, dest, eeprom.len > 12 ? 12 : eeprom.len);
 
+  printf("flag %ld, len %ld, %s\r\n", eeprom.flag, eeprom.len, eeprom.name);
+
   if(!metadata_write())
     return false;
 
   return true;
 }
 
+bool metadata_get_version(uint16_t *major, uint16_t *minor)
+{
+  if(!metadata_read())
+      return false;
+
+  *major = eeprom.ver_major;
+  *minor = eeprom.ver_minor;
+  return true;
+}

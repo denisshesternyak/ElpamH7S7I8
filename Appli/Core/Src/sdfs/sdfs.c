@@ -332,10 +332,9 @@ bool sdfs_prepare_to_update (const char *src, const char *dest)
 
   snprintf(temp_path, sizeof(temp_path), "%s/%s", FIRMWARE_DIR, src);
   sdfs_convert_eom2uni(temp_path, w_src_path);
+
   snprintf(temp_path, sizeof(temp_path), "%s/%s", BOOT_DIR, dest);
   sdfs_convert_eom2uni(temp_path, w_dest_path);
-
-//  f_unlink(w_dest_path);
 
   res = sdfs_copy_file(w_src_path, w_dest_path);
 

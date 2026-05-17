@@ -679,12 +679,11 @@ void MenuLoadSDCardSoftWare (void)
     {
       item->name[j] = listFilenames[i];
     }
-    item->submenu = softwareMenu;
-//    item->prepareAction = &siren_info_prepare_action;
   }
 
   softwareMenu->itemCount = count;
 }
+
 
 void MenuLoadSDCardMessages (void)
 {
@@ -769,7 +768,7 @@ void menu_init_language (void)
 
     for (uint8_t j = 0; j < LANG_COUNT; j++)
     {
-      languageMenu->items[i].name[j] = listFilenames[i];
+     languageMenu->items[i].name[j] = listFilenames[i];
     }
   }
 
@@ -1173,7 +1172,14 @@ void draw_menuScreen (bool forceFullRedraw)
     const char *text = currentMenu->screenText[GetLanguage()];
     if (text)
     {
-      hx8357_write_alignedX_string(0, TITLE_MENU_Y_POS, text, &Font_16x26, COLOR_WHITE, bg_color, ALIGN_CENTER);
+      if(currentMenu == softwareMenu)
+      {
+	char buf_ver[32];
+	snprintf(buf_ver, sizeof(buf_ver), text, VER_MAJOR, VER_MINOR);
+	hx8357_write_alignedX_string(0, TITLE_MENU_Y_POS, buf_ver, &Font_16x26, COLOR_WHITE, bg_color, ALIGN_CENTER);
+      }
+      else
+	hx8357_write_alignedX_string(0, TITLE_MENU_Y_POS, text, &Font_16x26, COLOR_WHITE, bg_color, ALIGN_CENTER);
     }
   }
 
@@ -1755,13 +1761,11 @@ static void softwareMenu_handle_button_press (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_ENTER:
-//      softwareMenu->currentSelection;
-
       MenuItem *item = &softwareMenu->items[softwareMenu->currentSelection];
-      if (!item || !item->submenu)
+      if (!item)
         return;
 
-      const char *fw_src = item->name[softwareMenu->currentSelection];
+      const char *fw_src = item->name[GetLanguage()];
 
       if(!sdfs_prepare_to_update(fw_src, UPDATE_FILE))
       {
