@@ -45,6 +45,7 @@
 #include "tests.h"
 #include "sdmmc.h"
 #include "metadata.h"
+#include "iwdg.h"
 
 /* USER CODE END Includes */
 
@@ -321,6 +322,8 @@ void StartDefaultTask(void *argument)
       metadata_status_update(FW_OK);
       flag = 1;
     }
+
+    HAL_IWDG_Refresh(&hiwdg);
 
     HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
 //    LOG_DEBUG("DefaultTask %d", count++);

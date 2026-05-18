@@ -274,256 +274,256 @@ void InitMenuPool (void)
 
 void menu_init (void)
 {
-//  InitMenuPool();
+  InitMenuPool();
+
+//	passwordMenu = &menuPool[menuPoolIndex++];
+  idleMenu = &menuPool[menuPoolIndex++];
+  rootMenu = &menuPool[menuPoolIndex++];
+  sirenMenu = &menuPool[menuPoolIndex++];
+  alarm_info_menu = &menuPool[menuPoolIndex++];
+  messagesMenu = &menuPool[menuPoolIndex++];
+  messagePlayMenu = &menuPool[menuPoolIndex++];
+  announcementMenu = &menuPool[menuPoolIndex++];
+  testMenu = &menuPool[menuPoolIndex++];
+  batteriesTestMenu = &menuPool[menuPoolIndex++];
+  apmplifiresTestMunu = &menuPool[menuPoolIndex++];
+  driversTestMenu = &menuPool[menuPoolIndex++];
+  reportMenu = &menuPool[menuPoolIndex++];
+  maintenanceMenu = &menuPool[menuPoolIndex++];
+  clockMenu = &menuPool[menuPoolIndex++];
+  languageMenu = &menuPool[menuPoolIndex++];
+  softwareMenu = &menuPool[menuPoolIndex++];
+  sinusMenu = &menuPool[menuPoolIndex++];
+  sinusInfoMenu = &menuPool[menuPoolIndex++];
+  motorolaInfoMenu = &menuPool[menuPoolIndex++];
+
+//	passwordMenu->type = MENU_TYPE_PASSWORD;
+//	passwordMenu->parent = rootMenu;
+//	passwordMenu->buttonHandler = passwordMenu_handle_button_press;
 //
-////	passwordMenu = &menuPool[menuPoolIndex++];
-//  idleMenu = &menuPool[menuPoolIndex++];
-//  rootMenu = &menuPool[menuPoolIndex++];
-//  sirenMenu = &menuPool[menuPoolIndex++];
-//  alarm_info_menu = &menuPool[menuPoolIndex++];
-//  messagesMenu = &menuPool[menuPoolIndex++];
-//  messagePlayMenu = &menuPool[menuPoolIndex++];
-//  announcementMenu = &menuPool[menuPoolIndex++];
-//  testMenu = &menuPool[menuPoolIndex++];
-//  batteriesTestMenu = &menuPool[menuPoolIndex++];
-//  apmplifiresTestMunu = &menuPool[menuPoolIndex++];
-//  driversTestMenu = &menuPool[menuPoolIndex++];
-//  reportMenu = &menuPool[menuPoolIndex++];
-//  maintenanceMenu = &menuPool[menuPoolIndex++];
-//  clockMenu = &menuPool[menuPoolIndex++];
-//  languageMenu = &menuPool[menuPoolIndex++];
-//  softwareMenu = &menuPool[menuPoolIndex++];
-//  sinusMenu = &menuPool[menuPoolIndex++];
-//  sinusInfoMenu = &menuPool[menuPoolIndex++];
-//  motorolaInfoMenu = &menuPool[menuPoolIndex++];
+//	///////////////////////////////////////////////////////////////////////
+  idleMenu->parent = idleMenu;
+  idleMenu->type = MENU_TYPE_IDLE;
+  idleMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_FAULT_IND, LANG_EN);
+  idleMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_FAULT_IND, LANG_HE);
+  idleMenu->buttonHandler = idle_menu_handler;
+
+//	///////////////////////////////////////////////
+  rootMenu->parent = idleMenu;
+  rootMenu->type = MENU_TYPE_LIST;
+  rootMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MENU, LANG_EN);
+  rootMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MENU, LANG_HE);
+  rootMenu->buttonHandler = handle_button_press;
+  rootMenu->items[0] = (MenuItem ) {
+	  .name = {
+	      get_root_menu_items_str(STR_ROOT_ITEM_SIREN, LANG_EN),
+	      get_root_menu_items_str(STR_ROOT_ITEM_SIREN, LANG_HE) },
+	  .prepareAction = &MenuLoadSDCardSirens,
+	  .submenu = sirenMenu };
+  rootMenu->items[1] = (MenuItem ) {
+	  .name = {
+	      get_root_menu_items_str(STR_ROOT_ITEM_MESSAGES, LANG_EN),
+	      get_root_menu_items_str(STR_ROOT_ITEM_MESSAGES, LANG_HE) },
+	  .prepareAction = &MenuLoadSDCardMessages,
+	  .submenu = messagesMenu };
+  rootMenu->items[2] = (MenuItem ) {
+	  .name = {
+	      get_root_menu_items_str(STR_ROOT_ITEM_ANNOUNCEMENT, LANG_EN),
+	      get_root_menu_items_str(STR_ROOT_ITEM_ANNOUNCEMENT, LANG_HE) },
+	  .prepareAction = &prepare_announcement,
+	  .submenu = announcementMenu };
+  rootMenu->items[3] = (MenuItem ) {
+	  .name = {
+	      get_root_menu_items_str(STR_ROOT_ITEM_TESTS, LANG_EN),
+	      get_root_menu_items_str(STR_ROOT_ITEM_TESTS, LANG_HE) },
+	  .submenu = testMenu };
+  rootMenu->items[4] = (MenuItem ) {
+	  .name = {
+	      get_root_menu_items_str(STR_ROOT_ITEM_REPORT, LANG_EN),
+	      get_root_menu_items_str(STR_ROOT_ITEM_REPORT, LANG_HE) },
+	  .submenu = reportMenu };
+  rootMenu->items[5] = (MenuItem ) {
+	  .name = {
+	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_EN),
+	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_HE) },
+	  .submenu = maintenanceMenu };
+  rootMenu->itemCount = ROOT_MENU_ITEM_COUNT;
+
+//    /////////////////////////////////////////
+  // "Siren"
+  sirenMenu->parent = rootMenu;
+  sirenMenu->type = MENU_TYPE_LIST;
+  sirenMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_SIREN, LANG_EN);
+  sirenMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_SIREN, LANG_HE);
+  sirenMenu->buttonHandler = handle_button_press;
+
+  alarm_info_menu->parent = sirenMenu;
+  alarm_info_menu->type = MENU_TYPE_SIREN_INFO;
+  alarm_info_menu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_ALARM_INFO, LANG_EN);
+  alarm_info_menu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_ALARM_INFO, LANG_HE);
+  alarm_info_menu->buttonHandler = alarm_info_menu_handler;
+
+//    //-----------------------------------------------------------------------------------------------------------
+  messagesMenu->parent = rootMenu;
+  messagesMenu->type = MENU_TYPE_LIST;
+  messagesMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MESSAGES, LANG_EN);
+  messagesMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MESSAGES, LANG_HE);
+  messagesMenu->buttonHandler = handle_button_press;
+
+  // play message
+  messagePlayMenu->parent = messagesMenu;
+  messagePlayMenu->type = MENU_TYPE_MESSAGE_PLAY;
+  messagePlayMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_PLAY_MESSAGES, LANG_EN);
+  messagePlayMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_PLAY_MESSAGES, LANG_HE);
+  messagePlayMenu->imageData = &menu_speaker_img;
+  messagePlayMenu->buttonHandler = message_info_menu_handler;
+
+//    //-----------------------------------------------------------------------------------------------------------
+  announcementMenu->parent = rootMenu;
+  announcementMenu->currentSelection = 0;
+  announcementMenu->itemCount = 0;
+  announcementMenu->scrollOffset = 0;
+  announcementMenu->type = MENU_TYPE_ANNOUNCEMENT;
+  announcementMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_ANNOUNCEMENT, LANG_EN);
+  announcementMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_ANNOUNCEMENT, LANG_HE);
+  announcementMenu->imageData = &menu_microfon_img;
+  announcementMenu->buttonHandler = volume_control_handler;
+
+  testMenu->parent = rootMenu;
+  testMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_TEST, LANG_EN);
+  testMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_TEST, LANG_HE);
+  testMenu->type = MENU_TYPE_LIST;
+  testMenu->buttonHandler = handle_button_press;
+  testMenu->items[0] = (MenuItem ) {
+	  .name = {
+	      get_test_menu_items_str(STR_TEST_ITEM_SILENT_TEST, LANG_EN),
+	      get_test_menu_items_str(STR_TEST_ITEM_SILENT_TEST, LANG_HE) },
+	  .postAction = &RunSilentTest };
+  testMenu->items[1] = (MenuItem ) {
+	  .name = {
+	      get_test_menu_items_str(STR_TEST_ITEM_BATTERIES_TEST, LANG_EN),
+	      get_test_menu_items_str(STR_TEST_ITEM_BATTERIES_TEST, LANG_HE) },
+	  .postAction = &RunBatteriesTest,
+	  .submenu = batteriesTestMenu };
+  testMenu->items[2] = (MenuItem ) {
+	  .name = {
+	      get_test_menu_items_str(STR_TEST_ITEM_APLIFIERS_TEST, LANG_EN),
+	      get_test_menu_items_str(STR_TEST_ITEM_APLIFIERS_TEST, LANG_HE) },
+	  .postAction = &RunAmplifiresTest,
+	  .submenu = apmplifiresTestMunu };
+  testMenu->items[3] = (MenuItem ) {
+	  .name = {
+	      get_test_menu_items_str(STR_TEST_ITEM_DRIVERS_TEST, LANG_EN),
+	      get_test_menu_items_str(STR_TEST_ITEM_DRIVERS_TEST, LANG_HE) },
+	  .postAction = &RunDriversTest,
+	  .submenu = driversTestMenu };
+  testMenu->items[4] = (MenuItem ) {
+	  .name = {
+	      get_test_menu_items_str(STR_TEST_ITEM_SINUS_TEST, LANG_EN),
+	      get_test_menu_items_str(STR_TEST_ITEM_SINUS_TEST, LANG_HE) },
+	  .prepareAction = &prepare_sinuse_items,
+	  .submenu = sinusMenu };
+  testMenu->itemCount = TEST_MENU_ITEM_COUNT;
+
+//	//---------------------------------------------------------------
+  batteriesTestMenu->parent = testMenu;
+  batteriesTestMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_BATTERIES_TEST, LANG_EN);
+  batteriesTestMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_BATTERIES_TEST, LANG_HE);
+  batteriesTestMenu->type = MENU_TYPE_TEST_BAT;
+  batteriesTestMenu->buttonHandler = handle_button_press;
+
 //
-////	passwordMenu->type = MENU_TYPE_PASSWORD;
-////	passwordMenu->parent = rootMenu;
-////	passwordMenu->buttonHandler = passwordMenu_handle_button_press;
-////
-////	///////////////////////////////////////////////////////////////////////
-//  idleMenu->parent = idleMenu;
-//  idleMenu->type = MENU_TYPE_IDLE;
-//  idleMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_FAULT_IND, LANG_EN);
-//  idleMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_FAULT_IND, LANG_HE);
-//  idleMenu->buttonHandler = idle_menu_handler;
+//	//--------------------------------------------------------
+  apmplifiresTestMunu->parent = testMenu;
+  apmplifiresTestMunu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_APLIFIERS_TEST, LANG_EN);
+  apmplifiresTestMunu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_APLIFIERS_TEST, LANG_HE);
+  apmplifiresTestMunu->type = MENU_TYPE_TEST_AMP;
+  apmplifiresTestMunu->buttonHandler = handle_button_press;
+
 //
-////	///////////////////////////////////////////////
-//  rootMenu->parent = idleMenu;
-//  rootMenu->type = MENU_TYPE_LIST;
-//  rootMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MENU, LANG_EN);
-//  rootMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MENU, LANG_HE);
-//  rootMenu->buttonHandler = handle_button_press;
-//  rootMenu->items[0] = (MenuItem ) {
-//	  .name = {
-//	      get_root_menu_items_str(STR_ROOT_ITEM_SIREN, LANG_EN),
-//	      get_root_menu_items_str(STR_ROOT_ITEM_SIREN, LANG_HE) },
-//	  .prepareAction = &MenuLoadSDCardSirens,
-//	  .submenu = sirenMenu };
-//  rootMenu->items[1] = (MenuItem ) {
-//	  .name = {
-//	      get_root_menu_items_str(STR_ROOT_ITEM_MESSAGES, LANG_EN),
-//	      get_root_menu_items_str(STR_ROOT_ITEM_MESSAGES, LANG_HE) },
-//	  .prepareAction = &MenuLoadSDCardMessages,
-//	  .submenu = messagesMenu };
-//  rootMenu->items[2] = (MenuItem ) {
-//	  .name = {
-//	      get_root_menu_items_str(STR_ROOT_ITEM_ANNOUNCEMENT, LANG_EN),
-//	      get_root_menu_items_str(STR_ROOT_ITEM_ANNOUNCEMENT, LANG_HE) },
-//	  .prepareAction = &prepare_announcement,
-//	  .submenu = announcementMenu };
-//  rootMenu->items[3] = (MenuItem ) {
-//	  .name = {
-//	      get_root_menu_items_str(STR_ROOT_ITEM_TESTS, LANG_EN),
-//	      get_root_menu_items_str(STR_ROOT_ITEM_TESTS, LANG_HE) },
-//	  .submenu = testMenu };
-//  rootMenu->items[4] = (MenuItem ) {
-//	  .name = {
-//	      get_root_menu_items_str(STR_ROOT_ITEM_REPORT, LANG_EN),
-//	      get_root_menu_items_str(STR_ROOT_ITEM_REPORT, LANG_HE) },
-//	  .submenu = reportMenu };
-//  rootMenu->items[5] = (MenuItem ) {
-//	  .name = {
-//	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_EN),
-//	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_HE) },
-//	  .submenu = maintenanceMenu };
-//  rootMenu->itemCount = ROOT_MENU_ITEM_COUNT;
-//
-////    /////////////////////////////////////////
-//  // "Siren"
-//  sirenMenu->parent = rootMenu;
-//  sirenMenu->type = MENU_TYPE_LIST;
-//  sirenMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_SIREN, LANG_EN);
-//  sirenMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_SIREN, LANG_HE);
-//  sirenMenu->buttonHandler = handle_button_press;
-//
-//  alarm_info_menu->parent = sirenMenu;
-//  alarm_info_menu->type = MENU_TYPE_SIREN_INFO;
-//  alarm_info_menu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_ALARM_INFO, LANG_EN);
-//  alarm_info_menu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_ALARM_INFO, LANG_HE);
-//  alarm_info_menu->buttonHandler = alarm_info_menu_handler;
-//
-////    //-----------------------------------------------------------------------------------------------------------
-//  messagesMenu->parent = rootMenu;
-//  messagesMenu->type = MENU_TYPE_LIST;
-//  messagesMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MESSAGES, LANG_EN);
-//  messagesMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MESSAGES, LANG_HE);
-//  messagesMenu->buttonHandler = handle_button_press;
-//
-//  // play message
-//  messagePlayMenu->parent = messagesMenu;
-//  messagePlayMenu->type = MENU_TYPE_MESSAGE_PLAY;
-//  messagePlayMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_PLAY_MESSAGES, LANG_EN);
-//  messagePlayMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_PLAY_MESSAGES, LANG_HE);
-//  messagePlayMenu->imageData = &menu_speaker_img;
-//  messagePlayMenu->buttonHandler = message_info_menu_handler;
-//
-////    //-----------------------------------------------------------------------------------------------------------
-//  announcementMenu->parent = rootMenu;
-//  announcementMenu->currentSelection = 0;
-//  announcementMenu->itemCount = 0;
-//  announcementMenu->scrollOffset = 0;
-//  announcementMenu->type = MENU_TYPE_ANNOUNCEMENT;
-//  announcementMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_ANNOUNCEMENT, LANG_EN);
-//  announcementMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_ANNOUNCEMENT, LANG_HE);
-//  announcementMenu->imageData = &menu_microfon_img;
-//  announcementMenu->buttonHandler = volume_control_handler;
-//
-//  testMenu->parent = rootMenu;
-//  testMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_TEST, LANG_EN);
-//  testMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_TEST, LANG_HE);
-//  testMenu->type = MENU_TYPE_LIST;
-//  testMenu->buttonHandler = handle_button_press;
-//  testMenu->items[0] = (MenuItem ) {
-//	  .name = {
-//	      get_test_menu_items_str(STR_TEST_ITEM_SILENT_TEST, LANG_EN),
-//	      get_test_menu_items_str(STR_TEST_ITEM_SILENT_TEST, LANG_HE) },
-//	  .postAction = &RunSilentTest };
-//  testMenu->items[1] = (MenuItem ) {
-//	  .name = {
-//	      get_test_menu_items_str(STR_TEST_ITEM_BATTERIES_TEST, LANG_EN),
-//	      get_test_menu_items_str(STR_TEST_ITEM_BATTERIES_TEST, LANG_HE) },
-//	  .postAction = &RunBatteriesTest,
-//	  .submenu = batteriesTestMenu };
-//  testMenu->items[2] = (MenuItem ) {
-//	  .name = {
-//	      get_test_menu_items_str(STR_TEST_ITEM_APLIFIERS_TEST, LANG_EN),
-//	      get_test_menu_items_str(STR_TEST_ITEM_APLIFIERS_TEST, LANG_HE) },
-//	  .postAction = &RunAmplifiresTest,
-//	  .submenu = apmplifiresTestMunu };
-//  testMenu->items[3] = (MenuItem ) {
-//	  .name = {
-//	      get_test_menu_items_str(STR_TEST_ITEM_DRIVERS_TEST, LANG_EN),
-//	      get_test_menu_items_str(STR_TEST_ITEM_DRIVERS_TEST, LANG_HE) },
-//	  .postAction = &RunDriversTest,
-//	  .submenu = driversTestMenu };
-//  testMenu->items[4] = (MenuItem ) {
-//	  .name = {
-//	      get_test_menu_items_str(STR_TEST_ITEM_SINUS_TEST, LANG_EN),
-//	      get_test_menu_items_str(STR_TEST_ITEM_SINUS_TEST, LANG_HE) },
-//	  .prepareAction = &prepare_sinuse_items,
-//	  .submenu = sinusMenu };
-//  testMenu->itemCount = TEST_MENU_ITEM_COUNT;
-//
-////	//---------------------------------------------------------------
-//  batteriesTestMenu->parent = testMenu;
-//  batteriesTestMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_BATTERIES_TEST, LANG_EN);
-//  batteriesTestMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_BATTERIES_TEST, LANG_HE);
-//  batteriesTestMenu->type = MENU_TYPE_TEST_BAT;
-//  batteriesTestMenu->buttonHandler = handle_button_press;
-//
-////
-////	//--------------------------------------------------------
-//  apmplifiresTestMunu->parent = testMenu;
-//  apmplifiresTestMunu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_APLIFIERS_TEST, LANG_EN);
-//  apmplifiresTestMunu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_APLIFIERS_TEST, LANG_HE);
-//  apmplifiresTestMunu->type = MENU_TYPE_TEST_AMP;
-//  apmplifiresTestMunu->buttonHandler = handle_button_press;
-//
-////
-////	//-----------------------------------
-//  driversTestMenu->parent = testMenu;
-//  driversTestMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_DRIVERS_TEST, LANG_EN);
-//  driversTestMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_DRIVERS_TEST, LANG_HE);
-//  driversTestMenu->type = MENU_TYPE_TEST_DRIV;
-//  driversTestMenu->buttonHandler = handle_button_press;
-//
-//  sinusMenu->parent = testMenu;
-//  sinusMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_GENERATE_SINUS, LANG_EN);
-//  sinusMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_GENERATE_SINUS, LANG_HE);
-//  sinusMenu->type = MENU_TYPE_LIST;
-//  sinusMenu->buttonHandler = handle_button_press;
-//
-//  sinusInfoMenu->parent = sinusMenu;
-//  sinusInfoMenu->type = MENU_TYPE_SIREN_INFO;
-//  sinusInfoMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_SINUS_INFO, LANG_EN);
-//  sinusInfoMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_SINUS_INFO, LANG_HE);
-////	sinusInfoMenu->buttonHandler = sinus_info_menu_handler;
-//  sinusInfoMenu->buttonHandler = sinus_info_menu_handler;
-//
-////	////////////////////////////////////////////////////////
-//  reportMenu->parent = rootMenu;
-//  reportMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_REPORT, LANG_EN);
-//  reportMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_REPORT, LANG_HE);
-//  reportMenu->type = MENU_TYPE_REPORT;
-//  reportMenu->buttonHandler = handle_button_press;
-//
-//  maintenanceMenu->parent = rootMenu;
-//  maintenanceMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MAINTENANCE, LANG_EN);
-//  maintenanceMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MAINTENANCE, LANG_HE);
-//  maintenanceMenu->type = MENU_TYPE_LIST;
-//  maintenanceMenu->buttonHandler = handle_button_press;
-//  maintenanceMenu->items[0] = (MenuItem ) {
-//	  .name = {
-//	      get_maintenance_menu_items_str(STR_TIME_AND_DATE, LANG_EN),
-//	      get_maintenance_menu_items_str(STR_TIME_AND_DATE, LANG_HE) },
-//	  .prepareAction = &prepare_clock,
-//	  .postAction = &run_clock };
-//  maintenanceMenu->items[1] = (MenuItem ) {
-//	  .name = {
-//	      get_maintenance_menu_items_str(STR_LANGUAGES, LANG_EN),
-//	      get_maintenance_menu_items_str(STR_LANGUAGES, LANG_HE) },
-//	  .prepareAction = &menu_init_language,
-//	  .submenu = languageMenu };
-//  maintenanceMenu->items[2] = (MenuItem ) {
-//	  .name = {
-//	      get_maintenance_menu_items_str(STR_SOFTWARE_UPDATE, LANG_EN),
-//	      get_maintenance_menu_items_str(STR_SOFTWARE_UPDATE, LANG_HE) },
-//	  .prepareAction = &MenuLoadSDCardSoftWare,
-//	  .submenu = softwareMenu };
-//  maintenanceMenu->itemCount = MAINTENCE_MENU_ITEM_COUNT;
-//
-//  clockMenu->parent = maintenanceMenu;
-//  clockMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_TIME_AND_DATE, LANG_EN);
-//  clockMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_TIME_AND_DATE, LANG_HE);
-//  clockMenu->type = MENU_TYPE_CLOCK;
-//  clockMenu->buttonHandler = clockMenu_handle_button_press;
-//
-//  languageMenu->parent = maintenanceMenu;
-//  languageMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_LANGUAGES, LANG_EN);
-//  languageMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_LANGUAGES, LANG_HE);
-//  languageMenu->type = MENU_TYPE_LIST;
-//  languageMenu->buttonHandler = languageMenu_handle_button_press;
-//
-//  softwareMenu->parent = maintenanceMenu;
-//  softwareMenu->type = MENU_TYPE_LIST;
-//  softwareMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_SOFTWARE, LANG_EN);
-//  softwareMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_SOFTWARE, LANG_HE);
-//  softwareMenu->buttonHandler = softwareMenu_handle_button_press;
-//
-//  motorolaInfoMenu->parent = rootMenu;
-//  motorolaInfoMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MOTOROLA, LANG_EN);
-//  motorolaInfoMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MOTOROLA, LANG_HE);
-//  motorolaInfoMenu->type = MENU_TYPE_MOTOROLA;
+//	//-----------------------------------
+  driversTestMenu->parent = testMenu;
+  driversTestMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_DRIVERS_TEST, LANG_EN);
+  driversTestMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_DRIVERS_TEST, LANG_HE);
+  driversTestMenu->type = MENU_TYPE_TEST_DRIV;
+  driversTestMenu->buttonHandler = handle_button_press;
+
+  sinusMenu->parent = testMenu;
+  sinusMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_GENERATE_SINUS, LANG_EN);
+  sinusMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_GENERATE_SINUS, LANG_HE);
+  sinusMenu->type = MENU_TYPE_LIST;
+  sinusMenu->buttonHandler = handle_button_press;
+
+  sinusInfoMenu->parent = sinusMenu;
+  sinusInfoMenu->type = MENU_TYPE_SIREN_INFO;
+  sinusInfoMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_SINUS_INFO, LANG_EN);
+  sinusInfoMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_SINUS_INFO, LANG_HE);
+//	sinusInfoMenu->buttonHandler = sinus_info_menu_handler;
+  sinusInfoMenu->buttonHandler = sinus_info_menu_handler;
+
+//	////////////////////////////////////////////////////////
+  reportMenu->parent = rootMenu;
+  reportMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_REPORT, LANG_EN);
+  reportMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_REPORT, LANG_HE);
+  reportMenu->type = MENU_TYPE_REPORT;
+  reportMenu->buttonHandler = handle_button_press;
+
+  maintenanceMenu->parent = rootMenu;
+  maintenanceMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MAINTENANCE, LANG_EN);
+  maintenanceMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MAINTENANCE, LANG_HE);
+  maintenanceMenu->type = MENU_TYPE_LIST;
+  maintenanceMenu->buttonHandler = handle_button_press;
+  maintenanceMenu->items[0] = (MenuItem ) {
+	  .name = {
+	      get_maintenance_menu_items_str(STR_TIME_AND_DATE, LANG_EN),
+	      get_maintenance_menu_items_str(STR_TIME_AND_DATE, LANG_HE) },
+	  .prepareAction = &prepare_clock,
+	  .postAction = &run_clock };
+  maintenanceMenu->items[1] = (MenuItem ) {
+	  .name = {
+	      get_maintenance_menu_items_str(STR_LANGUAGES, LANG_EN),
+	      get_maintenance_menu_items_str(STR_LANGUAGES, LANG_HE) },
+	  .prepareAction = &menu_init_language,
+	  .submenu = languageMenu };
+  maintenanceMenu->items[2] = (MenuItem ) {
+	  .name = {
+	      get_maintenance_menu_items_str(STR_SOFTWARE_UPDATE, LANG_EN),
+	      get_maintenance_menu_items_str(STR_SOFTWARE_UPDATE, LANG_HE) },
+	  .prepareAction = &MenuLoadSDCardSoftWare,
+	  .submenu = softwareMenu };
+  maintenanceMenu->itemCount = MAINTENCE_MENU_ITEM_COUNT;
+
+  clockMenu->parent = maintenanceMenu;
+  clockMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_TIME_AND_DATE, LANG_EN);
+  clockMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_TIME_AND_DATE, LANG_HE);
+  clockMenu->type = MENU_TYPE_CLOCK;
+  clockMenu->buttonHandler = clockMenu_handle_button_press;
+
+  languageMenu->parent = maintenanceMenu;
+  languageMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_LANGUAGES, LANG_EN);
+  languageMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_LANGUAGES, LANG_HE);
+  languageMenu->type = MENU_TYPE_LIST;
+  languageMenu->buttonHandler = languageMenu_handle_button_press;
+
+  softwareMenu->parent = maintenanceMenu;
+  softwareMenu->type = MENU_TYPE_LIST;
+  softwareMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_SOFTWARE, LANG_EN);
+  softwareMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_SOFTWARE, LANG_HE);
+  softwareMenu->buttonHandler = softwareMenu_handle_button_press;
+
+  motorolaInfoMenu->parent = rootMenu;
+  motorolaInfoMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MOTOROLA, LANG_EN);
+  motorolaInfoMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MOTOROLA, LANG_HE);
+  motorolaInfoMenu->type = MENU_TYPE_MOTOROLA;
 
   BLK_ON();
-//  isBacklightOn = true;
-//
-//  currentMenu = rootMenu;
-//
-//  draw_status_bar();
-//  update_date_time();
-//  draw_menuScreen(true);
+  isBacklightOn = true;
+
+  currentMenu = rootMenu;
+
+  draw_status_bar();
+  update_date_time();
+  draw_menuScreen(true);
 }
 
 static void menu_draw_image (Menu *menu)

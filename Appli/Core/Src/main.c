@@ -27,6 +27,7 @@
 #include "gpdma.h"
 #include "i2c.h"
 #include "i2s.h"
+#include "iwdg.h"
 #include "rtc.h"
 #include "sdmmc.h"
 #include "spi.h"
@@ -130,6 +131,7 @@ int main(void)
   MX_ADC1_Init();
   MX_USART1_UART_Init();
   MX_CRC_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   usart_clear_cb();
   spi_clear_cb();
