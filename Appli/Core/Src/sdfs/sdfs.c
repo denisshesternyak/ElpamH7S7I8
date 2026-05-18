@@ -324,7 +324,7 @@ static FRESULT sdfs_copy_file (const WCHAR *src_path, const WCHAR *dst_path)
     return res;
 }
 
-bool sdfs_prepare_to_update (const char *src, const char *dest)
+bool sdfs_prepare_to_update (const char *src, const char *dest, char *path, size_t len)
 {
   char temp_path[64];
 
@@ -333,8 +333,8 @@ bool sdfs_prepare_to_update (const char *src, const char *dest)
   snprintf(temp_path, sizeof(temp_path), "%s/%s", FIRMWARE_DIR, src);
   sdfs_convert_eom2uni(temp_path, w_src_path);
 
-  snprintf(temp_path, sizeof(temp_path), "%s/%s", BOOT_DIR, dest);
-  sdfs_convert_eom2uni(temp_path, w_dest_path);
+  snprintf(path, len, "%s/%s", BOOT_DIR, dest);
+  sdfs_convert_eom2uni(path, w_dest_path);
 
   res = sdfs_copy_file(w_src_path, w_dest_path);
 

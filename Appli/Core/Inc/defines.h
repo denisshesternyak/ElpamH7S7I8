@@ -6,7 +6,7 @@
 #define USE_LCD_ILI_9488   // 480x320
 
 #define VER_MAJOR  		0
-#define VER_MINOR  		12
+#define VER_MINOR  		14
 
 #define LCD_USART_TEXT_Y        300
 #define LCD_USART_TEXT_X        5

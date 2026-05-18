@@ -67,6 +67,8 @@ static bool test_i2c3()
   uint8_t data_tx[] = "Hello EEPROM";
   uint8_t data_rx[20];
   const uint8_t len = sizeof(data_tx);
+  const uint16_t addr = 0xA0;
+  const uint16_t reg = 0x0100;
 
   HAL_StatusTypeDef res;
 
@@ -74,7 +76,7 @@ static bool test_i2c3()
   osDelay(10);
 
   HAL_GPIO_WritePin(EP_WP_GPIO_Port, EP_WP_Pin, GPIO_PIN_RESET);
-  res = HAL_I2C_Mem_Write(&hi2c3, 0xA0, 0x0000, I2C_MEMADD_SIZE_16BIT, data_tx, len, 100);
+  res = HAL_I2C_Mem_Write(&hi2c3, addr, reg, I2C_MEMADD_SIZE_16BIT, data_tx, len, 100);
   HAL_GPIO_WritePin(EP_WP_GPIO_Port, EP_WP_Pin, GPIO_PIN_SET);
 
   while (res == HAL_OK && HAL_I2C_IsDeviceReady(&hi2c3, 0xA0, 3, 100) != HAL_OK);

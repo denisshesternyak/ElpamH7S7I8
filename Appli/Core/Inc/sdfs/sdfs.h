@@ -29,7 +29,7 @@ void sdfs_close_file (AudioFileInfo_t *info);
 
 bool sdfs_is_detected (void);
 
-bool sdfs_prepare_to_update (const char *src, const char *dest);
+bool sdfs_prepare_to_update (const char *src, const char *dest, char *path, size_t len);
 
 extern SDFS_STATE_t sdfs_state;
 

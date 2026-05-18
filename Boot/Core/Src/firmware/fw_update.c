@@ -28,7 +28,6 @@ typedef struct
 #define EXT_FLASH_SECTOR_SIZE  	0x1000U
 
 #define ROOT_DIR 		((TCHAR const*)"/")
-#define FIRMWARE_DIR 		((TCHAR const*)"/boot")
 #define FIRMWARE_BIN 		((TCHAR const*)"/boot/firmware.bin")
 
 static bool fw_erase_flash (uint32_t sectrors, uint32_t addr);
@@ -41,7 +40,6 @@ static FATFS SDFatFs;
 static FIL SDFile;
 char SDPath[4]; /* SD logical drive path */
 
-static TCHAR fw_path[64];
 static uint8_t flash_buffer[EXT_FLASH_SECTOR_SIZE];
 
 static FW_Header_t header;
@@ -122,7 +120,7 @@ static bool fw_read_header ()
     return false;
 
   decrypt_offset = sizeof(FW_Header_t);
-  printf("MN: 0x%04lx, size: 0x%lx, ver %d.%d\r\n", header.magic_number, header.total_size, header.ver_major, header.ver_minor);
+//  printf("MN: 0x%04lx, size: 0x%lx, ver %d.%d\r\n", header.magic_number, header.total_size, header.ver_major, header.ver_minor);
 
   return true;
 }
@@ -133,7 +131,7 @@ static bool fw_update_fw (void)
   uint32_t total_bytes = 0;
   uint32_t addr_offset_write = 0;
 
-  printf("Start writing to external flash...\r\n");
+  printf("\r\nStarting to write NEW firmware...\r\n");
 
   uint32_t sectrors = (header.total_size / EXT_FLASH_SECTOR_SIZE) + 1;
   if (!fw_erase_flash(sectrors, addr_offset_write))
@@ -159,7 +157,7 @@ static bool fw_update_fw (void)
     addr_offset_write += EXT_FLASH_SECTOR_SIZE;
     total_bytes += bytes_read;
 
-    printf("Written: %lu / %lu bytes\r\n", total_bytes, header.total_size);
+    printf("  written: %lu / %lu bytes\r\n", total_bytes, header.total_size);
   }
 
   return true;
@@ -182,6 +180,7 @@ static bool fw_copy_flash (FW_slot_t slot)
       total_crc = header.total_crc;
       eeprom.total_size_slot_b = total_size;
       eeprom.crc_slot_b = total_crc;
+      printf("\r\nCreating backup to 0x%08lX\r\n", addr_offset_write);
       break;
     case FROM_B_TO_A:
       addr_offset_read = FW_SLOT_OFFSET;
@@ -189,14 +188,13 @@ static bool fw_copy_flash (FW_slot_t slot)
       total_crc = eeprom.crc_slot_b;
       eeprom.total_size_slot_a = total_size;
       eeprom.crc_slot_a = total_crc;
+      printf("\r\nRestore backup to 0x%08lX\r\n", addr_offset_write);
       break;
   }
 
   uint32_t sectrors = (total_size / EXT_FLASH_SECTOR_SIZE) + 1;
   if (!fw_erase_flash(sectrors, addr_offset_write))
     return false;
-
-  printf("Start copy to flash...\r\n");
 
   while (total_bytes < total_size)
   {
@@ -214,7 +212,7 @@ static bool fw_copy_flash (FW_slot_t slot)
     addr_offset_write += EXT_FLASH_SECTOR_SIZE;
     total_bytes += bytes_to_copy;
 
-    printf("Written: %lu / %lu bytes\r\n", total_bytes, total_size);
+    printf("  written: %lu / %lu bytes\r\n", total_bytes, total_size);
   }
 
   return true;
@@ -224,36 +222,29 @@ void fw_process ()
 {
   if (!metadata_read())
   {
-      snprintf(fw_path, sizeof(fw_path), "%s", FIRMWARE_BIN);
+      snprintf(eeprom.path, sizeof(eeprom.path), "%s", FIRMWARE_BIN);
   }
-  else
-  {
-      snprintf(fw_path, sizeof(fw_path), "%s/%.12s", FIRMWARE_DIR, eeprom.name);
-  }
-
-  fw_path[sizeof(fw_path) - 1] = '\0';
-
-  printf("Firmware path: '%s'\r\n", fw_path);
 
   switch (eeprom.flag)
   {
-    case FW_NO_UPDATES:
-    case FW_SUCCESS_UPDATE:
+    case FW_OK:
       printf("No need for updating\r\n");
       return;
-    case FW_UPDATED:
-    case FW_BAD_UPDATE:
+    case FW_UPDATE_SUCCESS:
+    case FW_ROLLBACK:
+      printf("FW rollback start\r\n");
+
       if (!fw_copy_flash(FROM_B_TO_A))
       {
-	eeprom.flag = (uint32_t) FW_NO_UPDATES;
+	eeprom.flag = (uint32_t) FW_OK;
 	metadata_write();
 	printf("FW rollback failed\r\n");
 	return;
       }
 
-      eeprom.flag = (uint32_t) FW_UPDATED;
+      eeprom.flag = (uint32_t) FW_OK;
       eeprom.len = 0;
-      memset(eeprom.name, 0, sizeof(eeprom.name));
+      memset(eeprom.path, 0, sizeof(eeprom.path));
       metadata_write();
 
       printf("FW rollback success\r\n");
@@ -280,7 +271,7 @@ void fw_process ()
 
 //  sdfs_list_directory();
 
-  res = f_open(&SDFile, fw_path, FA_READ);
+  res = f_open(&SDFile, eeprom.path, FA_READ);
   if (res != FR_OK)
   {
     printf("Failed open\r\n");
@@ -301,20 +292,20 @@ void fw_process ()
 
   if (!fw_update_fw())
   {
-    eeprom.flag = (uint32_t) FW_BAD_UPDATE;
+    eeprom.flag = (uint32_t) FW_ROLLBACK;
     printf("FW update failure\r\n");
   }
   else
   {
-    eeprom.flag = (uint32_t) FW_UPDATED;
+    eeprom.flag = (uint32_t) FW_UPDATE_SUCCESS;
     printf("FW updated success!\r\n");
   }
 
   eeprom.len = 0;
-  memset(eeprom.name, 0, sizeof(eeprom.name));
+  memset(eeprom.path, 0, sizeof(eeprom.path));
   metadata_write();
 
-  f_unlink(fw_path);
+  f_unlink(eeprom.path);
 
   f_close(&SDFile);
   f_mount(NULL, SDPath, 1);

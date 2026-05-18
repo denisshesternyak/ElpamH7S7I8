@@ -21,6 +21,7 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include "adc.h"
+#include "crc.h"
 #include "fatfs.h"
 #include "flash.h"
 #include "gpdma.h"
@@ -36,6 +37,8 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <string.h>
+#include "metadata.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -126,6 +129,7 @@ int main(void)
   MX_RTC_Init();
   MX_ADC1_Init();
   MX_USART1_UART_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
   usart_clear_cb();
   spi_clear_cb();
@@ -281,6 +285,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  metadata_status_update(FW_ROLLBACK);
   __disable_irq();
   while (1)
   {

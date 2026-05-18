@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "crc.h"
 #include "extmem_manager.h"
 #include "flash.h"
 #include "gpdma.h"
@@ -160,6 +161,7 @@ int main(void)
   MX_UART4_Init();
   MX_SDMMC1_SD_Init();
   MX_I2C3_Init();
+  MX_CRC_Init();
   MX_EXTMEM_MANAGER_Init();
   /* USER CODE BEGIN 2 */
 #ifdef SELFTEST
@@ -169,7 +171,7 @@ int main(void)
   }
 #endif
 
-  printf("Bootloader running...\r\n");
+  printf("Bootloader running\r\n");
   fw_process();
   /* USER CODE END 2 */
 
