@@ -172,7 +172,7 @@ int main(void)
 #endif
 
   printf("Bootloader running\r\n");
-  fw_process();
+//  fw_process();
   /* USER CODE END 2 */
 
   /* Launch the application */

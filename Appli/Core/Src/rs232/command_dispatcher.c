@@ -44,7 +44,7 @@ void handle_arm (UART_HandleTypeDef *huart)
   system_status_set_mode(SYSTEM_MODE_ARMING);
   player.last_time_arming = 0;
   player.is_arming = true;
-  LOG_DEBUG("ARM is started");
+  LOG_INFO("'*_ARM__' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: ARM\r\n");
@@ -63,6 +63,7 @@ void handle_all_clear_1 (UART_HandleTypeDef *huart)
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_1);
   if (player.is_arming && !player.is_motorola)
   {
+    LOG_INFO("'*A_CLR1' - got the command");
     audio_notify_high(AUDIO_STOP, player.type);
     audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
     send_screen_notify(MENU_TYPE_MOTOROLA);
@@ -85,6 +86,7 @@ void handle_all_clear_2 (UART_HandleTypeDef *huart)
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_2);
   if (player.is_arming && !player.is_motorola)
   {
+    LOG_INFO("'*A_CLR2' - got the command");
     audio_notify_high(AUDIO_STOP, player.type);
     audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
     send_screen_notify(MENU_TYPE_MOTOROLA);
@@ -107,6 +109,7 @@ void handle_alarm (UART_HandleTypeDef *huart)
   system_status_set_mode(SYSTEM_MODE_ALARM_WAIL);
   if (player.is_arming && !player.is_motorola)
   {
+    LOG_INFO("'*I_WAIL' - got the command");
     audio_notify_high(AUDIO_STOP, player.type);
     audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
     send_screen_notify(MENU_TYPE_MOTOROLA);
@@ -129,6 +132,7 @@ void handle_chemical (UART_HandleTypeDef *huart)
   system_status_set_mode(SYSTEM_MODE_CHEMICAL);
   if (player.is_arming && !player.is_motorola)
   {
+    LOG_INFO("'*CHEM_A' - got the command");
     audio_notify_high(AUDIO_STOP, player.type);
     audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
     send_screen_notify(MENU_TYPE_MOTOROLA);
@@ -150,7 +154,7 @@ void handle_disarm (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
   player.is_arming = false;
-  LOG_DEBUG("DISARM");
+  LOG_INFO("'*DISARM' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: DISARM\r\n");
@@ -168,6 +172,8 @@ void handle_cancel (UART_HandleTypeDef *huart)
 {
   if (player.is_motorola)
   {
+    LOG_INFO("'*CANCEL' - got the command");
+
     system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
 
     audio_notify_high(AUDIO_STOP, AUDIO_MOTOROLA);
@@ -189,6 +195,7 @@ void handle_cancel (UART_HandleTypeDef *huart)
 void handle_quiet_test (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_QUIET_TEST);
+  LOG_INFO("'*Q_TEST' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: QUIET TEST\r\n");
@@ -205,6 +212,7 @@ void handle_quiet_test (UART_HandleTypeDef *huart)
 void handle_reserve_1 (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_FUTURE_SIREN_1);
+  LOG_INFO("'*_WAIL_' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: RESERVE 1\r\n");
@@ -221,6 +229,7 @@ void handle_reserve_1 (UART_HandleTypeDef *huart)
 void handle_reserve_2 (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_FUTURE_SIREN_2);
+  LOG_INFO("'*PWAIL_' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: RESERVE 2\r\n");
@@ -237,6 +246,7 @@ void handle_reserve_2 (UART_HandleTypeDef *huart)
 void handle_reserve_3 (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_FUTURE_SIREN_3);
+  LOG_INFO("'*YELP__' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: RESERVE 3\r\n");
@@ -253,6 +263,7 @@ void handle_reserve_3 (UART_HandleTypeDef *huart)
 void handle_remote_pa (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_VOICE);
+  LOG_INFO("'*_VOICE' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: REMOTE PA\r\n");
@@ -269,6 +280,7 @@ void handle_remote_pa (UART_HandleTypeDef *huart)
 void handle_reset (UART_HandleTypeDef *huart)
 {
   system_status_reset();
+  LOG_INFO("'*_VOICE' - got the command");
 
   //system_status_set_mode(SYSTEM_MODE_RESET);
 
@@ -327,6 +339,8 @@ void volume_down_handler (int value)
  */
 void system_fill_report (UART_HandleTypeDef *huart)
 {
+  LOG_INFO("'*REPORT' - got the command");
+
   char response_22[22] = { 0 };
 
   // Byte 1: Mode (one char)

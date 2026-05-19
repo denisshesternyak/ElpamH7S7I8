@@ -1,19 +1,6 @@
 #include "sdfs.h"
-#include "logger.h"
 #include "defines.h"
 #include "i2c.h"
-
-#define ROOT_DIR 		"/"
-#define ALARMS_DIR 		"/alarms"
-#define MESSAGES_DIR 		"/messages"
-#define FIRMWARE_DIR 		"/firmware"
-#define BOOT_DIR 		"/boot"
-
-#define ROOT_DIR_PATH 		((TCHAR*)u"/")
-#define ALARMS_DIR_PATH 	((TCHAR*)u"/alarms")
-#define MESSAGES_DIR_PATH 	((TCHAR*)u"/messages")
-#define FIRMWARE_DIR_PATH 	((TCHAR*)u"/firmware")
-#define BOOT_DIR_PATH 		((TCHAR*)u"/boot")
 
 static FRESULT res;
 static DIR dir;
@@ -33,7 +20,7 @@ typedef struct
   uint32_t total_crc;
 } FW_Header_t;
 
-static void sdfs_list_directory (const TCHAR *path,
+static bool sdfs_list_directory (const TCHAR *path,
 				 char list[][FF_MAX_LFN],
 				 uint8_t *size);
 
@@ -44,51 +31,41 @@ bool sdfs_is_detected (void)
   return HAL_GPIO_ReadPin(SD_DETECT_GPIO_Port, SD_DETECT_Pin) == GPIO_PIN_RESET;
 }
 
-FRESULT sdfs_mount_drive (void)
+bool sdfs_mount_drive (void)
 {
+  bool res;
   if (sdfs_state.is_mounted)
-    return FR_OK;
+    return true;
 
-  res = f_mount(&SDFatFs, (TCHAR const*) ROOT_DIR_PATH, 0);
-  if (res != FR_OK)
-  {
-    LOG_ERROR("Mounting failed: %d\r\n", res);
-    return res;
-  }
+  res = f_mount(&SDFatFs, (TCHAR const*) ROOT_DIR_PATH_U, 0) == FR_OK;
 
-  sdfs_state.is_mounted = res == FR_OK;
+  sdfs_state.is_mounted = res;
   return res;
 }
 
 void sdfs_unmount_drive (void)
 {
-  res = f_mount(NULL, (TCHAR const*) ROOT_DIR_PATH, 1);
-  if (res != FR_OK)
-    LOG_ERROR("Unmounting failed: %d", res);
-
-  sdfs_state.is_mounted = false;
+  sdfs_state.is_mounted = f_mount(NULL, (TCHAR const*) ROOT_DIR_PATH_U, 1) == FR_OK;
 }
 
-static void sdfs_list_directory (const TCHAR *path,
+static bool sdfs_list_directory (const TCHAR *path,
 				 char list[][FF_MAX_LFN],
 				 uint8_t *size)
 {
   if (!sdfs_state.is_mounted)
   {
-    LOG_WARN("SD Card is not mounted!");
-    return;
+    return false;
   }
 
+  bool res;
   uint8_t count = 0;
   char ascii_name[FF_MAX_LFN + 1];
 
-  res = f_opendir(&dir, path);
-  if (res != FR_OK)
+  res = f_opendir(&dir, path) == FR_OK;
+  if (!res)
   {
-    LOG_ERROR("f_opendir failed: %d\r\n", res);
+    return false;
   }
-
-  LOG_DEBUG("SD card: \r\n");
 
   for (uint8_t item = 0; item < MAX_MENU_ITEMS; item++)
   {
@@ -105,22 +82,15 @@ static void sdfs_list_directory (const TCHAR *path,
     }
     ascii_name[j] = '\0';
 
-    if (ascii_name[0] == '.' || strcmp(ascii_name, "System Volume Information") == 0)
+    if (ascii_name[0] == '.' ||
+	strcmp(ascii_name, "System Volume Information") == 0 ||
+	fno.fattrib & AM_DIR)
       continue;
 
-    if (fno.fattrib & AM_DIR)
+    if (list)
     {
-      LOG_DEBUG(" [DIR]  %s\r\n", ascii_name);
-    }
-    else
-    {
-      LOG_DEBUG(" [FILE] %s  (%lu bytes)\r\n", ascii_name, fno.fsize);
-
-      if (list)
-      {
-	strncpy(list[item], ascii_name, FF_MAX_LFN);
-	list[item][FF_MAX_LFN - 1] = '\0';
-      }
+      strncpy(list[item], ascii_name, FF_MAX_LFN);
+      list[item][FF_MAX_LFN - 1] = '\0';
     }
 
     count++;
@@ -129,6 +99,8 @@ static void sdfs_list_directory (const TCHAR *path,
 
   if (size)
     *size = count;
+
+  return true;
 }
 
 void sdfs_list_alarms (char list[][FF_MAX_LFN], uint8_t *size)
@@ -136,9 +108,9 @@ void sdfs_list_alarms (char list[][FF_MAX_LFN], uint8_t *size)
   if (!sdfs_state.is_mounted)
     return;
 
-  pos_path = snprintf(full_path, sizeof(full_path), "%s/", (char*) ALARMS_DIR);
+  pos_path = snprintf(full_path, sizeof(full_path), "%s/", (char*) ALARMS_DIR_PATH);
 
-  sdfs_list_directory(ALARMS_DIR_PATH, list, size);
+  sdfs_list_directory(ALARMS_DIR_PATH_U, list, size);
 }
 
 void sdfs_list_messages (char list[][FF_MAX_LFN], uint8_t *size)
@@ -146,9 +118,9 @@ void sdfs_list_messages (char list[][FF_MAX_LFN], uint8_t *size)
   if (!sdfs_state.is_mounted)
     return;
 
-  pos_path = snprintf(full_path, sizeof(full_path), "%s/", (char*) MESSAGES_DIR);
+  pos_path = snprintf(full_path, sizeof(full_path), "%s/", (char*) MESSAGES_DIR_PATH);
 
-  sdfs_list_directory(MESSAGES_DIR_PATH, list, size);
+  sdfs_list_directory(MESSAGES_DIR_PATH_U, list, size);
 }
 
 void sdfs_list_firmware (char list[][FF_MAX_LFN], uint8_t *size)
@@ -156,12 +128,12 @@ void sdfs_list_firmware (char list[][FF_MAX_LFN], uint8_t *size)
   if (!sdfs_state.is_mounted)
     return;
 
-  pos_path = snprintf(full_path, sizeof(full_path), "%s/", (char*) FIRMWARE_DIR);
+  pos_path = snprintf(full_path, sizeof(full_path), "%s/", (char*) FIRMWARE_DIR_PATH);
 
-  sdfs_list_directory(FIRMWARE_DIR_PATH, list, size);
+  sdfs_list_directory(FIRMWARE_DIR_PATH_U, list, size);
 }
 
-void sdfs_close_file (AudioFileInfo_t *info)
+void sdfs_close_audiofile (AudioFileInfo_t *info)
 {
   if (info->isOpened)
   {
@@ -175,7 +147,6 @@ static bool sdfs_read_wav_header (AudioFileInfo_t *info)
   res = f_read(&SDFile, &info->header, (UINT) AUDIO_HEADER_SIZE, (UINT*) &info->bytes_read);
   if (res != FR_OK || info->bytes_read != AUDIO_HEADER_SIZE)
   {
-    LOG_ERROR("Failed to read header of %s (read %lu bytes)", (char* )info->filename, info->bytes_read);
     f_close(&SDFile);
     return false;
   }
@@ -201,7 +172,7 @@ static bool sdfs_read_wav_header (AudioFileInfo_t *info)
   return true;
 }
 
-static void sdfs_convert_eom2uni(char *src, WCHAR *dest)
+void sdfs_convert_eom2uni(char *src, WCHAR *dest)
 {
   int j = 0;
   while (src[j] != 0 && j < 128)
@@ -252,7 +223,6 @@ bool sdfs_read_file (AudioFileInfo_t *info,
 
     if (res != FR_OK)
     {
-      LOG_ERROR("Failure f_read: %d", res);
       return false;
     }
 
@@ -328,16 +298,85 @@ bool sdfs_prepare_to_update (const char *src, const char *dest, char *path, size
 {
   char temp_path[64];
 
-  f_mkdir((const TCHAR*)BOOT_DIR_PATH);
+  f_mkdir((const TCHAR*)BOOT_DIR_PATH_U);
 
-  snprintf(temp_path, sizeof(temp_path), "%s/%s", FIRMWARE_DIR, src);
+  snprintf(temp_path, sizeof(temp_path), "%s/%s", FIRMWARE_DIR_PATH, src);
   sdfs_convert_eom2uni(temp_path, w_src_path);
 
-  snprintf(path, len, "%s/%s", BOOT_DIR, dest);
+  snprintf(path, len, "%s/%s", BOOT_DIR_PATH, dest);
   sdfs_convert_eom2uni(path, w_dest_path);
 
   res = sdfs_copy_file(w_src_path, w_dest_path);
 
   return res == FR_OK;
 }
+
+
+void sdfs_close_file(FIL* fp)
+{
+  f_close(fp);
+}
+
+bool sdfs_create_dir(const TCHAR *path)
+{
+  return f_mkdir(path) == FR_OK;
+}
+
+bool sdfs_is_file_exist(const TCHAR *path)
+{
+  FILINFO fno;
+  return f_stat(path, &fno) == FR_OK;
+}
+
+bool sdfs_is_file_exist_not_null(const TCHAR *path)
+{
+  FILINFO fno;
+  bool res = f_stat(path, &fno) == FR_OK;
+  return res && fno.fsize > 0;
+}
+
+bool sdfs_send_to_backup(const TCHAR *path_old, const TCHAR *path_new)
+{
+  return f_rename(path_old, path_new) == FR_OK;
+}
+
+bool sdfs_open_from_last_entry (FIL* fp, const TCHAR* path)
+{
+  if (f_open(fp, path, FA_WRITE | FA_OPEN_ALWAYS | FA_READ) == FR_OK)
+  {
+    f_lseek(fp, f_size(fp));
+    return true;
+  }
+  return false;
+}
+
+void sdfs_write_data(FIL* fp, const void* data, uint32_t len)
+{
+  UINT bytes_written;
+  f_write(fp, data, len, &bytes_written);
+  f_sync(fp);
+}
+
+void sdfs_delete_directory(const TCHAR* path)
+{
+  DIR dir;
+  FILINFO fno;
+
+  if (f_opendir(&dir, path) == FR_OK)
+  {
+    while (f_readdir(&dir, &fno) == FR_OK)
+    {
+      if (fno.fname[0] == 0) break;
+      if (fno.fattrib & AM_DIR) continue;
+
+//      snprintf(full_path, sizeof(full_path), "%s/%s", path, fno.fname);
+//      sdfs_convert_eom2uni(full_path, w_dest_path);
+//
+//      f_unlink((TCHAR*)w_dest_path);
+    }
+    f_closedir(&dir);
+  }
+  f_unlink(path);
+}
+
 

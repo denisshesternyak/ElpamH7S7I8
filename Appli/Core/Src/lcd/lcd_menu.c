@@ -835,7 +835,7 @@ static void sinus_info_prepare_action (void)
 
 static void prepare_announcement (void)
 {
-//  audio_notify_low(AUDIO_START, AUDIO_MIC);
+  audio_notify_low(AUDIO_START, AUDIO_MIC);
 }
 
 void Draw_MENU_TYPE_IDLE ()
@@ -1771,14 +1771,16 @@ static void softwareMenu_handle_button_press (KeyEvent_t event)
 
       if(!sdfs_prepare_to_update(fw_src, UPDATE_FILE, fw_path, sizeof(fw_path)))
       {
-	printf("Copy failed with error\r\n");
+	LOG_ERROR("Copy failed with error");
 	return;
       }
       if(!metadata_path_update(fw_path, sizeof(fw_path)))
       {
-	printf("Write metadata status failed\r\n");
+	LOG_ERROR("Write metadata status failed");
 	return;
       }
+
+      LOG_INFO("FW update ready");
 
       draw_menuScreen(false);
       return;

@@ -1,9 +1,23 @@
-
-
 #ifndef INC_DEFINES_H_
 #define INC_DEFINES_H_
 
-#define USE_LCD_ILI_9488   // 480x320
+#define ROOT_DIR_PATH 		"/"
+#define ALARMS_DIR_PATH 	"/alarms"
+#define MESSAGES_DIR_PATH 	"/messages"
+#define FIRMWARE_DIR_PATH 	"/firmware"
+#define BOOT_DIR_PATH 		"/boot"
+#define LOG_DIR_PATH 		"/log"
+#define LOG_BACKUP_DIR_PATH 	"/log/backup"
+#define LOG_FILE_PATH 		"/log/log.txt"
+
+#define ROOT_DIR_PATH_U 	((const TCHAR *)u"/")
+#define ALARMS_DIR_PATH_U 	((const TCHAR *)u"/alarms")
+#define MESSAGES_DIR_PATH_U 	((const TCHAR *)u"/messages")
+#define FIRMWARE_DIR_PATH_U 	((const TCHAR *)u"/firmware")
+#define BOOT_DIR_PATH_U 	((const TCHAR *)u"/boot")
+#define LOG_DIR_PATH_U 		((const TCHAR *)u"/log")
+#define LOG_BACKUP_DIR_PATH_U 	((const TCHAR *)u"/log/backup")
+#define LOG_FILE_PATH_U 	((const TCHAR *)u"/log/log.txt")
 
 #define VER_MAJOR  		0
 #define VER_MINOR  		15

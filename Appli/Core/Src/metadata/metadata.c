@@ -3,6 +3,7 @@
 #include "crc.h"
 #include <string.h>
 #include <stdio.h>
+#include "logger.h"
 
 #define EEPROM_HANDLER		&hi2c3
 #define EEPROM_ADDR		0xA0
@@ -43,7 +44,7 @@ bool metadata_read ()
   uint32_t calc_crc = metadata_calc_crc(&temp);
   if (calc_crc != temp.crc32)
   {
-    printf("CRC error! Expected: 0x%08lX, Got: 0x%08lX\r\n", temp.crc32, calc_crc);
+    LOG_INFO("EEPROM CRC error! Expected: 0x%08lX, Got: 0x%08lX\r\n", temp.crc32, calc_crc);
     return false;
   }
 

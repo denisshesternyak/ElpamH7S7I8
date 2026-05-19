@@ -354,7 +354,7 @@ void audio_set_volume (uint8_t level)
 // SINUS
 static void audio_start_sinus (AudioNotify_t *audio_notify)
 {
-//	LOG_DEBUG("START SINUS");
+  LOG_INFO("Start playback sinus");
 
   init_generation(audio_notify->sin_task);
   audio_generate_sine(&player, dma_buffer, AUDIO_STEREO_PAIRS_FULL);
@@ -384,15 +384,13 @@ static void audio_play_sinus (void)
 
 static void audio_stop_sinus (void)
 {
-//	LOG_DEBUG("STOP SINUS");
-
   stop_playback();
+
+  LOG_INFO("Stop playback sinus");
 }
 
 static void audio_prepare_stop_sinus (void)
 {
-//	LOG_DEBUG("PREPARE_STOP");
-
   if (player.is_playing && !player.is_stoped)
   {
     player.event = AUDIO_PLAY;
@@ -407,6 +405,8 @@ static void audio_start_sd (AudioNotify_t *audio_notify)
     return;
 
   player.file_info.filename = audio_notify->filename;
+
+  LOG_INFO("Start playback from uSD: %s", player.file_info.filename);
 
   bool res = sdfs_read_file_info(&player.file_info);
   if (!res)
@@ -449,12 +449,12 @@ static void audio_play_sd (void)
 
 static void audio_stop_sd (void)
 {
-//	LOG_DEBUG("STOP SD");
-
   stop_playback();
 
-  sdfs_close_file(&player.file_info);
+  sdfs_close_audiofile(&player.file_info);
   memset(&player.file_info, 0, sizeof(player.file_info));
+
+  LOG_INFO("Stop playback from uSD");
 }
 
 static void audio_prepare_stop_sd (void)
@@ -470,7 +470,7 @@ static void audio_prepare_stop_sd (void)
 // MIC
 static void audio_start_mic (void)
 {
-//	LOG_DEBUG("START MIC");
+  LOG_INFO("Start playback announcement");
 
 //	audio_cmd_playback_enable();
   player.last_time_announcement = 0;
@@ -485,11 +485,11 @@ static void audio_play_mic (void)
 
 static void audio_stop_mic (void)
 {
-//	LOG_DEBUG("STOP MIC");
-
 //	audio_cmd_playback_disable();
   player.is_announcement = false;
   audio_cmd_INR_disable();
+
+  LOG_INFO("Stop playback announcement");
 }
 
 static void audio_prepare_stop_mic (void)
@@ -502,6 +502,8 @@ static void audio_start_motorola (void)
 {
   player.is_motorola = true;
   audio_cmd_IN1R_enable();
+
+  LOG_INFO("Start playback motorola");
 }
 
 static void audio_play_motorola (void)
@@ -516,6 +518,8 @@ static void audio_stop_motorola (void)
   player.priority = AUDIO_PRIORITY_IDLE;
 
   audio_cmd_INR_disable();
+
+  LOG_INFO("Stop playback motorola");
 }
 
 static void audio_prepare_stop_motorola (void)
@@ -526,7 +530,7 @@ static void audio_prepare_stop_motorola (void)
 // DTMF
 static void audio_start_dtmf (void)
 {
-
+  LOG_INFO("Start payback DTMF");
 }
 
 static void audio_play_dtmf (void)
@@ -536,7 +540,7 @@ static void audio_play_dtmf (void)
 
 static void audio_stop_dtmf (void)
 {
-
+  LOG_INFO("Stop playback DTMF");
 }
 
 static void audio_prepare_stop_dtmf (void)

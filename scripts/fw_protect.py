@@ -24,7 +24,7 @@ def protect_firmware(input_file: str, output_file: str, salt: str):
     total_size = len(firmware)
     fw_crc32 = zlib.crc32(firmware) & 0xFFFFFFFF
   
-    print(f"File: {total_size/1024:.1f} KB | CRC16 = 0x{fw_crc32:04X}\n")
+    print(f"File: {total_size/1024:.1f} KB | CRC32 = 0x{fw_crc32:04X}\n")
     header = struct.pack('<IIIHH', MAGIC_NUMBER, total_size, fw_crc32, VER_MAJOR, VER_MINOR)
     
     data_with_magic = header + firmware

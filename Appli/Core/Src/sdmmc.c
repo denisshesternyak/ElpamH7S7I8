@@ -50,7 +50,7 @@ void MX_SDMMC1_SD_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SDMMC1_Init 2 */
-
+  sdfs_mount_drive();
   /* USER CODE END SDMMC1_Init 2 */
 
 }
