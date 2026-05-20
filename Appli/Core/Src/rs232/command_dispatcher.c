@@ -524,6 +524,15 @@ void handle_amp_st_command (UART_HandleTypeDef *huart)
   HAL_UART_Transmit(huart, (uint8_t*)buf, len, HAL_MAX_DELAY);
 }
 
+void handle_btn_8_command (UART_HandleTypeDef *huart)
+{
+  send_btn_notify(BTN_8);
+}
+void handle_btn_9_command (UART_HandleTypeDef *huart)
+{
+  send_btn_notify(BTN_9);
+}
+
 static void send_btn_notify (KeyCode_t btn)
 {
   player.priority = AUDIO_PRIORITY_LOW;

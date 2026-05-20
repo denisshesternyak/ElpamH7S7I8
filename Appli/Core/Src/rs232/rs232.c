@@ -9,7 +9,7 @@
 #include "queue.h"
 #include "defines.h"
 
-#define RS232_HANDLER	&huart4
+#define RS232_HANDLER	&huart7
 
 static uint8_t rx_byte;
 static char rx_buffer[8];
@@ -58,6 +58,9 @@ static rs232_cmd_handler_t handle_amp_t10 = NULL;
 static rs232_cmd_handler_t handle_amp_on = NULL;
 static rs232_cmd_handler_t handle_drv_on = NULL;
 static rs232_cmd_handler_t handle_amp_st = NULL;
+
+static rs232_cmd_handler_t handle_btn_9 = NULL;
+static rs232_cmd_handler_t handle_btn_8 = NULL;
 
 static void rs232a_rx_complete_callback (UART_HandleTypeDef *huart);
 static void call_or_default (rs232_cmd_handler_t h);
@@ -244,6 +247,12 @@ void rs232_process (UartEvent_t event)
     case UART_EVENT_AMP_ST_BTN:
       call_or_default(handle_amp_st);
       break;
+    case UART_EVENT_BTN_8:
+      call_or_default(handle_btn_8);
+      break;
+    case UART_EVENT_BTN_9:
+      call_or_default(handle_btn_9);
+      break;
   }
 }
 
@@ -399,6 +408,14 @@ static void process_command (char *cmd)
   else if (strncmp(cmd, "*AMP_ST", CMD_LENGTH) == 0)
   {
     event = UART_EVENT_AMP_ST_BTN;
+  }
+  else if (strncmp(cmd, "*BTN__8", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_BTN_8;
+  }
+  else if (strncmp(cmd, "*BTN__9", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_BTN_9;
   }
   else if (strncmp(cmd, "*VOL", 4) == 0)
   {
@@ -606,4 +623,12 @@ void rs232_register_drv_on (rs232_cmd_handler_t h)
 void rs232_register_amp_st (rs232_cmd_handler_t h)
 {
   handle_amp_st = h;
+}
+void rs232_register_btn_8 (rs232_cmd_handler_t h)
+{
+  handle_btn_8 = h;
+}
+void rs232_register_btn_9 (rs232_cmd_handler_t h)
+{
+  handle_btn_9 = h;
 }

@@ -2,10 +2,6 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include "queue.h"
-//#include "lcd_display.h"
-//#include "lcd_widget_siren_info_indicator.h"
-//#include "lcd_widget_password.h"
-//#include "system_status.h"
 
 #include "ff.h"
 #include <string.h>
@@ -28,6 +24,7 @@
 #include "analog.h"
 #include "system_status.h"
 #include "metadata.h"
+#include "lcd_widget_password.h"
 
 //bool isResetPasswordAfterIdle = false;
 
@@ -74,13 +71,10 @@ Menu *softwareMenu = NULL;
 Menu *sinusMenu = NULL;
 Menu *sinusInfoMenu = NULL;
 Menu *motorolaInfoMenu = NULL;
+Menu* passwordMenu = NULL;
 
-//Menu* passwordMenu = NULL;
-//
 //static uint8_t volumeValue = 10;
-//
-//
-//
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 MenuImage menu_speaker_img = {
     .image = speaker_img,
@@ -145,7 +139,7 @@ static void increase_volume (void);
 static void decrease_volume (void);
 
 static bool hot_key_handle_button (KeyEvent_t event);
-//void passwordMenu_handle_button_press(KeyEvent_t event);
+static void passwordMenu_handle_button_press(KeyEvent_t event);
 static void handle_button_press (KeyEvent_t event);
 static void clockMenu_handle_button_press (KeyEvent_t event);
 static void languageMenu_handle_button_press (KeyEvent_t event);
@@ -156,6 +150,7 @@ static void message_info_menu_handler (KeyEvent_t event);
 static void sinus_info_menu_handler (KeyEvent_t event);
 static void idle_menu_handler (KeyEvent_t event);
 static void volume_control_handler (KeyEvent_t event);
+static void maintenance_handle_button_press (KeyEvent_t event);
 
 ///////////////////////////////////////////////////////////////////
 
@@ -276,7 +271,6 @@ void menu_init (void)
 {
   InitMenuPool();
 
-//	passwordMenu = &menuPool[menuPoolIndex++];
   idleMenu = &menuPool[menuPoolIndex++];
   rootMenu = &menuPool[menuPoolIndex++];
   sirenMenu = &menuPool[menuPoolIndex++];
@@ -296,12 +290,9 @@ void menu_init (void)
   sinusMenu = &menuPool[menuPoolIndex++];
   sinusInfoMenu = &menuPool[menuPoolIndex++];
   motorolaInfoMenu = &menuPool[menuPoolIndex++];
+  passwordMenu = &menuPool[menuPoolIndex++];
 
-//	passwordMenu->type = MENU_TYPE_PASSWORD;
-//	passwordMenu->parent = rootMenu;
-//	passwordMenu->buttonHandler = passwordMenu_handle_button_press;
-//
-//	///////////////////////////////////////////////////////////////////////
+
   idleMenu->parent = idleMenu;
   idleMenu->type = MENU_TYPE_IDLE;
   idleMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_FAULT_IND, LANG_EN);
@@ -346,7 +337,7 @@ void menu_init (void)
 	  .name = {
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_EN),
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_HE) },
-	  .submenu = maintenanceMenu };
+	  .submenu = passwordMenu };
   rootMenu->itemCount = ROOT_MENU_ITEM_COUNT;
 
 //    /////////////////////////////////////////
@@ -472,7 +463,7 @@ void menu_init (void)
   maintenanceMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MAINTENANCE, LANG_EN);
   maintenanceMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MAINTENANCE, LANG_HE);
   maintenanceMenu->type = MENU_TYPE_LIST;
-  maintenanceMenu->buttonHandler = handle_button_press;
+  maintenanceMenu->buttonHandler = maintenance_handle_button_press;
   maintenanceMenu->items[0] = (MenuItem ) {
 	  .name = {
 	      get_maintenance_menu_items_str(STR_TIME_AND_DATE, LANG_EN),
@@ -515,6 +506,10 @@ void menu_init (void)
   motorolaInfoMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MOTOROLA, LANG_EN);
   motorolaInfoMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MOTOROLA, LANG_HE);
   motorolaInfoMenu->type = MENU_TYPE_MOTOROLA;
+
+  passwordMenu->parent = rootMenu;
+  passwordMenu->type = MENU_TYPE_PASSWORD;
+  passwordMenu->buttonHandler = passwordMenu_handle_button_press;
 
   BLK_ON();
   isBacklightOn = true;
@@ -1187,10 +1182,10 @@ void draw_menuScreen (bool forceFullRedraw)
   {
     Draw_MENU_TYPE_IDLE();
   }
-//	else if (currentMenu->type == MENU_TYPE_PASSWORD)
-//	{
-//		 Draw_MENU_TYPE_PASSWORD();
-//	}
+  else if (currentMenu->type == MENU_TYPE_PASSWORD)
+  {
+    Draw_MENU_TYPE_PASSWORD();
+  }
   else if (currentMenu->type == MENU_TYPE_ANNOUNCEMENT)
   {
     Draw_MENU_TYPE_ANNOUNCEMENT();
@@ -1543,44 +1538,6 @@ static void button_esc_handler (void)
   draw_menuScreen(true);
 }
 
-//void passwordMenu_handle_button_press(KeyEvent_t event)
-//{
-//	if ((!passwordMenu) && (currentMenu != passwordMenu)) return;
-//
-//	switch(event.button)
-//	{
-//		//case BTN__BACK:	 Password_Reset(true);      break;
-//		case BTN_ESC:
-//				Password_Backspace();  break;
-//		case BTN_ENTER:
-//						Password_Enter();
-//						if (Password_IsCorrect())
-//						{
-//							currentMenu = rootMenu;
-//							draw_menuScreen(true);
-//						}
-//						break;
-//
-//		case BTN_A:
-//						Password_AddChar('1'); break;
-//		case BTN_B:
-//					Password_AddChar('1'); break;
-//
-//		case BTN_1:          Password_AddChar('1'); break;
-//		case BTN_2:          Password_AddChar('2'); break;
-//		case BTN_3:          Password_AddChar('3'); break;
-//		case BTN_4:          Password_AddChar('4'); break;
-//		case BTN_5:          Password_AddChar('5'); break;
-//		case BTN_6:          Password_AddChar('6'); break;
-//		case BTN_7:          Password_AddChar('7'); break;
-//		case BTN_8:          Password_AddChar('8'); break;
-//		case BTN_9:          Password_AddChar('9'); break;
-//		case BTN_0:          Password_AddChar('0'); break;
-//
-//	}
-//}
-//
-
 static void idle_menu_handler (KeyEvent_t event)
 {
   if (!rootMenu)
@@ -1640,6 +1597,63 @@ static void sinus_info_menu_handler (KeyEvent_t event)
     default:
       break;
   }
+}
+
+static void maintenance_handle_button_press (KeyEvent_t event)
+{
+  if (!maintenanceMenu)
+    return;
+
+  switch (event.button)
+  {
+    case BTN_ESC:
+      if (maintenanceMenu->parent == NULL)
+	return;
+      Password_Reset(false);
+      currentMenu = maintenanceMenu->parent;
+      draw_menuScreen(true);
+      return;
+
+    default:
+      break;
+  }
+  handle_button_press(event);
+}
+
+void passwordMenu_handle_button_press(KeyEvent_t event)
+{
+  if ((!passwordMenu) && (currentMenu != passwordMenu)) return;
+
+  switch(event.button)
+  {
+    //case BTN__BACK:	 Password_Reset(true);      break;
+    case BTN_LEFT:     Password_Backspace();  return;
+
+    case BTN_HASH:     Password_AddChar('#'); return;
+    case BTN_ASTERISK: Password_AddChar('*'); return;
+
+    case BTN_1:        Password_AddChar('1'); return;
+    case BTN_2:        Password_AddChar('2'); return;
+    case BTN_3:        Password_AddChar('3'); return;
+    case BTN_4:        Password_AddChar('4'); return;
+    case BTN_5:        Password_AddChar('5'); return;
+    case BTN_6:        Password_AddChar('6'); return;
+    case BTN_7:        Password_AddChar('7'); return;
+    case BTN_8:        Password_AddChar('8'); return;
+    case BTN_9:        Password_AddChar('9'); return;
+    case BTN_0:        Password_AddChar('0'); return;
+    case BTN_ENTER:
+		      Password_Enter();
+		      if (Password_IsCorrect())
+		      {
+			      currentMenu = maintenanceMenu;
+			      draw_menuScreen(true);
+		      }
+		      return;
+    default:
+      break;
+  }
+  handle_button_press(event);
 }
 
 static void message_info_menu_handler (KeyEvent_t event)

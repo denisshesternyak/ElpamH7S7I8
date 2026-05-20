@@ -19,6 +19,9 @@
 #define LOG_BACKUP_DIR_PATH_U 	((const TCHAR *)u"/log/backup")
 #define LOG_FILE_PATH_U 	((const TCHAR *)u"/log/log.txt")
 
+#define USED_SD 		0
+#define MAINTENANCE_PASSWORD 	"9999"
+
 #define VER_MAJOR  		0
 #define VER_MINOR  		15
 

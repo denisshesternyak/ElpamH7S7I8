@@ -7,8 +7,6 @@
 #include "rtc.h"
 #include "sdfs.h"
 
-#define USED_SD 1
-
 #if !USED_SD
 #define LOGGER_HANDLER	&huart1
 static volatile bool uart_error;
