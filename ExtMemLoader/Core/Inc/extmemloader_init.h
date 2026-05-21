@@ -83,6 +83,8 @@ void Error_Handler(void);
 #define OVER_VO_GPIO_Port GPIOE
 #define EP_WP_Pin GPIO_PIN_1
 #define EP_WP_GPIO_Port GPIOO
+#define OSC_ON_Pin GPIO_PIN_5
+#define OSC_ON_GPIO_Port GPIOO
 #define CODEC_RESET_Pin GPIO_PIN_15
 #define CODEC_RESET_GPIO_Port GPIOB
 #define CU_RESET_ACT_Pin GPIO_PIN_7

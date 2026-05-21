@@ -502,12 +502,19 @@ void handle_drv_on_command (UART_HandleTypeDef *huart)
   HAL_GPIO_TogglePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin);
   handle_amp_st_command(huart);
 }
+
+void handle_osc_on_command (UART_HandleTypeDef *huart)
+{
+  HAL_GPIO_TogglePin(OSC_ON_GPIO_Port, OSC_ON_Pin);
+  handle_amp_st_command(huart);
+}
+
 void handle_amp_st_command (UART_HandleTypeDef *huart)
 {
   char buf[128];
   int len = snprintf(buf, sizeof(buf),
-      "A1  A2  A3  A4  A5  A6  A7  A8  A9  A10 AON DON\r\n"
-      " %d   %d   %d   %d   %d   %d   %d   %d   %d    %d   %d   %d\r\n",
+      "A1  A2  A3  A4  A5  A6  A7  A8  A9  A10 AON DON OSCON\r\n"
+      " %d   %d   %d   %d   %d   %d   %d   %d   %d    %d   %d   %d     %d\r\n",
       HAL_GPIO_ReadPin(AMP_T1_ACT_GPIO_Port, AMP_T1_ACT_Pin),
       HAL_GPIO_ReadPin(AMP_T2_ACT_GPIO_Port, AMP_T2_ACT_Pin),
       HAL_GPIO_ReadPin(AMP_T3_ACT_GPIO_Port, AMP_T3_ACT_Pin),
@@ -519,7 +526,8 @@ void handle_amp_st_command (UART_HandleTypeDef *huart)
       HAL_GPIO_ReadPin(AMP_T9_ACT_GPIO_Port, AMP_T9_ACT_Pin),
       HAL_GPIO_ReadPin(AMP_T10_ACT_GPIO_Port, AMP_T10_ACT_Pin),
       HAL_GPIO_ReadPin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin),
-      HAL_GPIO_ReadPin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin)
+      HAL_GPIO_ReadPin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin),
+      HAL_GPIO_ReadPin(OSC_ON_GPIO_Port, OSC_ON_Pin)
   );
   HAL_UART_Transmit(huart, (uint8_t*)buf, len, HAL_MAX_DELAY);
 }

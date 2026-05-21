@@ -58,6 +58,7 @@ static rs232_cmd_handler_t handle_amp_t10 = NULL;
 static rs232_cmd_handler_t handle_amp_on = NULL;
 static rs232_cmd_handler_t handle_drv_on = NULL;
 static rs232_cmd_handler_t handle_amp_st = NULL;
+static rs232_cmd_handler_t handle_osc_on = NULL;
 
 static rs232_cmd_handler_t handle_btn_9 = NULL;
 static rs232_cmd_handler_t handle_btn_8 = NULL;
@@ -247,6 +248,9 @@ void rs232_process (UartEvent_t event)
     case UART_EVENT_AMP_ST_BTN:
       call_or_default(handle_amp_st);
       break;
+    case UART_EVENT_OSC_ON_BTN:
+      call_or_default(handle_osc_on);
+      break;
     case UART_EVENT_BTN_8:
       call_or_default(handle_btn_8);
       break;
@@ -404,6 +408,10 @@ static void process_command (char *cmd)
   else if (strncmp(cmd, "*DRV_ON", CMD_LENGTH) == 0)
   {
     event = UART_EVENT_DRV_ON_BTN;
+  }
+  else if (strncmp(cmd, "*OSC_ON", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_OSC_ON_BTN;
   }
   else if (strncmp(cmd, "*AMP_ST", CMD_LENGTH) == 0)
   {
@@ -623,6 +631,10 @@ void rs232_register_drv_on (rs232_cmd_handler_t h)
 void rs232_register_amp_st (rs232_cmd_handler_t h)
 {
   handle_amp_st = h;
+}
+void rs232_register_osc_on (rs232_cmd_handler_t h)
+{
+  handle_osc_on = h;
 }
 void rs232_register_btn_8 (rs232_cmd_handler_t h)
 {

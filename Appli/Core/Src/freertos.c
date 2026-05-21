@@ -364,6 +364,7 @@ void StartUartTask (void *argument)
   rs232_register_amp_on(handle_amp_on_command);
   rs232_register_drv_on(handle_drv_on_command);
   rs232_register_amp_st(handle_amp_st_command);
+  rs232_register_osc_on(handle_osc_on_command);
 
   rs232_register_btn_8(handle_btn_8_command);
   rs232_register_btn_9(handle_btn_9_command);

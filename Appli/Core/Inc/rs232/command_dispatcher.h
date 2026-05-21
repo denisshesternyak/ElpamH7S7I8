@@ -49,6 +49,7 @@ void handle_amp_t10_command (UART_HandleTypeDef *huart);
 void handle_amp_on_command (UART_HandleTypeDef *huart);
 void handle_drv_on_command (UART_HandleTypeDef *huart);
 void handle_amp_st_command (UART_HandleTypeDef *huart);
+void handle_osc_on_command (UART_HandleTypeDef *huart);
 
 void handle_btn_8_command (UART_HandleTypeDef *huart);
 void handle_btn_9_command (UART_HandleTypeDef *huart);

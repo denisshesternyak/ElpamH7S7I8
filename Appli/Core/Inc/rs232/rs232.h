@@ -52,6 +52,7 @@ typedef enum
   UART_EVENT_AMP_ON_BTN,
   UART_EVENT_DRV_ON_BTN,
   UART_EVENT_AMP_ST_BTN,
+  UART_EVENT_OSC_ON_BTN,
 
   UART_EVENT_BTN_8,
   UART_EVENT_BTN_9
@@ -106,6 +107,7 @@ void rs232_register_amp_t10 (rs232_cmd_handler_t h);
 void rs232_register_amp_on (rs232_cmd_handler_t h);
 void rs232_register_drv_on (rs232_cmd_handler_t h);
 void rs232_register_amp_st (rs232_cmd_handler_t h);
+void rs232_register_osc_on (rs232_cmd_handler_t h);
 
 void rs232_register_btn_8 (rs232_cmd_handler_t h);
 void rs232_register_btn_9 (rs232_cmd_handler_t h);
