@@ -1626,7 +1626,6 @@ void passwordMenu_handle_button_press(KeyEvent_t event)
 
   switch(event.button)
   {
-    //case BTN__BACK:	 Password_Reset(true);      break;
     case BTN_LEFT:     Password_Backspace();  return;
 
     case BTN_HASH:     Password_AddChar('#'); return;
@@ -1650,10 +1649,16 @@ void passwordMenu_handle_button_press(KeyEvent_t event)
 			      draw_menuScreen(true);
 		      }
 		      return;
+    case BTN_ESC:
+      if (passwordMenu->parent == NULL)
+      	return;
+      Password_Reset(false);
+      currentMenu = passwordMenu->parent;
+      draw_menuScreen(true);
+      return;
     default:
       break;
   }
-  handle_button_press(event);
 }
 
 static void message_info_menu_handler (KeyEvent_t event)
