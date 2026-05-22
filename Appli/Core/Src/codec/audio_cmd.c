@@ -91,7 +91,7 @@ void audio_cmd_init_playback (void)
 
   audio_cmd_write_cmd(AIC32X4_OUTPWRCTL, 0x3F); // Power up HPL/HPR and LOL/LOR drivers
 
-  osDelay(2500);	// Wait for soft stepping (2.5 sec in TI example)
+  osDelay(200);	// Wait for soft stepping (2.5 sec in TI example)
 
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x00);		// Page 0
   // 0xC8 -28dB,

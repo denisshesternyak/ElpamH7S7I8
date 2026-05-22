@@ -107,11 +107,13 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : CODEC_CS_Pin LCD_DC_Pin */
-  GPIO_InitStruct.Pin = CODEC_CS_Pin|LCD_DC_Pin;
+  /*Configure GPIO pins : CODEC_CS_Pin LCD_PWM_Pin AMP_T1_ACT_Pin AMP_T2_ACT_Pin
+                           AMP_T3_ACT_Pin AMP_T10_ACT_Pin */
+  GPIO_InitStruct.Pin = CODEC_CS_Pin|LCD_PWM_Pin|AMP_T1_ACT_Pin|AMP_T2_ACT_Pin
+                          |AMP_T3_ACT_Pin|AMP_T10_ACT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : AMP_T8_ACT_Pin AMP_T9_ACT_Pin AMP_ON_ACT_Pin LED_3_Pin
@@ -142,15 +144,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : LCD_PWM_Pin AMP_T1_ACT_Pin AMP_T2_ACT_Pin AMP_T3_ACT_Pin
-                           AMP_T10_ACT_Pin */
-  GPIO_InitStruct.Pin = LCD_PWM_Pin|AMP_T1_ACT_Pin|AMP_T2_ACT_Pin|AMP_T3_ACT_Pin
-                          |AMP_T10_ACT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : EP_WP_Pin */
   GPIO_InitStruct.Pin = EP_WP_Pin;
@@ -225,6 +218,13 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(KEYPAD_INT_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LCD_DC_Pin */
+  GPIO_InitStruct.Pin = LCD_DC_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(LCD_DC_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
