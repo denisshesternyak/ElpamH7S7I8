@@ -343,7 +343,7 @@ void audio_set_volume (uint8_t level)
   else
     vol = CNVR_VOL(corrected_vol);
 
-  audio_cmd_send_volume(vol);
+  audio_cmd_send_volume_announc(vol);
 
   system_status.max_volume = (corrected_vol == MAX_VOLUME);
 

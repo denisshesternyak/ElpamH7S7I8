@@ -17,6 +17,7 @@
 #include "lcd_widget_test_ampl_indicator.h"
 #include "lcd_widget_report_indicator.h"
 #include "lcd_widget_motorola.h"
+#include "lcd_widget_volume.h"
 #include "audio.h"
 #include "app_freertos.h"
 #include "rtc.h"
@@ -72,6 +73,7 @@ Menu *sinusMenu = NULL;
 Menu *sinusInfoMenu = NULL;
 Menu *motorolaInfoMenu = NULL;
 Menu* passwordMenu = NULL;
+Menu* volumeMenu = NULL;
 
 //static uint8_t volumeValue = 10;
 
@@ -151,6 +153,7 @@ static void sinus_info_menu_handler (KeyEvent_t event);
 static void idle_menu_handler (KeyEvent_t event);
 static void volume_control_handler (KeyEvent_t event);
 static void maintenance_handle_button_press (KeyEvent_t event);
+static void volumeMenu_handle_button_press (KeyEvent_t event);
 
 ///////////////////////////////////////////////////////////////////
 
@@ -291,7 +294,7 @@ void menu_init (void)
   sinusInfoMenu = &menuPool[menuPoolIndex++];
   motorolaInfoMenu = &menuPool[menuPoolIndex++];
   passwordMenu = &menuPool[menuPoolIndex++];
-
+  volumeMenu = &menuPool[menuPoolIndex++];
 
   idleMenu->parent = idleMenu;
   idleMenu->type = MENU_TYPE_IDLE;
@@ -337,7 +340,7 @@ void menu_init (void)
 	  .name = {
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_EN),
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_HE) },
-	  .submenu = passwordMenu };
+	  .submenu = maintenanceMenu };
   rootMenu->itemCount = ROOT_MENU_ITEM_COUNT;
 
 //    /////////////////////////////////////////
@@ -482,6 +485,11 @@ void menu_init (void)
 	      get_maintenance_menu_items_str(STR_SOFTWARE_UPDATE, LANG_HE) },
 	  .prepareAction = &MenuLoadSDCardSoftWare,
 	  .submenu = softwareMenu };
+  maintenanceMenu->items[3] = (MenuItem ) {
+	  .name = {
+	      get_maintenance_menu_items_str(STR_VOLUME_UPDATE, LANG_EN),
+	      get_maintenance_menu_items_str(STR_VOLUME_UPDATE, LANG_HE) },
+	  .submenu = volumeMenu };
   maintenanceMenu->itemCount = MAINTENCE_MENU_ITEM_COUNT;
 
   clockMenu->parent = maintenanceMenu;
@@ -511,10 +519,16 @@ void menu_init (void)
   passwordMenu->type = MENU_TYPE_PASSWORD;
   passwordMenu->buttonHandler = passwordMenu_handle_button_press;
 
+  volumeMenu->parent = maintenanceMenu;
+  volumeMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_VOLUME, LANG_EN);
+  volumeMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_VOLUME, LANG_HE);
+  volumeMenu->type = MENU_TYPE_VOLUME;
+  volumeMenu->buttonHandler = volumeMenu_handle_button_press;
+
   BLK_ON();
   isBacklightOn = true;
 
-  currentMenu = rootMenu;
+  currentMenu = volumeMenu;
 
   draw_status_bar();
   update_date_time();
@@ -1222,6 +1236,10 @@ void draw_menuScreen (bool forceFullRedraw)
   {
     draw_menu_clock();
   }
+  else if (currentMenu->type == MENU_TYPE_VOLUME)
+  {
+    Volume_UpdateValue();
+  }
   else if (currentMenu->type == MENU_TYPE_MOTOROLA)
   {
     draw_menu_motorola();
@@ -1656,6 +1674,45 @@ void passwordMenu_handle_button_press(KeyEvent_t event)
       currentMenu = passwordMenu->parent;
       draw_menuScreen(true);
       return;
+    default:
+      break;
+  }
+}
+
+static void volumeMenu_handle_button_press (KeyEvent_t event)
+{
+  if (!volumeMenu)
+    return;
+
+  switch (event.button)
+  {
+    case BTN_LEFT:
+      Volume_DecreaseIndex();
+      return;
+    case BTN_RIGHT:
+      Volume_IncreaseIndex();
+      return;
+    case BTN_1:        Volume_ChangeNumber(1); return;
+    case BTN_2:        Volume_ChangeNumber(2); return;
+    case BTN_3:        Volume_ChangeNumber(3); return;
+    case BTN_4:        Volume_ChangeNumber(4); return;
+    case BTN_5:        Volume_ChangeNumber(5); return;
+    case BTN_6:        Volume_ChangeNumber(6); return;
+    case BTN_7:        Volume_ChangeNumber(7); return;
+    case BTN_8:        Volume_ChangeNumber(8); return;
+    case BTN_9:        Volume_ChangeNumber(9); return;
+    case BTN_0:        Volume_ChangeNumber(0); return;
+    case BTN_ENTER:
+      Volume_SendVolume();
+      return;
+    case BTN_ESC:
+      if (volumeMenu->parent == NULL)
+	return;
+//      Password_Reset(false);
+      currentMenu = volumeMenu->parent;
+      draw_menuScreen(true);
+      return;
+
     default:
       break;
   }

@@ -135,7 +135,7 @@ void audio_cmd_init_record (void)
   audio_cmd_write_cmd(AIC32X4_ADCMUTE, 0x88);     // Mute both ADCs, gain 0 dB
 }
 
-void audio_cmd_send_volume (uint8_t lvl)
+void audio_cmd_send_volume_announc (uint8_t lvl)
 {
 //    audio_cmd_write_cmd(AIC32X4_PSEL, 0x00);			// Page 0
 //	audio_cmd_write_cmd(AIC32X4_LDACVOL, lvl); 			// Left DAC Channel Digital Volume
@@ -145,6 +145,13 @@ void audio_cmd_send_volume (uint8_t lvl)
 
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
   audio_cmd_write_cmd(AIC32X4_RMIXAMPL, lvl); // Mixer Amplifier Right Volume Control
+}
+
+void audio_cmd_send_volume_dac (uint8_t lvl)
+{
+  audio_cmd_write_cmd(AIC32X4_PSEL, 0x00);			// Page 0
+  audio_cmd_write_cmd(AIC32X4_LDACVOL, lvl); 			// Left DAC Channel Digital Volume
+  audio_cmd_write_cmd(AIC32X4_RDACVOL, lvl); 			// Right DAC Channel Digital Volume
 }
 
 void audio_cmd_enable_HP (void)

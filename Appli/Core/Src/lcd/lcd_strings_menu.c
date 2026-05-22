@@ -19,6 +19,7 @@ static const char* menu_header_str[][LANG_COUNT] = {
   { "### Time and Date ###", "### ™’„ …š€˜‰Š ###" },
   { "### Language ###", "### ™”„ ###" },
   { "### SW update v%d.%d ###", "### v%d.%d ’ƒ‹… „š…‹„ ###" },
+  { "### Volume ###", "### Volume ###" },
   { "### Motorola ###", "### …ˆ…˜…Œ„ ###" }
 };
 const uint8_t MENU_HEADER_ITEM_COUNT = ARRAY_SIZE(menu_header_str);
@@ -45,7 +46,8 @@ const uint8_t TEST_MENU_ITEM_COUNT = ARRAY_SIZE(test_menu_items_str);
 static const char* maintenance_menu_items_str[][LANG_COUNT] = {
   { "Time and Date", "™’„ …š€˜‰Š" },
   { "Language select", "‡‰˜š ™”„" },
-  { "Software update", "’ƒ‹… „š…‹„" }
+  { "Software update", "’ƒ‹… „š…‹„" },
+  { "Volume update", "’ƒ‹… „š…‹„" }
 };
 const uint8_t MAINTENCE_MENU_ITEM_COUNT = ARRAY_SIZE(maintenance_menu_items_str);
 

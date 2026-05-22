@@ -390,8 +390,11 @@ void StartUartTask(void *argument)
   rs232_register_amp_st(handle_amp_st_command);
   rs232_register_osc_on(handle_osc_on_command);
 
+  rs232_register_btn_1(handle_btn_1_command);
   rs232_register_btn_8(handle_btn_8_command);
   rs232_register_btn_9(handle_btn_9_command);
+  rs232_register_btn_left(handle_btn_left_command);
+  rs232_register_btn_right(handle_btn_right_command);
 
   system_status_init();
   UartEvent_t event;

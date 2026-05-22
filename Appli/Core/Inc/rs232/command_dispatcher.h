@@ -51,7 +51,10 @@ void handle_drv_on_command (UART_HandleTypeDef *huart);
 void handle_amp_st_command (UART_HandleTypeDef *huart);
 void handle_osc_on_command (UART_HandleTypeDef *huart);
 
+void handle_btn_1_command (UART_HandleTypeDef *huart);
 void handle_btn_8_command (UART_HandleTypeDef *huart);
 void handle_btn_9_command (UART_HandleTypeDef *huart);
+void handle_btn_left_command (UART_HandleTypeDef *huart);
+void handle_btn_right_command (UART_HandleTypeDef *huart);
 
 #endif /* INC_RS232_COMMAND_DISPATCHER_H_ */

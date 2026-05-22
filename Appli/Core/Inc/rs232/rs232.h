@@ -54,8 +54,11 @@ typedef enum
   UART_EVENT_AMP_ST_BTN,
   UART_EVENT_OSC_ON_BTN,
 
+  UART_EVENT_BTN_1,
   UART_EVENT_BTN_8,
-  UART_EVENT_BTN_9
+  UART_EVENT_BTN_9,
+  UART_EVENT_BTN_LEFT,
+  UART_EVENT_BTN_RIGHT
 } UartEvent_t;
 
 typedef void (*rs232_cmd_handler_t) (UART_HandleTypeDef *huart);
@@ -109,7 +112,10 @@ void rs232_register_drv_on (rs232_cmd_handler_t h);
 void rs232_register_amp_st (rs232_cmd_handler_t h);
 void rs232_register_osc_on (rs232_cmd_handler_t h);
 
+void rs232_register_btn_1 (rs232_cmd_handler_t h);
 void rs232_register_btn_8 (rs232_cmd_handler_t h);
 void rs232_register_btn_9 (rs232_cmd_handler_t h);
+void rs232_register_btn_left (rs232_cmd_handler_t h);
+void rs232_register_btn_right (rs232_cmd_handler_t h);
 
 #endif /* INC_RS232_RS232_H_ */

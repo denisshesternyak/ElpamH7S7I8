@@ -60,8 +60,12 @@ static rs232_cmd_handler_t handle_drv_on = NULL;
 static rs232_cmd_handler_t handle_amp_st = NULL;
 static rs232_cmd_handler_t handle_osc_on = NULL;
 
-static rs232_cmd_handler_t handle_btn_9 = NULL;
+
+static rs232_cmd_handler_t handle_btn_1 = NULL;
 static rs232_cmd_handler_t handle_btn_8 = NULL;
+static rs232_cmd_handler_t handle_btn_9 = NULL;
+static rs232_cmd_handler_t handle_btn_left = NULL;
+static rs232_cmd_handler_t handle_btn_right = NULL;
 
 static void rs232a_rx_complete_callback (UART_HandleTypeDef *huart);
 static void call_or_default (rs232_cmd_handler_t h);
@@ -251,11 +255,21 @@ void rs232_process (UartEvent_t event)
     case UART_EVENT_OSC_ON_BTN:
       call_or_default(handle_osc_on);
       break;
+
+    case UART_EVENT_BTN_1:
+      call_or_default(handle_btn_1);
+      break;
     case UART_EVENT_BTN_8:
       call_or_default(handle_btn_8);
       break;
     case UART_EVENT_BTN_9:
       call_or_default(handle_btn_9);
+      break;
+    case UART_EVENT_BTN_LEFT:
+      call_or_default(handle_btn_left);
+      break;
+    case UART_EVENT_BTN_RIGHT:
+      call_or_default(handle_btn_right);
       break;
   }
 }
@@ -417,6 +431,10 @@ static void process_command (char *cmd)
   {
     event = UART_EVENT_AMP_ST_BTN;
   }
+  else if (strncmp(cmd, "*BTN__1", CMD_LENGTH) == 0)
+    {
+      event = UART_EVENT_BTN_1;
+    }
   else if (strncmp(cmd, "*BTN__8", CMD_LENGTH) == 0)
   {
     event = UART_EVENT_BTN_8;
@@ -425,6 +443,15 @@ static void process_command (char *cmd)
   {
     event = UART_EVENT_BTN_9;
   }
+  else if (strncmp(cmd, "*BTNLFT", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_BTN_LEFT;
+  }
+  else if (strncmp(cmd, "*BTNRGT", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_BTN_RIGHT;
+  }
+
   else if (strncmp(cmd, "*VOL", 4) == 0)
   {
     int d1 = (cmd[4] == ' ') ? 0 : (cmd[4] - '0');
@@ -636,6 +663,11 @@ void rs232_register_osc_on (rs232_cmd_handler_t h)
 {
   handle_osc_on = h;
 }
+
+void rs232_register_btn_1 (rs232_cmd_handler_t h)
+{
+  handle_btn_1 = h;
+}
 void rs232_register_btn_8 (rs232_cmd_handler_t h)
 {
   handle_btn_8 = h;
@@ -643,4 +675,12 @@ void rs232_register_btn_8 (rs232_cmd_handler_t h)
 void rs232_register_btn_9 (rs232_cmd_handler_t h)
 {
   handle_btn_9 = h;
+}
+void rs232_register_btn_left (rs232_cmd_handler_t h)
+{
+  handle_btn_left = h;
+}
+void rs232_register_btn_right (rs232_cmd_handler_t h)
+{
+  handle_btn_right = h;
 }
