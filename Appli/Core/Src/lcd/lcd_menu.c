@@ -11,6 +11,8 @@
 #include "m2_80x74.h"
 #include "lcd_widget_progress_bar.h"
 #include "lcd_widget_volume_indicator.h"
+#include "lcd_widget_volume.h"
+#include "lcd_widget_date_time.h"
 #include "lcd_widget_faults_indicator.h"
 #include "lcd_widget_batteries_indicator.h"
 #include "lcd_widget_test_drivers_indicator.h"
@@ -36,18 +38,6 @@ static bool isBacklightOn = false;
 static uint32_t lastInteractionTick = 0;
 static Menu menuPool[MAX_MENU_POOL];
 static uint8_t menuPoolIndex = 0;
-
-#define CLOCK_MAX_SYMBOLS		6
-
-typedef struct
-{
-  uint8_t current_symbol;
-  int8_t change_value;
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
-} ClockEdit_t;
-
-static ClockEdit_t clock;
 
 static char listFilenames[MAX_MENU_ITEMS][FF_MAX_LFN] __attribute__((section(".extram")));
 //const char *selectedFile = NULL;
@@ -105,9 +95,6 @@ MenuImage menu_microfon_img = {
 #define LOGO_X_POS 10
 #define LOGO_Y_POS 12
 
-#define TIME_X_POS 340       
-#define TIME_Y_POS 5
-
 #define SERIAL_X_POS 340     
 #define SERIAL_Y_POS 28
 
@@ -133,8 +120,6 @@ void RunSilentTest (void);
 void RunBatteriesTest (void);
 void RunAmplifiresTest (void);
 void RunDriversTest (void);
-void run_clock (void);
-void prepare_clock (void);
 static void menu_init_language (void);
 //static void change_volume (void);
 static void increase_volume (void);
@@ -179,7 +164,6 @@ static void MenuLoadSDCardSirens (void);
 static void MenuLoadSDCardSoftWare (void);
 static void prepare_announcement (void);
 static void prepare_sinuse_items (void);
-static void draw_menu_clock (void);
 static void draw_menu_motorola (void);
 
 static void siren_info_prepare_action (void);
@@ -340,7 +324,7 @@ void menu_init (void)
 	  .name = {
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_EN),
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_HE) },
-	  .submenu = maintenanceMenu };
+	  .submenu = passwordMenu };
   rootMenu->itemCount = ROOT_MENU_ITEM_COUNT;
 
 //    /////////////////////////////////////////
@@ -471,8 +455,8 @@ void menu_init (void)
 	  .name = {
 	      get_maintenance_menu_items_str(STR_TIME_AND_DATE, LANG_EN),
 	      get_maintenance_menu_items_str(STR_TIME_AND_DATE, LANG_HE) },
-	  .prepareAction = &prepare_clock,
-	  .postAction = &run_clock };
+	  .prepareAction = &DateTime_Prepare,
+	  .submenu = clockMenu};
   maintenanceMenu->items[1] = (MenuItem ) {
 	  .name = {
 	      get_maintenance_menu_items_str(STR_LANGUAGES, LANG_EN),
@@ -528,7 +512,7 @@ void menu_init (void)
   BLK_ON();
   isBacklightOn = true;
 
-  currentMenu = volumeMenu;
+  currentMenu = rootMenu;
 
   draw_status_bar();
   update_date_time();
@@ -610,20 +594,6 @@ void RunDriversTest (void)
     bool is_drv = check_voltage(ADC_DRIVER_MEAS, ADC_DRV_DIV, ADC_TASK_DRV, 100);
     TestDrvDisplay_SetStatus(i, is_drv);
   }
-}
-
-void prepare_clock (void)
-{
-  HAL_RTC_GetTime(&hrtc, &clock.sTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &clock.sDate, RTC_FORMAT_BIN);
-}
-
-void run_clock (void)
-{
-  clock.change_value = 0;
-  clock.current_symbol = 0;
-  currentMenu = clockMenu;
-  draw_menuScreen(true);
 }
 
 void MenuLoadSDCardSirens (void)
@@ -915,139 +885,6 @@ void Draw_MENU_TYPE_MESSAGE_PLAY (void)
   osDelay(3);
 }
 
-void draw_menu_clock (void)
-{
-  RTC_TimeTypeDef *sTime = &clock.sTime;
-  RTC_DateTypeDef *sDate = &clock.sDate;
-
-  if (clock.change_value != 0)
-  {
-    if (clock.current_symbol == 0)
-    {
-      int8_t data = sDate->Date;
-      data += clock.change_value;
-
-      if (data > 31)
-	sDate->Date = 1;
-      else if (data < 1)
-	sDate->Date = 31;
-      else
-	sDate->Date = data;
-    }
-    if (clock.current_symbol == 1)
-    {
-      int8_t data = sDate->Month;
-      data += clock.change_value;
-
-      if (data > 12)
-	sDate->Month = 1;
-      else if (data < 1)
-	sDate->Month = 12;
-      else
-	sDate->Month = data;
-    }
-    if (clock.current_symbol == 2)
-    {
-      int8_t data = sDate->Year;
-      data += clock.change_value;
-
-      if (data > 99)
-	sDate->Year = 0;
-      else if (data < 0)
-	sDate->Year = 99;
-      else
-	sDate->Year = data;
-    }
-
-    if (clock.current_symbol == 3)
-    {
-      int8_t data = sTime->Hours;
-      data += clock.change_value;
-
-      if (data > 23)
-	sTime->Hours = 0;
-      else if (data < 0)
-	sTime->Hours = 23;
-      else
-	sTime->Hours = data;
-    }
-
-    if (clock.current_symbol == 4)
-    {
-      int8_t data = sTime->Minutes;
-      data += clock.change_value;
-
-      if (data > 59)
-	sTime->Minutes = 0;
-      else if (data < 0)
-	sTime->Minutes = 59;
-      else
-	sTime->Minutes = data;
-    }
-    if (clock.current_symbol == 5)
-    {
-      int8_t data = sTime->Seconds;
-      data += clock.change_value;
-
-      if (data > 59)
-	sTime->Seconds = 0;
-      else if (data < 0)
-	sTime->Seconds = 59;
-      else
-	sTime->Seconds = data;
-    }
-
-    HAL_RTC_SetTime(&hrtc, sTime, RTC_FORMAT_BIN);
-    HAL_RTC_SetDate(&hrtc, sDate, RTC_FORMAT_BIN);
-    clock.change_value = 0;
-  }
-
-  FontDef *font = &Font_16x26;
-  const uint8_t fontW = font->width;
-  const uint16_t baseX = 99;
-  const uint16_t y = 153;
-
-  char buf[32];
-  snprintf(buf, sizeof(buf), "%02d/%02d/%02d  %02d:%02d:%02d", sDate->Date, sDate->Month, sDate->Year, sTime->Hours, sTime->Minutes, sTime->Seconds);
-
-  hx8357_write_alignedX_string(baseX, y, buf, font, COLOR_YELLOW, COLOR_BLACK, ALIGN_LEFT);
-
-  uint16_t field_color = COLOR_YELLOW;
-  uint16_t field_bg = COLOR_BLUE;
-  uint16_t field_offset = 0;
-
-  const uint8_t pos_in_str[CLOCK_MAX_SYMBOLS] = { 0, 3, 6, 10, 13, 16 };
-
-  if (clock.current_symbol < CLOCK_MAX_SYMBOLS)
-  {
-    field_offset = pos_in_str[clock.current_symbol] * fontW;
-
-    char field_str[4];
-    switch (clock.current_symbol)
-    {
-      case 0:
-	snprintf(field_str, sizeof(field_str), "%02d", sDate->Date);
-	break;
-      case 1:
-	snprintf(field_str, sizeof(field_str), "%02d", sDate->Month);
-	break;
-      case 2:
-	snprintf(field_str, sizeof(field_str), "%02d", sDate->Year);
-	break;
-      case 3:
-	snprintf(field_str, sizeof(field_str), "%02d", sTime->Hours);
-	break;
-      case 4:
-	snprintf(field_str, sizeof(field_str), "%02d", sTime->Minutes);
-	break;
-      case 5:
-	snprintf(field_str, sizeof(field_str), "%02d", sTime->Seconds);
-	break;
-    }
-
-    hx8357_write_alignedX_string(baseX + field_offset, y, field_str, font, field_color, field_bg, ALIGN_LEFT);
-  }
-}
 
 static void draw_menu_motorola (void)
 {
@@ -1234,7 +1071,7 @@ void draw_menuScreen (bool forceFullRedraw)
   }
   else if (currentMenu->type == MENU_TYPE_CLOCK)
   {
-    draw_menu_clock();
+    Draw_MENU_TYPE_CLOCK();
   }
   else if (currentMenu->type == MENU_TYPE_VOLUME)
   {
@@ -1320,16 +1157,8 @@ void update_date_time ()
     return;
   }
 
-  char clock_str[64];
-  RTC_TimeTypeDef sTime = { 0 };
-  RTC_DateTypeDef sDate = { 0 };
+  DateTime_HeaderClock();
 
-  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-
-  snprintf(clock_str, sizeof(clock_str), "%02d/%02d/%02d %02d:%02d:%02d", sDate.Date, sDate.Month, sDate.Year, sTime.Hours, sTime.Minutes, sTime.Seconds);
-
-  hx8357_write_alignedX_string(0, TIME_Y_POS, clock_str, &Font_11x18, COLOR_YELLOW, COLOR_BLACK, ALIGN_RIGHT);
   return;
 }
 
@@ -1790,24 +1619,34 @@ static void clockMenu_handle_button_press (KeyEvent_t event)
 
   switch (event.button)
   {
+    case BTN_LEFT:
+      DateTime_DecreaseIndex();
+      return;
+    case BTN_RIGHT:
+      DateTime_IncreaseIndex();
+      return;
+    case BTN_1:        DateTime_ChangeNumber(1); return;
+    case BTN_2:        DateTime_ChangeNumber(2); return;
+    case BTN_3:        DateTime_ChangeNumber(3); return;
+    case BTN_4:        DateTime_ChangeNumber(4); return;
+    case BTN_5:        DateTime_ChangeNumber(5); return;
+    case BTN_6:        DateTime_ChangeNumber(6); return;
+    case BTN_7:        DateTime_ChangeNumber(7); return;
+    case BTN_8:        DateTime_ChangeNumber(8); return;
+    case BTN_9:        DateTime_ChangeNumber(9); return;
+    case BTN_0:        DateTime_ChangeNumber(0); return;
     case BTN_ENTER:
-      clock.current_symbol++;
-      if (clock.current_symbol >= CLOCK_MAX_SYMBOLS)
-	clock.current_symbol = 0;
-      draw_menu_clock();
+      DateTime_Set();
       return;
-    case BTN_UP:
-      clock.change_value = 1;
-      draw_menu_clock();
-      return;
-    case BTN_DOWN:
-      clock.change_value = -1;
-      draw_menu_clock();
+    case BTN_ESC:
+      if (clockMenu->parent == NULL)
+	return;
+      currentMenu = clockMenu->parent;
+      draw_menuScreen(true);
       return;
     default:
       break;
   }
-  handle_button_press(event);
 }
 
 static void languageMenu_handle_button_press (KeyEvent_t event)

@@ -10,6 +10,4 @@ void Volume_ChangeNumber (uint8_t n);
 void Volume_SendVolume (void);
 void Volume_UpdateValue (void);
 
-void Volume_UpdateValue (void);
-
 #endif /* INC_LCD_LCD_WIDGET_VOLUME_H_ */

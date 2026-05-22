@@ -73,8 +73,6 @@ void Volume_UpdateValue (void)
   const uint8_t pos_in_str[MAX_VOLUME_SIZE] = { 0, 2, 3 };
   field_offset = pos_in_str[volumeIndex] * font->width;
 
-  printf("ind %d, pos %d\r\n", volumeIndex, field_offset);
-
   char field_str[4];
   snprintf(field_str, sizeof(field_str), "%1d", volumeBuffer[volumeIndex]);
   hx8357_write_alignedX_string(VOLUME_VALUE_X + field_offset, VOLUME_VALUE_Y, field_str, font, field_color, field_bg, ALIGN_LEFT);
