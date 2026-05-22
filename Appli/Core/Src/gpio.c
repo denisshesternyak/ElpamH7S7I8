@@ -227,10 +227,10 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(LCD_DC_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 10, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI2_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 11, 0);
   HAL_NVIC_EnableIRQ(EXTI2_IRQn);
 
 }

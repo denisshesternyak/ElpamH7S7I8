@@ -57,9 +57,6 @@
 /* External variables --------------------------------------------------------*/
 extern SD_HandleTypeDef hsd1;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
-extern UART_HandleTypeDef huart4;
-extern UART_HandleTypeDef huart5;
-extern UART_HandleTypeDef huart7;
 extern UART_HandleTypeDef huart1;
 extern DMA_NodeTypeDef Node_GPDMA1_Channel3;
 extern DMA_QListTypeDef List_GPDMA1_Channel3;
@@ -70,6 +67,9 @@ extern DMA_HandleTypeDef handle_GPDMA1_Channel0;
 extern RTC_HandleTypeDef hrtc;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel1;
 extern SPI_HandleTypeDef hspi2;
+extern UART_HandleTypeDef huart4;
+extern UART_HandleTypeDef huart5;
+extern UART_HandleTypeDef huart7;
 extern TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN EV */
