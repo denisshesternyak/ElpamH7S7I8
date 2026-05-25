@@ -16,6 +16,7 @@
 void audio_init (void);
 void audio_process (AudioNotify_t *audio_notify);
 void audio_set_volume (uint8_t level);
+void audio_set_volume_playback (uint8_t level);
 
 void audio_notify_low (AudioEvent_t event, AudioType_t type);
 void audio_notify_high (AudioEvent_t event, AudioType_t type);

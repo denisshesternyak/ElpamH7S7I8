@@ -97,8 +97,8 @@ void audio_cmd_init_playback (void)
   // 0xC8 -28dB,
 //    audio_cmd_write_cmd(AIC32X4_LDACVOL, 0x81); 		// Left DAC Channel Digital Volume -63.5dB
 //    audio_cmd_write_cmd(AIC32X4_RDACVOL, 0x81); 		// Right DAC Channel Digital Volume -63.5dB
-  audio_cmd_write_cmd(AIC32X4_LDACVOL, 0x00); // Left DAC Channel Digital Volume 0dB
-  audio_cmd_write_cmd(AIC32X4_RDACVOL, 0x00); // Right DAC Channel Digital Volume 0dB
+//  audio_cmd_write_cmd(AIC32X4_LDACVOL, 0x00); // Left DAC Channel Digital Volume 0dB
+//  audio_cmd_write_cmd(AIC32X4_RDACVOL, 0x00); // Right DAC Channel Digital Volume 0dB
   audio_cmd_write_cmd(AIC32X4_DACSETUP, 0xD6); // LDAC + RDAC powered, soft step 1/fs
 //    audio_cmd_write_cmd(AIC32X4_DACMUTE, 0x0C); 		// Mute both DACs, gain 0 dB
   audio_cmd_write_cmd(AIC32X4_DACMUTE, 0x00); 	// Unmute both DACs, gain 0 dB

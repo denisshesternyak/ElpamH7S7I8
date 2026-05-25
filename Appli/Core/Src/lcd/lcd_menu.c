@@ -514,6 +514,7 @@ void menu_init (void)
 
   currentMenu = rootMenu;
 
+  Volume_Init();
   draw_status_bar();
   update_date_time();
   draw_menuScreen(true);

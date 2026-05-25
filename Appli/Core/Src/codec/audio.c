@@ -114,6 +114,7 @@ void audio_init (void)
   audio_cmd_init_power();
   audio_cmd_init_playback();
   audio_cmd_init_record();
+  audio_set_volume_playback(CUR_VOLUME_PLAYBACK);
 }
 
 void audio_process (AudioNotify_t *audio_notify)
@@ -349,6 +350,16 @@ void audio_set_volume (uint8_t level)
 
   //uint8_t bar_index = find_volume_index(corrected) + 1;
   //VolumeIndicator_SetLevelSilent(&volumeIndicator, bar_index);
+}
+
+void audio_set_volume_playback (uint8_t level)
+{
+  uint8_t vol = 0;
+  if (level == 0) vol = MAX_VOLUME_PLAYBACK;
+  else if (level >= 150) vol = MIN_VOLUME_PLAYBACK;
+  else vol = (uint8_t)(129 + (level * 127 / 150));
+
+  audio_cmd_send_volume_dac(vol);
 }
 
 // SINUS

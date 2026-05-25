@@ -3,6 +3,7 @@
 #include "defines.h"
 #include "hx8357d.h"
 #include "fonts.h"
+#include "audio.h"
 #include <stdio.h>
 
 #define STATUS_BAR_LINE_Y_POS  		35
@@ -23,6 +24,16 @@ static void volume_change_status (const char *str)
 {
   FontDef *font = &Font_11x18;
   hx8357_write_alignedX_string(0, VOLUME_TEXT_LINE1_Y, str, font, COLOR_WHITE, COLOR_BLACK, ALIGN_CENTER);
+}
+
+void Volume_Init (void)
+{
+  volumeIndex = 0;
+  uint16_t volume = CUR_VOLUME_PLAYBACK;
+
+  volumeBuffer[0] = volume / 100;
+  volumeBuffer[1] = (volume / 10) % 10;
+  volumeBuffer[2] = volume % 10;
 }
 
 void Volume_IncreaseIndex (void)
@@ -49,6 +60,16 @@ void Volume_ChangeNumber (uint8_t n)
 {
   volumeBuffer[volumeIndex] = n;
 
+  uint8_t num = (volumeBuffer[0] * 100) + (volumeBuffer[1] * 10) + volumeBuffer[2];
+  if(num > MAX_VOLUME_PLAYBACK)
+  {
+    uint16_t volume = MAX_VOLUME_PLAYBACK;
+
+    volumeBuffer[0] = volume / 100;
+    volumeBuffer[1] = (volume / 10) % 10;
+    volumeBuffer[2] = volume % 10;
+  }
+
   Volume_UpdateValue();
   volume_change_status(MAX_UPDATE_STR_EMPTY);
 }
@@ -56,6 +77,10 @@ void Volume_ChangeNumber (uint8_t n)
 void Volume_SendVolume (void)
 {
   // send to SPI
+  uint8_t level = (volumeBuffer[0] * 100) + (volumeBuffer[1] * 10) + volumeBuffer[2];
+  printf("lvl %d\r\n", level);
+
+  audio_set_volume_playback(level);
   volume_change_status(MAX_UPDATE_STR);
 }
 

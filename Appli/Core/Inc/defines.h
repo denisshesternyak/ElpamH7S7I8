@@ -34,6 +34,11 @@
 //#define MIN_VOLUME_CODEC    200
 #define MAX_VOLUME_CODEC    	0
 #define MIN_VOLUME_CODEC    	40
+
+#define MAX_VOLUME_PLAYBACK    	150
+#define MIN_VOLUME_PLAYBACK    	0
+#define CUR_VOLUME_PLAYBACK    	150
+
 #define MAX_VOLUME          	122
 #define MIN_VOLUME          	80
 #define VOLUME_STEP         	3

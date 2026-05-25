@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+void Volume_Init(void);
 void Volume_IncreaseIndex (void);
 void Volume_DecreaseIndex (void);
 void Volume_ChangeNumber (uint8_t n);
