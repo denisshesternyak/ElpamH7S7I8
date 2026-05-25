@@ -28,6 +28,7 @@
 #include "system_status.h"
 #include "metadata.h"
 #include "lcd_widget_password.h"
+#include "tester.h"
 
 //bool isResetPasswordAfterIdle = false;
 
@@ -514,6 +515,7 @@ void menu_init (void)
 
   currentMenu = rootMenu;
 
+  tester_init();
   Volume_Init();
   draw_status_bar();
   update_date_time();
@@ -581,20 +583,32 @@ void RunBatteriesTest (void)
 
 void RunAmplifiresTest (void)
 {
+//  audio_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
+  OSC_ON;
+
   for(uint8_t i = 0; i < AMP_COUNT; i++)
   {
-    bool is_amp = check_voltage(ADC_AMPLIFIER_MEAS, ADC_AMP_DIV, ADC_TASK_AMP, 100);
-    TestAmplDisplay_SetStatus(i, is_amp);
+    bool res = tester_check_amplifier(i);
+    TestAmplDisplay_SetStatus(i, res);
   }
+
+  OSC_OFF;
+//  audio_notify_stop_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
 }
 
 void RunDriversTest (void)
 {
+//  audio_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
+  OSC_ON;
+
   for(uint8_t i = 0; i < DRV_COUNT; i++)
   {
-    bool is_drv = check_voltage(ADC_DRIVER_MEAS, ADC_DRV_DIV, ADC_TASK_DRV, 100);
-    TestDrvDisplay_SetStatus(i, is_drv);
+    bool res = tester_check_driver(i);
+    TestDrvDisplay_SetStatus(i, res);
   }
+
+  OSC_OFF;
+//  audio_notify_stop_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
 }
 
 void MenuLoadSDCardSirens (void)

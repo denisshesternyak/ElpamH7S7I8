@@ -79,6 +79,10 @@ static void audio_play_dtmf (void);
 static void audio_stop_dtmf (void);
 static void audio_prepare_stop_dtmf (void);
 
+// QUIET
+static void audio_start_quiet (AudioNotify_t *audio_notify);
+static void audio_stop_quiet (void);
+
 static void start_playback (void);
 static void stop_playback (void);
 static void check_progress (void);
@@ -187,6 +191,8 @@ static void audio_start (AudioNotify_t *audio_notify)
     case AUDIO_DTMF:
       audio_start_dtmf();
       break;
+    case AUDIO_QUIET:
+      audio_start_quiet(audio_notify);
     default:
       break;
   }
@@ -239,6 +245,8 @@ static void audio_stop (AudioNotify_t *audio_notify)
     case AUDIO_DTMF:
       audio_stop_dtmf();
       break;
+    case AUDIO_QUIET:
+      audio_stop_quiet();
     default:
       break;
   }
@@ -370,6 +378,8 @@ static void audio_start_sinus (AudioNotify_t *audio_notify)
   init_generation(audio_notify->sin_task);
   audio_generate_sine(&player, dma_buffer, AUDIO_STEREO_PAIRS_FULL);
 
+  audio_cmd_playback_enable();
+
   start_playback();
 }
 
@@ -396,6 +406,7 @@ static void audio_play_sinus (void)
 static void audio_stop_sinus (void)
 {
   stop_playback();
+  audio_cmd_playback_disable();
 
   LOG_INFO("Stop playback sinus");
 }
@@ -433,6 +444,8 @@ static void audio_start_sd (AudioNotify_t *audio_notify)
     return;
   }
 
+  audio_cmd_playback_enable();
+
   start_playback();
 }
 
@@ -461,6 +474,7 @@ static void audio_play_sd (void)
 static void audio_stop_sd (void)
 {
   stop_playback();
+  audio_cmd_playback_disable();
 
   sdfs_close_audiofile(&player.file_info);
   memset(&player.file_info, 0, sizeof(player.file_info));
@@ -559,6 +573,26 @@ static void audio_prepare_stop_dtmf (void)
 
 }
 
+// QUIET
+static void audio_start_quiet (AudioNotify_t *audio_notify)
+{
+  LOG_INFO("Start playback quiet test");
+
+  init_generation(audio_notify->sin_task);
+  audio_generate_sine(&player, dma_buffer, AUDIO_STEREO_PAIRS_FULL);
+
+  audio_cmd_quiet_enable();
+  start_playback();
+}
+
+static void audio_stop_quiet (void)
+{
+  audio_cmd_quiet_disable();
+  stop_playback();
+
+  LOG_INFO("Stop playback quiet test");
+}
+
 ////
 static void start_playback (void)
 {
@@ -567,7 +601,6 @@ static void start_playback (void)
 //		HAL_I2S_DMAStop(CODEC_I2S_HANDLER);
 //	}
 
-  audio_cmd_playback_enable();
   audio_cmd_I2S_to_DAC();
 
   player.is_playing = true;
@@ -595,7 +628,6 @@ static void stop_playback (void)
   player.priority = AUDIO_PRIORITY_IDLE;
 
 //	LOG_DEBUG("STOP");
-  audio_cmd_playback_disable();
 
   if (!player.is_fade_stoped)
   {
@@ -682,6 +714,18 @@ void audio_notify_start_task_low (AudioType_t type,
   AudioNotify_t audio_notify = { .sin_task = task, .filename = name };
 
   if (send_audio_notify(&audio_notify, AUDIO_START, type, AUDIO_PRIORITY_LOW, 10) != osOK)
+  {
+    LOG_WARN("The event from KEYBOARD cannot be handled. The audio queue is full");
+  }
+}
+
+void audio_notify_stop_task_low (AudioType_t type,
+				  SinTask_t task,
+				  const char *name)
+{
+  AudioNotify_t audio_notify = { .sin_task = task, .filename = name };
+
+  if (send_audio_notify(&audio_notify, AUDIO_STOP, type, AUDIO_PRIORITY_LOW, 10) != osOK)
   {
     LOG_WARN("The event from KEYBOARD cannot be handled. The audio queue is full");
   }

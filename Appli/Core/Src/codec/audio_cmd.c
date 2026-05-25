@@ -287,7 +287,7 @@ void audio_cmd_A2D_loopback (void)
 
 void audio_cmd_I2S_to_DAC (void)
 {
-  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x08); 		// LDAC -> HPL
+//  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x08); 		// LDAC -> HPL
 
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x00);			// Page 0
   audio_cmd_write_cmd(AIC32X4_IFACE3, 0x00);			// No Loopback
@@ -344,4 +344,17 @@ void audio_cmd_INR_disable (void)
   audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x00);// No route IN1R to RIGHT_P with 20K input impedance
   audio_cmd_mute_LO();
   audio_cmd_mute_HP();
+}
+
+void audio_cmd_quiet_enable (void)
+{
+  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);			// Page 1
+  audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x08);   	// RDAC -> HPR
+  audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x00);		 // HPR gain 0 dB, driver is not unmuted
+}
+
+void audio_cmd_quiet_disable (void)
+{
+  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
+  audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x40); 		// HPR gain 0 dB, driver is not muted
 }

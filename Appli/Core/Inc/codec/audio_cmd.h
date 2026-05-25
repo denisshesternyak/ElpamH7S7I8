@@ -35,4 +35,7 @@ void audio_cmd_IN3L_enable (void);
 void audio_cmd_IN1R_enable (void);
 void audio_cmd_INR_disable (void);
 
+void audio_cmd_quiet_enable (void);
+void audio_cmd_quiet_disable (void);
+
 #endif /* INC_CODEC_AUDIO_CMD_H_ */

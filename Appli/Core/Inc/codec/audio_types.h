@@ -33,6 +33,7 @@ typedef enum
   AUDIO_MIC,
   AUDIO_MOTOROLA,
   AUDIO_DTMF,
+  AUDIO_QUIET,
 } AudioType_t;
 
 typedef enum
