@@ -117,8 +117,10 @@ typedef struct
 
   uint32_t last_time_arming;
   uint32_t last_time_announcement;
+  uint32_t last_time_recording;
 
   volatile bool is_playing;
+  volatile bool is_recording;
   volatile bool is_paused;
   volatile bool is_stoped;
   volatile bool is_prepare_stoped;

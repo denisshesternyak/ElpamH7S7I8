@@ -108,30 +108,34 @@ void audio_cmd_init_playback (void)
 void audio_cmd_init_record (void)
 {
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x00);		// Page 0
-  audio_cmd_write_cmd(AIC32X4_NADC, 0x81);   		// NADC = 1, powered up
-  audio_cmd_write_cmd(AIC32X4_MADC, 0x82);     		// MADC = 2, powered up
+  audio_cmd_write_cmd(AIC32X4_NADC, 0x82);   		// NADC = 2, powered up
+  audio_cmd_write_cmd(AIC32X4_MADC, 0x86);     		// MADC = 6, powered up
   audio_cmd_write_cmd(AIC32X4_AOSR, 0x80);     		// AOSR = 128
-  audio_cmd_write_cmd(AIC32X4_ADCSPB, 0x01); // PRB_R1 for ADC (default recording)
+  audio_cmd_write_cmd(AIC32X4_ADCSPB, 0x04); // PRB_R4 for ADC (default recording)
 
 //	audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);			// Page 1
 //	audio_cmd_write_cmd(AIC32X4_ADCPWTUNE, 0x00);		// Select ADC PTM_R4
+//
+//  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
+//  audio_cmd_write_cmd(AIC32X4_MICBIAS, 0x40);		// MIC BIAS power-up
+//  audio_cmd_write_cmd(AIC32X4_INPWRCTRL, 0x31);  // MicPGA startup delay ~3.1 ms
+//  audio_cmd_write_cmd(AIC32X4_RMIXAMPL, 0x00); // Mixer Amplifier Right Volume Control
 
-  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
-  audio_cmd_write_cmd(AIC32X4_MICBIAS, 0x40);		// MIC BIAS power-up
-  audio_cmd_write_cmd(AIC32X4_INPWRCTRL, 0x31);  // MicPGA startup delay ~3.1 ms
-  audio_cmd_write_cmd(AIC32X4_RMIXAMPL, 0x00); // Mixer Amplifier Right Volume Control
+//  audio_cmd_write_cmd(AIC32X4_LMICPGANIN, 0x80); // Route CM to LEFT_N with 20K input impedance
+//  audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); // Route CM to RIGHT_N with 20K input impedance
 
-  audio_cmd_write_cmd(AIC32X4_LMICPGANIN, 0x80); // Route CM to LEFT_N with 20K input impedance
-  audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); // Route CM to RIGHT_N with 20K input impedance
+  audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x08); // Route IN3R to RIGHT_P with 20K input impedance
+  audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); // Route CM1 to RIGHT_N with 20K input impedance
 
-  audio_cmd_write_cmd(AIC32X4_LMICPGAVOL, 0x0C);  // Left MicPGA enable, +6 dB
+//  audio_cmd_write_cmd(AIC32X4_LMICPGAVOL, 0x0C);  // Left MicPGA enable, +6 dB
   audio_cmd_write_cmd(AIC32X4_RMICPGAVOL, 0x0C);  // Right MicPGA enable, +6 dB
 
 //    audio_cmd_write_cmd(AIC32X4_LMIXAMPL, 0x00);  		// Mixer Amplifier Left Volume Control, 0 dB
 //    audio_cmd_write_cmd(AIC32X4_RMIXAMPL, 0x00);		// Mixer Amplifier Right Volume Control, 0 dB
 
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x00);		// Page 0
-  audio_cmd_write_cmd(AIC32X4_ADCSETUP, 0xC0); 	// Left + Right ADC powered up
+//  audio_cmd_write_cmd(AIC32X4_ADCSETUP, 0xC0); 	// Left + Right ADC powered up
+  audio_cmd_write_cmd(AIC32X4_ADCSETUP, 0x40); 	  // Right ADC powered up
   audio_cmd_write_cmd(AIC32X4_ADCMUTE, 0x88);     // Mute both ADCs, gain 0 dB
 }
 

@@ -77,6 +77,8 @@ void Error_Handler(void);
 #define LED_1_GPIO_Port GPIOB
 #define SOL_DET_Pin GPIO_PIN_7
 #define SOL_DET_GPIO_Port GPIOE
+#define LINE_DISCONNECT_Pin GPIO_PIN_8
+#define LINE_DISCONNECT_GPIO_Port GPIOE
 #define LCD_PWM_Pin GPIO_PIN_9
 #define LCD_PWM_GPIO_Port GPIOE
 #define OVER_VO_Pin GPIO_PIN_10
@@ -85,10 +87,15 @@ void Error_Handler(void);
 #define EP_WP_GPIO_Port GPIOO
 #define OSC_ON_Pin GPIO_PIN_5
 #define OSC_ON_GPIO_Port GPIOO
+#define GEN_OFFHOOK_Pin GPIO_PIN_14
+#define GEN_OFFHOOK_GPIO_Port GPIOB
 #define CODEC_RESET_Pin GPIO_PIN_15
 #define CODEC_RESET_GPIO_Port GPIOB
 #define CU_RESET_ACT_Pin GPIO_PIN_7
 #define CU_RESET_ACT_GPIO_Port GPION
+#define LOCAL_OH_Pin GPIO_PIN_6
+#define LOCAL_OH_GPIO_Port GPIOC
+#define LOCAL_OH_EXTI_IRQn EXTI6_IRQn
 #define KEYPAD_RST_Pin GPIO_PIN_7
 #define KEYPAD_RST_GPIO_Port GPIOC
 #define RS485_DE_Pin GPIO_PIN_8
@@ -125,6 +132,9 @@ void Error_Handler(void);
 #define AMP_T5_ACT_GPIO_Port GPIOF
 #define AMP_T6_ACT_Pin GPIO_PIN_3
 #define AMP_T6_ACT_GPIO_Port GPIOF
+#define RING_Pin GPIO_PIN_4
+#define RING_GPIO_Port GPIOF
+#define RING_EXTI_IRQn EXTI4_IRQn
 #define LED_2_Pin GPIO_PIN_4
 #define LED_2_GPIO_Port GPIOB
 #define PPF_PD0_DOOR_Pin GPIO_PIN_0

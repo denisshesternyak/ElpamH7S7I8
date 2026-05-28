@@ -24,6 +24,7 @@
 /* USER CODE BEGIN 0 */
 #include "app_freertos.h"
 #include "events.h"
+#include "dtmf_types.h"
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -32,9 +33,14 @@
 /* USER CODE BEGIN 1 */
 #define DEBOUNCE_KEY_TIME_MS    50
 #define DEBOUNCE_SD_TIME_MS    50
+#define DEBOUNCE_LOCAL_TIME_MS    50
+#define DEBOUNCE_RING_TIME_MS    50
 
 static uint32_t last_key_event_time = 0;
 static uint32_t last_sd_event_time = 0;
+static uint32_t last_local_event_time = 0;
+static uint32_t last_ring_event_time = 0;
+
 /* USER CODE END 1 */
 
 /** Configure pins
@@ -72,7 +78,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(BAT_OFF_ACT_GPIO_Port, BAT_OFF_ACT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LED_1_Pin|CODEC_RESET_Pin|LED_2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LED_1_Pin|GEN_OFFHOOK_Pin|CODEC_RESET_Pin|LED_2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOO, EP_WP_Pin|OSC_ON_Pin, GPIO_PIN_RESET);
@@ -99,10 +105,10 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DISPLAY_RST_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : POW_DET_Pin SOL_DET_Pin OVER_VO_Pin UNDER_VO_Pin
-                           PPF_PD0_DOOR_Pin */
-  GPIO_InitStruct.Pin = POW_DET_Pin|SOL_DET_Pin|OVER_VO_Pin|UNDER_VO_Pin
-                          |PPF_PD0_DOOR_Pin;
+  /*Configure GPIO pins : POW_DET_Pin SOL_DET_Pin LINE_DISCONNECT_Pin OVER_VO_Pin
+                           UNDER_VO_Pin PPF_PD0_DOOR_Pin */
+  GPIO_InitStruct.Pin = POW_DET_Pin|SOL_DET_Pin|LINE_DISCONNECT_Pin|OVER_VO_Pin
+                          |UNDER_VO_Pin|PPF_PD0_DOOR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
@@ -138,8 +144,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(BAT_OFF_ACT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED_1_Pin CODEC_RESET_Pin LED_2_Pin */
-  GPIO_InitStruct.Pin = LED_1_Pin|CODEC_RESET_Pin|LED_2_Pin;
+  /*Configure GPIO pins : LED_1_Pin GEN_OFFHOOK_Pin CODEC_RESET_Pin LED_2_Pin */
+  GPIO_InitStruct.Pin = LED_1_Pin|GEN_OFFHOOK_Pin|CODEC_RESET_Pin|LED_2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -165,6 +171,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(CU_RESET_ACT_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LOCAL_OH_Pin */
+  GPIO_InitStruct.Pin = LOCAL_OH_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(LOCAL_OH_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : KEYPAD_RST_Pin RS485_DE_Pin */
   GPIO_InitStruct.Pin = KEYPAD_RST_Pin|RS485_DE_Pin;
@@ -219,6 +231,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(KEYPAD_INT_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : RING_Pin */
+  GPIO_InitStruct.Pin = RING_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(RING_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : LCD_DC_Pin */
   GPIO_InitStruct.Pin = LCD_DC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -232,6 +250,12 @@ void MX_GPIO_Init(void)
 
   HAL_NVIC_SetPriority(EXTI2_IRQn, 11, 0);
   HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI6_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(EXTI6_IRQn);
 
 }
 
@@ -254,6 +278,31 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
       {
 	last_sd_event_time = now;
 	osEventFlagsSet(SDEventHandle, SD_EVENT);
+      }
+      break;
+    case LOCAL_OH_Pin:
+      if ((now - last_local_event_time) > DEBOUNCE_LOCAL_TIME_MS)
+      {
+	last_local_event_time = now;
+//	osEventFlagsSet(DTMFEventHandle, LOCAL_EVENT);
+
+	DTMFMessage_t msg;
+	msg.event = DTMF_START;
+	msg.data = NULL;
+
+	osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+      }
+      break;
+    case RING_Pin:
+      if ((now - last_ring_event_time) > DEBOUNCE_RING_TIME_MS)
+      {
+	last_ring_event_time = now;
+//	osEventFlagsSet(DTMFEventHandle, RING_EVENT);
+	DTMFMessage_t msg;
+	msg.event = DTMF_START;
+	msg.data = NULL;
+
+	osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
       }
       break;
   }

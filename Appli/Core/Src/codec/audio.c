@@ -13,12 +13,14 @@
 #include "logger.h"
 #include "i2s.h"
 #include "app_freertos.h"
+#include "dtmf_types.h"
 
 #define CODEC_I2S_HANDLER	&hi2s6
 
 Audio_Player_t player;
 
-static uint8_t dma_buffer[AUDIO_BUFFER_SIZE] __attribute__((section(".extram")));
+static uint8_t dma_buffer_tx[AUDIO_BUFFER_SIZE] __attribute__((section(".extram")));
+static uint8_t dma_buffer_rx[DTMF_BUFFER_RX_SIZE] __attribute__((section(".extram")));
 
 // List of acceptable levels
 const uint8_t valid_volume_levels[] = {
@@ -310,6 +312,23 @@ static void audio_timer (void)
       xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
     }
   }
+
+  if (player.is_recording)
+  {
+    player.last_time_recording++;
+    player.is_recording = player.last_time_recording < RECORDING_TIME;
+    if (!player.is_recording)
+    {
+      player.is_recording = false;
+      player.last_time_recording = 0;
+      LOG_DEBUG("DTMF listening time's up");
+
+      DTMFMessage_t msg;
+      msg.event = DTMF_STOP;
+      msg.data = NULL;
+      osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+    }
+  }
 }
 
 static void audio_volume (void)
@@ -376,7 +395,7 @@ static void audio_start_sinus (AudioNotify_t *audio_notify)
   LOG_INFO("Start playback sinus");
 
   init_generation(audio_notify->sin_task);
-  audio_generate_sine(&player, dma_buffer, AUDIO_STEREO_PAIRS_FULL);
+  audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
 
   audio_cmd_playback_enable();
 
@@ -395,7 +414,7 @@ static void audio_play_sinus (void)
 
   uint32_t offset =
       (player.buff_state == BUFFER_HALF) ? 0 : AUDIO_HALF_BUFFER_SIZE;
-  uint8_t *buf_ptr = dma_buffer + offset;
+  uint8_t *buf_ptr = dma_buffer_tx + offset;
 
   audio_generate_sine(&player, buf_ptr, AUDIO_STEREO_PAIRS_HALF);
 
@@ -437,7 +456,7 @@ static void audio_start_sd (AudioNotify_t *audio_notify)
     return;
   }
 
-  res = sdfs_read_file(&player.file_info, dma_buffer, AUDIO_BUFFER_SIZE);
+  res = sdfs_read_file(&player.file_info, dma_buffer_tx, AUDIO_BUFFER_SIZE);
   if (!res)
   {
     LOG_ERROR("Failure load data: %s", player.file_info.filename);
@@ -455,7 +474,7 @@ static void audio_play_sd (void)
 
   uint32_t offset =
       (player.buff_state == BUFFER_HALF) ? 0 : AUDIO_HALF_BUFFER_SIZE;
-  uint8_t *buf_ptr = dma_buffer + offset;
+  uint8_t *buf_ptr = dma_buffer_tx + offset;
 
   bool res = sdfs_read_file(&player.file_info, buf_ptr, AUDIO_HALF_BUFFER_SIZE);
   if (player.file_info.isEnd || !res)
@@ -555,17 +574,50 @@ static void audio_prepare_stop_motorola (void)
 // DTMF
 static void audio_start_dtmf (void)
 {
-  LOG_INFO("Start payback DTMF");
+  LOG_INFO("Start record DTMF");
+//  audio_cmd_I2S_to_DAC();
+
+  player.is_recording = true;
+  player.is_stoped = false;
+//  player.is_prepare_stoped = false;
+//  player.is_fade_stoped = false;
+  player.event = AUDIO_PLAY;
+  player.last_time_recording = 0;
+
+  hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
+  hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_8K;
+  HAL_I2S_Init(CODEC_I2S_HANDLER);
+  HAL_I2S_Receive_DMA(CODEC_I2S_HANDLER, (uint16_t*) dma_buffer_rx, DTMF_BUFFER_RX_SIZE);
 }
 
 static void audio_play_dtmf (void)
 {
+//  uint32_t offset =
+//      (player.buff_state == BUFFER_HALF) ? 0 : AUDIO_HALF_BUFFER_RX_SIZE;
+//  uint8_t *buf_ptr = dma_buffer_tx + offset;
+//
+//  audio_generate_sine(&player, buf_ptr, AUDIO_STEREO_PAIRS_HALF);
 
+  player.buff_state = BUFFER_IDLE;
+  player.event = AUDIO_PLAY;
 }
 
 static void audio_stop_dtmf (void)
 {
-  LOG_INFO("Stop playback DTMF");
+  LOG_INFO("Stop record DTMF");
+
+  if (!player.is_recording)
+    return;
+
+  player.is_recording = false;
+  player.is_stoped = true;
+  player.event = AUDIO_IDLE;
+  player.buff_state = BUFFER_IDLE;
+  player.priority = AUDIO_PRIORITY_IDLE;
+
+  HAL_I2S_DMAStop(CODEC_I2S_HANDLER);
+  hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
+  HAL_I2S_Init(CODEC_I2S_HANDLER);
 }
 
 static void audio_prepare_stop_dtmf (void)
@@ -579,7 +631,7 @@ static void audio_start_quiet (AudioNotify_t *audio_notify)
   LOG_INFO("Start playback quiet test");
 
   init_generation(audio_notify->sin_task);
-  audio_generate_sine(&player, dma_buffer, AUDIO_STEREO_PAIRS_FULL);
+  audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
 
   audio_cmd_quiet_enable();
   start_playback();
@@ -610,8 +662,9 @@ static void start_playback (void)
   player.event = AUDIO_PLAY;
 
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
+  hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_44K;
   HAL_I2S_Init(CODEC_I2S_HANDLER);
-  HAL_I2S_Transmit_DMA(CODEC_I2S_HANDLER, (uint16_t*) dma_buffer, AUDIO_HALF_BUFFER_SIZE);
+  HAL_I2S_Transmit_DMA(CODEC_I2S_HANDLER, (uint16_t*) dma_buffer_tx, AUDIO_HALF_BUFFER_SIZE);
 
 //	audio_set_volume(player.volume);
 }
@@ -667,6 +720,46 @@ void HAL_I2S_TxCpltCallback (I2S_HandleTypeDef *hi2s)
   if (hi2s->Instance != SPI6)
     return;
   send_audio_notify_playing(BUFFER_FULL);
+}
+
+void HAL_I2S_RxHalfCpltCallback (I2S_HandleTypeDef *hi2s)
+{
+  if (hi2s->Instance != SPI6)
+    return;
+
+  if (!player.is_recording || player.event == AUDIO_STOP)
+      return;
+
+  LOG_WARN("RxHalfCpltCallback");
+
+  DTMFMessage_t msg;
+  msg.event = DTMF_CHECK;
+  msg.data = dma_buffer_rx;
+
+  if (osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0) != osOK)
+  {
+    LOG_WARN("The event from DTMF cannot be handled. The audio queue is full");
+  }
+}
+
+void HAL_I2S_RxCpltCallback (I2S_HandleTypeDef *hi2s)
+{
+  if (hi2s->Instance != SPI6)
+    return;
+
+  if (!player.is_recording || player.event == AUDIO_STOP)
+      return;
+
+  LOG_WARN("RxCpltCallback");
+
+  DTMFMessage_t msg;
+  msg.event = DTMF_CHECK;
+  msg.data = dma_buffer_rx + DTMF_HALF_BUFFER_RX_SIZE;
+
+  if (osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0) != osOK)
+  {
+    LOG_WARN("The event from DTMF cannot be handled. The audio queue is full");
+  }
 }
 
 static osStatus_t send_audio_notify (AudioNotify_t *audio_notify,
@@ -738,5 +831,15 @@ void audio_notify_high (AudioEvent_t event, AudioType_t type)
   if (send_audio_notify(&audio_notify, event, type, AUDIO_PRIORITY_HIGH, 10) != osOK)
   {
     LOG_WARN("The event from MOTOROLA cannot be handled. The audio queue is full");
+  }
+}
+
+void audio_notify_medium (AudioEvent_t event, AudioType_t type)
+{
+  AudioNotify_t audio_notify;
+
+  if (send_audio_notify(&audio_notify, event, type, AUDIO_PRIORITY_MEDIUM, 10) != osOK)
+  {
+    LOG_WARN("The event from DTMF cannot be handled. The audio queue is full");
   }
 }

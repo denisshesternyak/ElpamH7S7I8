@@ -46,6 +46,7 @@
 #include "sdmmc.h"
 #include "metadata.h"
 #include "iwdg.h"
+#include "dtmf.h"
 
 /* USER CODE END Includes */
 
@@ -127,6 +128,13 @@ const osThreadAttr_t SDTask_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for DTMFTask */
+osThreadId_t DTMFTaskHandle;
+const osThreadAttr_t DTMFTask_attributes = {
+  .name = "DTMFTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* Definitions for xLCDQueue */
 osMessageQueueId_t xLCDQueueHandle;
 const osMessageQueueAttr_t xLCDQueue_attributes = {
@@ -146,6 +154,11 @@ const osMessageQueueAttr_t xUartQueue_attributes = {
 osMessageQueueId_t xLoggerQueueHandle;
 const osMessageQueueAttr_t xLoggerQueue_attributes = {
   .name = "xLoggerQueue"
+};
+/* Definitions for xDTMFQueue */
+osMessageQueueId_t xDTMFQueueHandle;
+const osMessageQueueAttr_t xDTMFQueue_attributes = {
+  .name = "xDTMFQueue"
 };
 /* Definitions for LoggerMutex */
 osMutexId_t LoggerMutexHandle;
@@ -172,6 +185,11 @@ osEventFlagsId_t SDEventHandle;
 const osEventFlagsAttr_t SDEvent_attributes = {
   .name = "SDEvent"
 };
+/* Definitions for DTMFEvent */
+osEventFlagsId_t DTMFEventHandle;
+const osEventFlagsAttr_t DTMFEvent_attributes = {
+  .name = "DTMFEvent"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -185,12 +203,14 @@ void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef *hrtc)
   static LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_RTC };
   osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
 
-  static AudioNotify_t audio_notify = {
-      .event = AUDIO_TIMER,
-      .type = AUDIO_NONE,
-      .priority = AUDIO_PRIORITY_LOW };
-  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
-
+  if (player.is_arming || player.is_announcement || player.is_recording)
+  {
+    static AudioNotify_t audio_notify = {
+	.event = AUDIO_TIMER,
+	.type = AUDIO_NONE,
+	.priority = AUDIO_PRIORITY_LOW };
+    osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
+  }
 }
 /* USER CODE END FunctionPrototypes */
 
@@ -201,6 +221,7 @@ void StartLcdTask(void *argument);
 void StartKeyboardTask(void *argument);
 void StartLoggerTask(void *argument);
 void StartSDTask(void *argument);
+void StartDTMFTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -249,6 +270,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of xLoggerQueue */
   xLoggerQueueHandle = osMessageQueueNew (16, sizeof(LogMessage_t), &xLoggerQueue_attributes);
 
+  /* creation of xDTMFQueue */
+  xDTMFQueueHandle = osMessageQueueNew (16, sizeof(DTMFMessage_t), &xDTMFQueue_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
 #ifdef SELFTEST
   TestsTaskHandle = osThreadNew(StartTestsTask, NULL, &testsTask_attributes);
@@ -277,6 +301,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of SDTask */
   SDTaskHandle = osThreadNew(StartSDTask, NULL, &SDTask_attributes);
 
+  /* creation of DTMFTask */
+  DTMFTaskHandle = osThreadNew(StartDTMFTask, NULL, &DTMFTask_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
 
   /* USER CODE END RTOS_THREADS */
@@ -286,6 +313,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of SDEvent */
   SDEventHandle = osEventFlagsNew(&SDEvent_attributes);
+
+  /* creation of DTMFEvent */
+  DTMFEventHandle = osEventFlagsNew(&DTMFEvent_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
@@ -322,6 +352,11 @@ void StartDefaultTask(void *argument)
       metadata_status_update(FW_OK);
       LOG_INFO("FW confirmed: v%d.%d", VER_MAJOR, VER_MINOR);
       flag = 1;
+
+      DTMFMessage_t msg;
+      msg.event = DTMF_START;
+      msg.data = NULL;
+      osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
     }
 
     HAL_IWDG_Refresh(&hiwdg);
@@ -596,6 +631,29 @@ void StartSDTask(void *argument)
     }
   }
   /* USER CODE END StartSDTask */
+}
+
+/* USER CODE BEGIN Header_StartDTMFTask */
+/**
+* @brief Function implementing the DTMFTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartDTMFTask */
+void StartDTMFTask(void *argument)
+{
+  /* USER CODE BEGIN StartDTMFTask */
+  dtmf_init();
+  DTMFMessage_t msg;
+  /* Infinite loop */
+  for(;;)
+  {
+    if (osMessageQueueGet(xDTMFQueueHandle, &msg, NULL, osWaitForever) == osOK)
+    {
+      dtmf_process(&msg);
+    }
+  }
+  /* USER CODE END StartDTMFTask */
 }
 
 /* Private application code --------------------------------------------------*/
