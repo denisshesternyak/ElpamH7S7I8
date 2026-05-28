@@ -353,10 +353,10 @@ void StartDefaultTask(void *argument)
       LOG_INFO("FW confirmed: v%d.%d", VER_MAJOR, VER_MINOR);
       flag = 1;
 
-      DTMFMessage_t msg;
-      msg.event = DTMF_START;
-      msg.data = NULL;
-      osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+//      DTMFMessage_t msg;
+//      msg.event = DTMF_START;
+//      msg.data = NULL;
+//      osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
     }
 
     HAL_IWDG_Refresh(&hiwdg);

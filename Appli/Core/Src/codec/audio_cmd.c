@@ -116,7 +116,7 @@ void audio_cmd_init_record (void)
 //	audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);			// Page 1
 //	audio_cmd_write_cmd(AIC32X4_ADCPWTUNE, 0x00);		// Select ADC PTM_R4
 //
-//  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
+  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
 //  audio_cmd_write_cmd(AIC32X4_MICBIAS, 0x40);		// MIC BIAS power-up
 //  audio_cmd_write_cmd(AIC32X4_INPWRCTRL, 0x31);  // MicPGA startup delay ~3.1 ms
 //  audio_cmd_write_cmd(AIC32X4_RMIXAMPL, 0x00); // Mixer Amplifier Right Volume Control
