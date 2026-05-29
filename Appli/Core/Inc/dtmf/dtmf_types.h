@@ -3,8 +3,7 @@
 
 #include <stdint.h>
 
-#define DTMF_BUFFER_RX_SIZE  			512
-#define DTMF_HALF_BUFFER_RX_SIZE  		256
+#define DTMF_BUFFER_RX_SIZE  			100
 
 #define DTMF_COUNT_NUM  			8
 #define DTMF_HALF_COUNT_NUM  			(DTMF_COUNT_NUM >> 1)
@@ -20,7 +19,7 @@ typedef enum
 typedef struct
 {
   DTMFEvent_t event;
-  uint8_t *data;
+  int16_t *data;
 } DTMFMessage_t;
 
 #endif /* INC_DTMF_DTMF_TYPES_H_ */

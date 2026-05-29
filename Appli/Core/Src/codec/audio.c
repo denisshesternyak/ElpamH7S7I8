@@ -14,13 +14,14 @@
 #include "i2s.h"
 #include "app_freertos.h"
 #include "dtmf_types.h"
+#include <math.h>
 
 #define CODEC_I2S_HANDLER	&hi2s6
 
 Audio_Player_t player;
 
 static uint8_t dma_buffer_tx[AUDIO_BUFFER_SIZE] __attribute__((section(".extram")));
-static uint8_t dma_buffer_rx[DTMF_BUFFER_RX_SIZE] __attribute__((section(".extram")));
+static int16_t dma_buffer_rx[DTMF_BUFFER_RX_SIZE] __attribute__((section(".extram")));
 
 // List of acceptable levels
 const uint8_t valid_volume_levels[] = {
@@ -584,10 +585,21 @@ static void audio_start_dtmf (void)
   player.event = AUDIO_PLAY;
   player.last_time_recording = 0;
 
+//  int16_t amp = 512;
+//  for (int i = 0; i < DTMF_BUFFER_RX_SIZE; i++)
+//  {
+//    int16_t sin1 = sin (2 * M_PI * (i * 697 / 8000.0f)) * amp;
+//    int16_t sin2 = sin (2 * M_PI * (i * 1477 / 8000.0f)) * amp;
+//    int16_t sinsum = sin1 + sin2;
+//
+//    dma_buffer_rx[i] = sinsum;
+//  }
+
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
+  hi2s6.Init.Mode = I2S_MODE_MASTER_RX;
   hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_8K;
   HAL_I2S_Init(CODEC_I2S_HANDLER);
-  HAL_I2S_Receive_DMA(CODEC_I2S_HANDLER, (uint16_t*) dma_buffer_rx, DTMF_BUFFER_RX_SIZE);
+  HAL_I2S_Receive_DMA(CODEC_I2S_HANDLER, (uint16_t *)dma_buffer_rx, DTMF_BUFFER_RX_SIZE);
 }
 
 static void audio_play_dtmf (void)
@@ -598,8 +610,40 @@ static void audio_play_dtmf (void)
 //
 //  audio_generate_sine(&player, buf_ptr, AUDIO_STEREO_PAIRS_HALF);
 
-  player.buff_state = BUFFER_IDLE;
-  player.event = AUDIO_PLAY;
+//  LOG_INFO("Play record DTMF");
+//
+//  static bool fl = false;
+//  uint16_t row = fl ? 941 : 697;
+//  uint16_t col = fl ? 1633 : 1477;
+//
+//  fl = !fl;
+//
+//  int16_t amp = 512;
+//
+//  for (int i = 0; i < DTMF_BUFFER_RX_SIZE; i++)
+//  {
+//    int16_t sin1 = sin (2 * M_PI * (i * row / 8000.0f)) * amp;
+//    int16_t sin2 = sin (2 * M_PI * (i * col / 8000.0f)) * amp;
+//    int16_t sinsum = sin1 + sin2;
+//
+//    dma_buffer_rx[i] = sinsum;
+//  }
+//
+//  player.buff_state = BUFFER_IDLE;
+//  player.event = AUDIO_PLAY;
+//
+//  hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
+//  hi2s6.Init.Mode = I2S_MODE_MASTER_RX;
+//  hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_8K;
+//  HAL_I2S_Init(CODEC_I2S_HANDLER);
+//  HAL_I2S_Receive_DMA(CODEC_I2S_HANDLER, (uint16_t *)dma_buffer_tx, DTMF_BUFFER_RX_SIZE);
+
+  hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
+  hi2s6.Init.Mode = I2S_MODE_MASTER_RX;
+  hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_8K;
+  HAL_I2S_Init(CODEC_I2S_HANDLER);
+  HAL_I2S_Receive_DMA(CODEC_I2S_HANDLER, (uint16_t *)dma_buffer_rx, DTMF_BUFFER_RX_SIZE);
+
 }
 
 static void audio_stop_dtmf (void)
@@ -662,6 +706,7 @@ static void start_playback (void)
   player.event = AUDIO_PLAY;
 
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
+  hi2s6.Init.Mode = I2S_MODE_MASTER_TX;
   hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_44K;
   HAL_I2S_Init(CODEC_I2S_HANDLER);
   HAL_I2S_Transmit_DMA(CODEC_I2S_HANDLER, (uint16_t*) dma_buffer_tx, AUDIO_HALF_BUFFER_SIZE);
@@ -722,25 +767,33 @@ void HAL_I2S_TxCpltCallback (I2S_HandleTypeDef *hi2s)
   send_audio_notify_playing(BUFFER_FULL);
 }
 
-void HAL_I2S_RxHalfCpltCallback (I2S_HandleTypeDef *hi2s)
-{
-  if (hi2s->Instance != SPI6)
-    return;
+//static bool fl = false;
 
-  if (!player.is_recording || player.event == AUDIO_STOP)
-      return;
-
-  LOG_WARN("RxHalfCpltCallback");
-
-  DTMFMessage_t msg;
-  msg.event = DTMF_CHECK;
-  msg.data = dma_buffer_rx;
-
-  if (osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0) != osOK)
-  {
-    LOG_WARN("The event from DTMF cannot be handled. The audio queue is full");
-  }
-}
+//void HAL_I2S_RxHalfCpltCallback (I2S_HandleTypeDef *hi2s)
+//{
+//  if (hi2s->Instance != SPI6)
+//    return;
+//
+//  if (!player.is_recording || player.event == AUDIO_STOP)
+//      return;
+//
+////  if(!fl)
+////  {
+////    memcpy(dma_buffer_rx, dtmf_test_digit_1, 100);
+////    for(int j = 0; j < 100; j++)
+////    {
+////      printf("%04x ", dma_buffer_rx[j]);
+////    }
+////    printf("---\r\n");
+////    fl = true;
+////  }
+//
+//  DTMFMessage_t msg;
+//  msg.event = DTMF_CHECK;
+//  msg.data = dma_buffer_rx;
+//
+//  osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+//}
 
 void HAL_I2S_RxCpltCallback (I2S_HandleTypeDef *hi2s)
 {
@@ -750,16 +803,11 @@ void HAL_I2S_RxCpltCallback (I2S_HandleTypeDef *hi2s)
   if (!player.is_recording || player.event == AUDIO_STOP)
       return;
 
-  LOG_WARN("RxCpltCallback");
-
   DTMFMessage_t msg;
   msg.event = DTMF_CHECK;
-  msg.data = dma_buffer_rx + DTMF_HALF_BUFFER_RX_SIZE;
+  msg.data = dma_buffer_rx;
 
-  if (osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0) != osOK)
-  {
-    LOG_WARN("The event from DTMF cannot be handled. The audio queue is full");
-  }
+  osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
 }
 
 static osStatus_t send_audio_notify (AudioNotify_t *audio_notify,

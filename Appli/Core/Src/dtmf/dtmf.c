@@ -6,10 +6,11 @@
 #include "logger.h"
 #include "app_freertos.h"
 #include "events.h"
+#include <stdio.h>
 
-static int power_all[DTMF_COUNT_NUM];
+//static int16_t samples[DTMF_BUFFER_RX_SIZE];
+static int32_t power_all[DTMF_COUNT_NUM];
 static int32_t coeff[DTMF_COUNT_NUM];
-
 static const uint16_t f_tone[DTMF_COUNT_NUM] = { 697, 770, 852, 941, 1209, 1336, 1477, 1633 };
 static const char row_col[DTMF_HALF_COUNT_NUM][DTMF_HALF_COUNT_NUM] =
 {
@@ -21,19 +22,58 @@ static const char row_col[DTMF_HALF_COUNT_NUM][DTMF_HALF_COUNT_NUM] =
 
 #define FS 8000.0f
 
-static int32_t goertzel (int16_t *sample, int32_t coeff);
+static int32_t goertzel (const int16_t *sample, int32_t coeff);
 static void post_test (void);
 
 static void dtmf_start (void);
 static void dtmf_check (DTMFMessage_t *msg);
 static void dtmf_stop (void);
 
+//void sin_data (int f_row, int col)
+//{
+//  int16_t amp = 512;
+//  for (int i = 0; i < DTMF_BUFFER_RX_SIZE; i++)
+//  {
+//    int16_t sin1 = sin (2 * M_PI * (i * f_row / FS)) * amp;
+//    int16_t sin2 = sin (2 * M_PI * (i * col / FS)) * amp;
+//    int16_t sinsum = sin1 + sin2;
+//
+//    samples[i] = sinsum;
+//  }
+//
+//  for (uint8_t i = 0; i < DTMF_COUNT_NUM; i++)
+//    power_all[i] = goertzel (samples, coeff[i]);
+//
+//  post_test ();
+//}
+
 void dtmf_init (void)
 {
-  for (int i = 0; i < DTMF_COUNT_NUM; i++)
+  for (uint8_t i = 0; i < DTMF_COUNT_NUM; i++)
   {
     coeff[i] = (int32_t) (2.0 * cos(2.0 * M_PI * f_tone[i] / FS) * (1 << 14));
   }
+
+//  sin_data(697, 1209);  // 1
+//  sin_data(697, 1336);  // 2
+//  sin_data(697, 1477);  // 3
+//
+//  sin_data(770, 1209);  // 4
+//  sin_data(770, 1336);  // 5
+//  sin_data(770, 1477);  // 6
+//
+//  sin_data(852, 1209);  // 7
+//  sin_data(852, 1336);  // 8
+//  sin_data(852, 1477);  // 9
+//
+//  sin_data(941, 1209);  // *
+//  sin_data(941, 1336);  // 0
+//  sin_data(941, 1477);  // #
+//
+//  sin_data(697, 1633);  // A
+//  sin_data(770, 1633);  // B
+//  sin_data(852, 1633);  // C
+//  sin_data(941, 1633);  // D
 }
 
 void dtmf_process (DTMFMessage_t *msg)
@@ -64,14 +104,30 @@ static void dtmf_start (void)
 
 static void dtmf_check (DTMFMessage_t *msg)
 {
-  LOG_DEBUG("DTMF Check");
+//  LOG_DEBUG("DTMF Check");
 
-  for (int i = 0; i < DTMF_COUNT_NUM; i++)
+  for (uint8_t i = 0; i < DTMF_COUNT_NUM; i++)
   {
     power_all[i] = goertzel((int16_t*) msg->data, coeff[i]);
   }
 
+//  static bool fl = false;
+//
+//  if(!fl)
+//  {
+//    printf("buff:\r\n");
+//    for(uint8_t j = 0; j < 20; j++)
+//    {
+//      printf("%04x ", msg->data[j]);
+//    }
+//    printf("\r\n");
+//    fl = true;
+//  }
+
   post_test();
+
+  osDelay(1000);
+  audio_notify_medium(AUDIO_PLAY, AUDIO_DTMF);
 }
 
 static void dtmf_stop (void)
@@ -80,79 +136,59 @@ static void dtmf_stop (void)
   audio_notify_medium(AUDIO_STOP, AUDIO_DTMF);
 }
 
-//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-//{
-//    if (count < N)
-//    {
-//        samples[count++] = HAL_ADC_GetValue(hadc) >> 2;
-//    }
-//
-//    if (count >= N)
-//    {
-//        flag = true;
-//    }
-//}
-
-static int32_t goertzel (int16_t *sample, int32_t coeff)
+static int32_t goertzel (const int16_t *sample, int32_t coeff)
 {
-  int32_t Q = 0, Q_prev = 0, Q_prev2 = 0;
-  int64_t prod1, prod2, prod3, power = 0;
+  int32_t Q, Q_prev, Q_prev2, i;
+  int64_t prod1, prod2, prod3, power;
 
-  for (int i = 0; i < DTMF_HALF_BUFFER_RX_SIZE; i++)
-  {
-    Q = sample[i] + ((coeff * Q_prev) >> 14) - Q_prev2;
+  Q_prev = 0;
+  Q_prev2 = 0;
+  power = 0;
 
-    Q_prev2 = Q_prev;
-    Q_prev = Q;
-  }
+  for (i = 0; i < DTMF_BUFFER_RX_SIZE; i++)
+    {
+      Q = (sample[i]) + ((coeff * Q_prev) >> 14) - (Q_prev2);
+      Q_prev2 = Q_prev;
+      Q_prev = Q;
+    }
 
-  prod1 = (int64_t) Q_prev * Q_prev;
-  prod2 = (int64_t) Q_prev2 * Q_prev2;
-  prod3 = ((int64_t) Q_prev * coeff) >> 14;
-  prod3 = prod3 * Q_prev2;
+  prod1 = ((long) Q_prev * Q_prev);
+  prod2 = ((long) Q_prev2 * Q_prev2);
+  prod3 = ((long) Q_prev * coeff) >> 14;
+  prod3 = (prod3 * Q_prev2);
 
-  power = (prod1 + prod2 - prod3) >> 8;
+  power = ((prod1 + prod2 - prod3)) >> 8;
 
-  return (int32_t) power;
+  return power;
 }
 
-static void post_test(void)
+static void post_test (void)
 {
-  int row = 0, col = 0;
-  uint32_t max_power = 0;
-  bool new_dig = true;
+  int32_t row = -1, col = -1;
+  int32_t max_row = 0, max_col = 0;
 
-  max_power = 0;
   for (int i = 0; i < DTMF_HALF_COUNT_NUM; i++)
   {
-    if (power_all[i] > max_power)
+    if (power_all[i] > max_row)
     {
-      max_power = power_all[i];
+      max_row = power_all[i];
       row = i;
     }
   }
 
-  max_power = 0;
-  for (int i = DTMF_HALF_COUNT_NUM; i < DTMF_COUNT_NUM; i++)
+  for (int i = 4; i < 8; i++)
   {
-    if (power_all[i] > max_power)
+    if (power_all[i] > max_col)
     {
-      max_power = power_all[i];
-      col = i;
+      max_col = power_all[i];
+      col = i - 4;
     }
   }
 
-  if (power_all[row] == 0 && power_all[col] == 0)
-  {
-    new_dig = true;
-  }
+  // printf("Powers: %u %u %u %u | %u %u %u %u\n",
+  //       power_all[0], power_all[1], power_all[2], power_all[3],
+  //       power_all[4], power_all[5], power_all[6], power_all[7]);
 
-  if (power_all[row] > 800 && power_all[col] > 800 && new_dig)
-  {
-    char digit = row_col[row][col - DTMF_HALF_COUNT_NUM];
-
-    LOG_DEBUG("digit: %c", digit);
-    new_dig = false;
-  }
+  char digit = row_col[row][col];
+  LOG_DEBUG("digit: %c (power: %u / %u)\n", digit, max_row, max_col);
 }
-
