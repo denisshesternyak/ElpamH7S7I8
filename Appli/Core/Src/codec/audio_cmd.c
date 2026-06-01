@@ -136,7 +136,7 @@ void audio_cmd_init_record (void)
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x00);		// Page 0
 //  audio_cmd_write_cmd(AIC32X4_ADCSETUP, 0xC0); 	// Left + Right ADC powered up
   audio_cmd_write_cmd(AIC32X4_ADCSETUP, 0x40); 	  // Right ADC powered up
-  audio_cmd_write_cmd(AIC32X4_ADCMUTE, 0x88);     // Mute both ADCs, gain 0 dB
+  audio_cmd_write_cmd(AIC32X4_ADCMUTE, 0x80);     // Mute both ADCs, gain 0 dB
 }
 
 void audio_cmd_send_volume_announc (uint8_t lvl)
