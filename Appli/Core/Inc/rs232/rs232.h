@@ -61,11 +61,17 @@ typedef enum
   UART_EVENT_BTN_RIGHT
 } UartEvent_t;
 
+typedef struct
+{
+  UART_HandleTypeDef *huart;
+  UartEvent_t event;
+}UartMessage_t;
+
 typedef void (*rs232_cmd_handler_t) (UART_HandleTypeDef *huart);
 typedef void (*rs232_volume_handler_t) (int step);
 
 void rs232_init ();
-void rs232_process (UartEvent_t event);
+void rs232_process (UartMessage_t *msg);
 
 // Functions for registering handlers
 void rs232_register_arm (rs232_cmd_handler_t handler);

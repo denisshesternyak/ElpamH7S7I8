@@ -265,7 +265,7 @@ void MX_FREERTOS_Init(void) {
   xAudioQueueHandle = osMessageQueueNew (16, sizeof(AudioNotify_t), &xAudioQueue_attributes);
 
   /* creation of xUartQueue */
-  xUartQueueHandle = osMessageQueueNew (16, sizeof(UartEvent_t), &xUartQueue_attributes);
+  xUartQueueHandle = osMessageQueueNew (16, sizeof(UartMessage_t), &xUartQueue_attributes);
 
   /* creation of xLoggerQueue */
   xLoggerQueueHandle = osMessageQueueNew (16, sizeof(LogMessage_t), &xLoggerQueue_attributes);
@@ -432,13 +432,13 @@ void StartUartTask(void *argument)
   rs232_register_btn_right(handle_btn_right_command);
 
   system_status_init();
-  UartEvent_t event;
+  UartMessage_t msg;
   /* Infinite loop */
   for (;;)
   {
-    if (osMessageQueueGet(xUartQueueHandle, &event, NULL, osWaitForever) == osOK)
+    if (osMessageQueueGet(xUartQueueHandle, &msg, NULL, osWaitForever) == osOK)
     {
-      rs232_process(event);
+      rs232_process(&msg);
     }
   }
   /* USER CODE END StartUartTask */

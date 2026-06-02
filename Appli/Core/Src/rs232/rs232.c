@@ -9,13 +9,6 @@
 #include "queue.h"
 #include "defines.h"
 
-#define RS232_HANDLER	&huart7
-
-static uint8_t rx_byte;
-static char rx_buffer[8];
-static uint8_t rx_count = 0;
-static uint8_t reception_active = 0;
-
 static rs232_cmd_handler_t handler_arm = NULL;
 static rs232_cmd_handler_t handler_all_clear_1 = NULL;
 static rs232_cmd_handler_t handler_all_clear_2 = NULL;
@@ -67,110 +60,134 @@ static rs232_cmd_handler_t handle_btn_9 = NULL;
 static rs232_cmd_handler_t handle_btn_left = NULL;
 static rs232_cmd_handler_t handle_btn_right = NULL;
 
+typedef struct {
+    uint32_t last_rx_time;
+    char rx_buffer[CMD_LENGTH + 1];
+    uint8_t rx_count;
+    uint8_t rx_byte;
+    uint8_t reception_active;
+    bool sent_unknown;
+} UartContext_t;
+
+static UartContext_t rs232a_ctx = {0};
+static UartContext_t rs232b_ctx = {0};
+
 static void rs232a_rx_complete_callback (UART_HandleTypeDef *huart);
-static void call_or_default (rs232_cmd_handler_t h);
-static void call_or_default_unknown (void);
-static void process_command (char *cmd);
+static void call_or_default (UART_HandleTypeDef *huart, rs232_cmd_handler_t h);
+static void call_or_default_unknown (UART_HandleTypeDef *huart);
+static void process_command (UART_HandleTypeDef *huart, char *cmd);
 
 static uint16_t volume_value;
-static bool sent_unknown;
 
-static void rs232a_rx_complete_callback (UART_HandleTypeDef *huart)
+static void process_uart_rx (UART_HandleTypeDef *huart,
+			     UartContext_t *ctx)
 {
-  static uint32_t last_rx_time = 0;
   uint32_t now = osKernelGetTickCount();
 
-  if ((now - last_rx_time) > ACTIVATION_CMD_TIMEOUT)
+  if ((now - ctx->last_rx_time) > ACTIVATION_CMD_TIMEOUT)
   {
-    rx_count = 0;
-    sent_unknown = false;
+    ctx->rx_count = 0;
+    ctx->sent_unknown = false;
   }
+  ctx->last_rx_time = now;
 
-  last_rx_time = now;
-
-  if (reception_active && (rx_byte >= 32 && rx_byte <= 126) && rx_count < CMD_LENGTH)
+  if (ctx->reception_active && (ctx->rx_byte >= 32 && ctx->rx_byte <= 126) && ctx->rx_count < CMD_LENGTH)
   {
-    if (rx_count == 0 && rx_byte != '*')
+    if (ctx->rx_count == 0 && ctx->rx_byte != '*')
     {
-      if (!sent_unknown)
+      if (!ctx->sent_unknown)
       {
-	sent_unknown = true;
+	ctx->sent_unknown = true;
 	UartEvent_t event = UART_EVENT_UNKNOWN;
 	osMessageQueuePut(xUartQueueHandle, &event, 0U, 0U);
       }
     }
     else
     {
-      rx_buffer[rx_count++] = rx_byte;
-      if (rx_count == CMD_LENGTH)
+      ctx->rx_buffer[ctx->rx_count++] = ctx->rx_byte;
+      if (ctx->rx_count == CMD_LENGTH)
       {
-	rx_buffer[CMD_LENGTH] = '\0';
-	process_command(rx_buffer);
-	rx_count = 0;
+	ctx->rx_buffer[CMD_LENGTH] = '\0';
+	process_command(huart, ctx->rx_buffer);
+	ctx->rx_count = 0;
       }
     }
   }
   else
   {
-    rx_count = 0;
+    ctx->rx_count = 0;
   }
+}
 
-  HAL_UART_Receive_IT(RS232_HANDLER, &rx_byte, 1);
+static void rs232a_rx_complete_callback (UART_HandleTypeDef *huart)
+{
+  process_uart_rx(huart, &rs232a_ctx);
+  HAL_UART_Receive_IT(huart, &rs232a_ctx.rx_byte, 1);
+}
+
+static void rs232b_rx_complete_callback (UART_HandleTypeDef *huart)
+{
+  process_uart_rx(huart, &rs232b_ctx);
+  HAL_UART_Receive_IT(huart, &rs232b_ctx.rx_byte, 1);
 }
 
 void rs232_init ()
 {
-  usart_register_rx_callback(RS232_HANDLER, rs232a_rx_complete_callback);
+  usart_register_rx_callback(&huart7, rs232a_rx_complete_callback);
+  usart_register_rx_callback(&huart4, rs232b_rx_complete_callback);
 
-  HAL_UART_Receive_IT(RS232_HANDLER, &rx_byte, 1);
-  reception_active = 1;
+  HAL_UART_Receive_IT(&huart7, &rs232a_ctx.rx_byte, 1);
+  HAL_UART_Receive_IT(&huart4, &rs232b_ctx.rx_byte, 1);
+
+  rs232a_ctx.reception_active = 1;
+  rs232b_ctx.reception_active = 1;
 }
 
-void rs232_process (UartEvent_t event)
+void rs232_process (UartMessage_t *msg)
 {
-  switch (event)
+  switch (msg->event)
   {
     case UART_EVENT_ARM:
-      call_or_default(handler_arm);
+      call_or_default(msg->huart, handler_arm);
       break;
     case UART_EVENT_A_CLR1:
-      call_or_default(handler_all_clear_1);
+      call_or_default(msg->huart, handler_all_clear_1);
       break;
     case UART_EVENT_A_CLR2:
-      call_or_default(handler_all_clear_2);
+      call_or_default(msg->huart, handler_all_clear_2);
       break;
     case UART_EVENT_I_WAIL:
-      call_or_default(handler_alarm);
+      call_or_default(msg->huart, handler_alarm);
       break;
     case UART_EVENT_CHEM_A:
-      call_or_default(handler_chemical);
+      call_or_default(msg->huart, handler_chemical);
       break;
     case UART_EVENT_DISARM:
-      call_or_default(handler_disarm);
+      call_or_default(msg->huart, handler_disarm);
       break;
     case UART_EVENT_CANCEL:
-      call_or_default(handler_cancel);
+      call_or_default(msg->huart, handler_cancel);
       break;
     case UART_EVENT_Q_TEST:
-      call_or_default(handler_quiet_test);
+      call_or_default(msg->huart, handler_quiet_test);
       break;
     case UART_EVENT_WAIL:
-      call_or_default(handler_reserve_1);
+      call_or_default(msg->huart, handler_reserve_1);
       break;
     case UART_EVENT_P_WAIL:
-      call_or_default(handler_reserve_2);
+      call_or_default(msg->huart, handler_reserve_2);
       break;
     case UART_EVENT_YELP:
-      call_or_default(handler_reserve_3);
+      call_or_default(msg->huart, handler_reserve_3);
       break;
     case UART_EVENT_REPORT:
-      call_or_default(handler_report);
+      call_or_default(msg->huart, handler_report);
       break;
     case UART_EVENT_VOICE:
-      call_or_default(handler_remote_pa);
+      call_or_default(msg->huart, handler_remote_pa);
       break;
     case UART_EVENT_RESET:
-      call_or_default(handler_reset);
+      call_or_default(msg->huart, handler_reset);
       break;
     case UART_EVENT_VOL_UP:
       handler_volume_up(volume_value);
@@ -179,102 +196,102 @@ void rs232_process (UartEvent_t event)
       handler_volume_down(volume_value - 900 + 1);
       break;
     case UART_EVENT_UNKNOWN:
-      call_or_default_unknown();
+      call_or_default_unknown(msg->huart);
       break;
 
     case UART_EVENT_ENTER_BTN:
-      call_or_default(handler_enter);
+      call_or_default(msg->huart, handler_enter);
       break;
     case UART_EVENT_UP_BTN:
-      call_or_default(handler_up);
+      call_or_default(msg->huart, handler_up);
       break;
     case UART_EVENT_DOWEN_BTN:
-      call_or_default(handler_down);
+      call_or_default(msg->huart, handler_down);
       break;
     case UART_EVENT_ESC_BTN:
-      call_or_default(handler_esc);
+      call_or_default(msg->huart, handler_esc);
       break;
     case UART_EVENT_CANCEL_BTN:
-      call_or_default(handler_cnlbtn);
+      call_or_default(msg->huart, handler_cnlbtn);
       break;
     case UART_EVENT_TEST_BTN:
-      call_or_default(handler_test);
+      call_or_default(msg->huart, handler_test);
       break;
     case UART_EVENT_ANNOUNCEMENT_BTN:
-      call_or_default(handler_announc);
+      call_or_default(msg->huart, handler_announc);
       break;
     case UART_EVENT_MESSAGE_BTN:
-      call_or_default(handler_message);
+      call_or_default(msg->huart, handler_message);
       break;
     case UART_EVENT_ALARM_BTN:
-      call_or_default(handler_almbtn);
+      call_or_default(msg->huart, handler_almbtn);
       break;
     case UART_EVENT_ARM_BTN:
-      call_or_default(handle_armbtn);
+      call_or_default(msg->huart, handle_armbtn);
       break;
 
     case UART_EVENT_AMP1_BTN:
-      call_or_default(handle_amp_t1);
+      call_or_default(msg->huart, handle_amp_t1);
       break;
     case UART_EVENT_AMP2_BTN:
-      call_or_default(handle_amp_t2);
+      call_or_default(msg->huart, handle_amp_t2);
       break;
     case UART_EVENT_AMP3_BTN:
-      call_or_default(handle_amp_t3);
+      call_or_default(msg->huart, handle_amp_t3);
       break;
     case UART_EVENT_AMP4_BTN:
-      call_or_default(handle_amp_t4);
+      call_or_default(msg->huart, handle_amp_t4);
       break;
     case UART_EVENT_AMP5_BTN:
-      call_or_default(handle_amp_t5);
+      call_or_default(msg->huart, handle_amp_t5);
       break;
     case UART_EVENT_AMP6_BTN:
-      call_or_default(handle_amp_t6);
+      call_or_default(msg->huart, handle_amp_t6);
       break;
     case UART_EVENT_AMP7_BTN:
-      call_or_default(handle_amp_t7);
+      call_or_default(msg->huart, handle_amp_t7);
       break;
     case UART_EVENT_AMP8_BTN:
-      call_or_default(handle_amp_t8);
+      call_or_default(msg->huart, handle_amp_t8);
       break;
     case UART_EVENT_AMP9_BTN:
-      call_or_default(handle_amp_t9);
+      call_or_default(msg->huart, handle_amp_t9);
       break;
     case UART_EVENT_AMP10_BTN:
-      call_or_default(handle_amp_t10);
+      call_or_default(msg->huart, handle_amp_t10);
       break;
     case UART_EVENT_AMP_ON_BTN:
-      call_or_default(handle_amp_on);
+      call_or_default(msg->huart, handle_amp_on);
       break;
     case UART_EVENT_DRV_ON_BTN:
-      call_or_default(handle_drv_on);
+      call_or_default(msg->huart, handle_drv_on);
       break;
     case UART_EVENT_AMP_ST_BTN:
-      call_or_default(handle_amp_st);
+      call_or_default(msg->huart, handle_amp_st);
       break;
     case UART_EVENT_OSC_ON_BTN:
-      call_or_default(handle_osc_on);
+      call_or_default(msg->huart, handle_osc_on);
       break;
 
     case UART_EVENT_BTN_1:
-      call_or_default(handle_btn_1);
+      call_or_default(msg->huart, handle_btn_1);
       break;
     case UART_EVENT_BTN_8:
-      call_or_default(handle_btn_8);
+      call_or_default(msg->huart, handle_btn_8);
       break;
     case UART_EVENT_BTN_9:
-      call_or_default(handle_btn_9);
+      call_or_default(msg->huart, handle_btn_9);
       break;
     case UART_EVENT_BTN_LEFT:
-      call_or_default(handle_btn_left);
+      call_or_default(msg->huart, handle_btn_left);
       break;
     case UART_EVENT_BTN_RIGHT:
-      call_or_default(handle_btn_right);
+      call_or_default(msg->huart, handle_btn_right);
       break;
   }
 }
 
-static void process_command (char *cmd)
+static void process_command (UART_HandleTypeDef *huart, char *cmd)
 {
   UartEvent_t event;
 
@@ -474,29 +491,25 @@ static void process_command (char *cmd)
   else
     event = UART_EVENT_UNKNOWN;
 
-  osMessageQueuePut(xUartQueueHandle, &event, 0U, 0U);
+  UartMessage_t msg = { .huart = huart, .event = event};
+  osMessageQueuePut(xUartQueueHandle, &msg, 0U, 0U);
 }
 
-static void call_or_default (rs232_cmd_handler_t h)
+static void call_or_default (UART_HandleTypeDef *huart, rs232_cmd_handler_t h)
 {
   if (h)
-    h(RS232_HANDLER);
+    h(huart);
   else
-    HAL_UART_Transmit(RS232_HANDLER, (uint8_t*) "NO HANDLER\r\n", 12, HAL_MAX_DELAY);
+    HAL_UART_Transmit(huart, (uint8_t*) "NO HANDLER\r\n", 12, HAL_MAX_DELAY);
 }
 
-static void call_or_default_unknown (void)
+static void call_or_default_unknown (UART_HandleTypeDef *huart)
 {
   if (handler_unknown)
-    handler_unknown(RS232_HANDLER);
+    handler_unknown(huart);
   else
-    HAL_UART_Transmit(RS232_HANDLER, (uint8_t*) "ERR:UNKNOWN\r\n", 13, HAL_MAX_DELAY);
-  rx_count = 0;
+    HAL_UART_Transmit(huart, (uint8_t*) "ERR:UNKNOWN\r\n", 13, HAL_MAX_DELAY);
 }
-
-// ————————————————————————
-//// Registration functions
-// ————————————————————————
 
 void rs232_register_arm (rs232_cmd_handler_t h)
 {
