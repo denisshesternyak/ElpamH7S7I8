@@ -29,6 +29,7 @@
 // Grayscale (approximate)
 #define COLOR_GRAY     0x8410  // 0b1000010000010000 (R=16, G=32, B=16)
 #define COLOR_LIGHTGRAY 0xC618 // 0b1100011000011000 (R=24, G=48, B=24)
+#define COLOR_HIGHLIGHT 0x7E0F
 #define COLOR_DARKGRAY 0x4208  // 0b0100001000001000 (R=8,  G=16, B=8)
 
 // Extended Colors

@@ -18,7 +18,7 @@ static const char* menu_header_str[][LANG_COUNT] = {
   { "### Maintenance ###", "### š‡†…—„ ###" },
   { "### Time and Date ###", "### ™’„ …š€˜‰Š ###" },
   { "### Language ###", "### ™”„ ###" },
-  { "### SW update v%d.%d ###", "### v%d.%d ’ƒ‹… „š…‹„ ###" },
+  { "### SW update ###", "### ’ƒ‹… „š…‹„ ###" },
   { "### Volume ###", "### Volume ###" },
   { "### Motorola ###", "### …ˆ…˜…Œ„ ###" }
 };

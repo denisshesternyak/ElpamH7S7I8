@@ -1033,14 +1033,7 @@ void draw_menuScreen (bool forceFullRedraw)
     const char *text = currentMenu->screenText[GetLanguage()];
     if (text)
     {
-      if(currentMenu == softwareMenu)
-      {
-	char buf_ver[32];
-	snprintf(buf_ver, sizeof(buf_ver), text, VER_MAJOR, VER_MINOR);
-	hx8357_write_alignedX_string(0, TITLE_MENU_Y_POS, buf_ver, &Font_16x26, COLOR_WHITE, bg_color, ALIGN_CENTER);
-      }
-      else
-	hx8357_write_alignedX_string(0, TITLE_MENU_Y_POS, text, &Font_16x26, COLOR_WHITE, bg_color, ALIGN_CENTER);
+      hx8357_write_alignedX_string(0, TITLE_MENU_Y_POS, text, &Font_16x26, COLOR_WHITE, bg_color, ALIGN_CENTER);
     }
   }
 

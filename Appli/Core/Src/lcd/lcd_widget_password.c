@@ -4,6 +4,7 @@
 #include "defines.h"
 #include "hx8357d.h"
 #include "fonts.h"
+#include <stdio.h>
 
 static bool passwordIsCorrect = false;
 
@@ -16,11 +17,6 @@ static bool passwordIsCorrect = false;
 #define PASSWORD_BOX_SPACING 20
 
 #define MAX_PASSWORD_LENGTH 6
-
-#define COLOR_WHITE     0xFFFF
-#define COLOR_BLACK     0x0000
-#define COLOR_LIGHTGRAY 0xC618
-#define COLOR_HIGHLIGHT 0x7E0F  
 
 static uint8_t passwordLength = 4;
 static char passwordBuffer[MAX_PASSWORD_LENGTH] = { 0 };
@@ -122,6 +118,10 @@ void Draw_MENU_TYPE_PASSWORD (void)
 
   hx8357_write_alignedX_string(0, PASSWORD_TEXT_LINE1_Y, "Enter password to", font, COLOR_WHITE, COLOR_BLACK, ALIGN_CENTER);
   hx8357_write_alignedX_string(0, PASSWORD_TEXT_LINE2_Y, "continue", font, COLOR_WHITE, COLOR_BLACK, ALIGN_CENTER);
+
+  char buf_ver[32];
+  snprintf(buf_ver, sizeof(buf_ver), "v%d.%d", VER_MAJOR, VER_MINOR);
+  hx8357_write_alignedX_string(0, 284, buf_ver, &Font_16x26, COLOR_YELLOW, COLOR_BLACK, ALIGN_CENTER);
 
   for (int i = 0; i < passwordLength; i++)
   {
