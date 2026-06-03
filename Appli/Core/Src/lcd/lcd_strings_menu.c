@@ -19,8 +19,9 @@ static const char* menu_header_str[][LANG_COUNT] = {
   { "### Time and Date ###", "### ™’„ …š€˜‰Š ###" },
   { "### Language ###", "### ™”„ ###" },
   { "### SW update ###", "### ’ƒ‹… „š…‹„ ###" },
-  { "### Volume ###", "### Volume ###" },
-  { "### Motorola ###", "### Ž…ˆ…˜…Œ„ ###" }
+  { "### Volume ###", "### ”‡ ###" },
+  { "### Motorola ###", "### Ž…ˆ…˜…Œ„ ###" },
+  { "### Confirming ###", "### Ž€™˜ ###" }
 };
 const uint8_t MENU_HEADER_ITEM_COUNT = ARRAY_SIZE(menu_header_str);
 
@@ -70,6 +71,12 @@ static const char* service_str[][LANG_COUNT] = {
 };
 const uint8_t SERVICE_COUNT = ARRAY_SIZE(service_str);
 
+static const char* sel_confirm_str[][LANG_COUNT] = {
+  { "YES", "‹" },
+  { "NO", "Œ€" }
+};
+const uint8_t SEL_CONFIRM_COUNT = ARRAY_SIZE(sel_confirm_str);
+
 const char* get_menu_header_str(uint8_t task, Language lang)
 {
   if (task >= MENU_HEADER_ITEM_COUNT) return "";
@@ -104,6 +111,12 @@ const char* get_service_str(uint8_t task, Language lang)
 {
   if (task >= SERVICE_COUNT) return "";
   return service_str[task][lang];
+}
+
+const char* get_sel_confirm_str(uint8_t task, Language lang)
+{
+  if (task >= SEL_CONFIRM_COUNT) return "";
+  return sel_confirm_str[task][lang];
 }
 
 //char* get_menu_items_str(uint8_t task, Language lang)

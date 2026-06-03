@@ -28,7 +28,8 @@ typedef enum {
 	STR_HEADER_LANGUAGES,
 	STR_HEADER_SOFTWARE,
 	STR_HEADER_VOLUME,
-	STR_HEADER_MOTOROLA
+	STR_HEADER_MOTOROLA,
+	STR_HEADER_CONFIRM
 } MenuHeaderStrings;
 
 typedef enum {
@@ -58,6 +59,8 @@ typedef enum {
 	STR_SINUS_ABC_120S,
 	STR_SERVICE_SERIAL_STR = 0,
 	STR_SERVICE_EMPTY_DIR_STR,
+	STR_SEL_CONFIRM_YES = 0,
+	STR_SEL_CONFIRM_NO
 } MenuItemStrings;
 
 const char* get_menu_header_str(uint8_t task, Language lang);
@@ -66,6 +69,8 @@ const char* get_test_menu_items_str(uint8_t task, Language lang);
 const char* get_maintenance_menu_items_str(uint8_t task, Language lang);
 const char* get_sinus_menu_items_str(uint8_t task, Language lang);
 const char* get_service_str(uint8_t task, Language lang);
+const char* get_sel_confirm_str(uint8_t task, Language lang);
+
 //const char* get_menu_items_str(uint8_t task, Language lang);
 
 extern const uint8_t MENU_HEADER_ITEM_COUNT;
@@ -74,6 +79,8 @@ extern const uint8_t TEST_MENU_ITEM_COUNT;
 extern const uint8_t MAINTENCE_MENU_ITEM_COUNT;
 extern const uint8_t SINUS_ITEM_COUNT;
 extern const uint8_t SERVICE_COUNT;
+extern const uint8_t SEL_CONFIRM_COUNT;
+
 //extern const uint8_t MENU_ITEMS_COUNT;
 
 #endif /* INC_LCD_LCD_STRINGS_MENU_H_ */

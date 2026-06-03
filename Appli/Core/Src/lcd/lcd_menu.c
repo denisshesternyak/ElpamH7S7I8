@@ -510,6 +510,24 @@ void menu_init (void)
   volumeMenu->type = MENU_TYPE_VOLUME;
   volumeMenu->buttonHandler = volumeMenu_handle_button_press;
 
+  confirmMenu->parent = maintenanceMenu;
+  confirmMenu->type = MENU_TYPE_LIST;
+  confirmMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_SOFTWARE, LANG_EN);
+  confirmMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_SOFTWARE, LANG_HE);
+  confirmMenu->buttonHandler = softwareMenu_handle_button_press;
+  confirmMenu->items[0] = (MenuItem ) {
+  	  .name = {
+  	      get_sel_confirm_str(STR_SEL_CONFIRM_YES, LANG_EN),
+	      get_sel_confirm_str(STR_SEL_CONFIRM_YES, LANG_HE) },
+  	  .prepareAction = &confirmMenu_handle_button_press,
+  	  .submenu = softwareMenu };
+  confirmMenu->items[1] = (MenuItem ) {
+  	  .name = {
+  	      get_sel_confirm_str(STR_SEL_CONFIRM_NO, LANG_EN),
+	      get_sel_confirm_str(STR_SEL_CONFIRM_NO, LANG_HE) },
+  	  .submenu = volumeMenu };
+  confirmMenu->itemCount = SEL_CONFIRM_COUNT;
+
   BLK_ON();
   isBacklightOn = true;
 
