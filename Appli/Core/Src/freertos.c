@@ -577,10 +577,10 @@ void StartLoggerTask(void *argument)
 void StartSDTask(void *argument)
 {
   /* USER CODE BEGIN StartSDTask */
-//  if (sdfs_is_detected())
-//  {
-//    osEventFlagsSet(SDEventHandle, SD_EVENT);
-//  }
+  if (sdfs_is_detected())
+  {
+    osEventFlagsSet(SDEventHandle, SD_EVENT);
+  }
   /* Infinite loop */
   for (;;)
   {

@@ -33,11 +33,14 @@ bool sdfs_is_detected (void)
 
 bool sdfs_mount_drive (void)
 {
+  if(!sdfs_state.is_init)
+    return false;
+
   bool res;
   if (sdfs_state.is_mounted)
     return true;
 
-  res = f_mount(&SDFatFs, (TCHAR const*) ROOT_DIR_PATH_U, 0) == FR_OK;
+  res = f_mount(&SDFatFs, (TCHAR const*) ROOT_DIR_PATH_U, 1) == FR_OK;
 
   sdfs_state.is_mounted = res;
   return res;
@@ -54,7 +57,11 @@ static bool sdfs_list_directory (const TCHAR *path,
 {
   if (!sdfs_state.is_mounted)
   {
-    return false;
+    sdfs_mount_drive();
+    if (!sdfs_state.is_mounted)
+    {
+      return false;
+    }
   }
 
   bool res;
