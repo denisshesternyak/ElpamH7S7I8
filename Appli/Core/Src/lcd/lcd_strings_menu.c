@@ -47,7 +47,7 @@ static const char* maintenance_menu_items_str[][LANG_COUNT] = {
   { "Time and Date", "™’„ …š€˜‰Š" },
   { "Language select", "‡‰˜š ™”„" },
   { "Software update", "’ƒ‹… „š…‹„" },
-  { "Volume update", "’ƒ‹… „š…‹„" }
+  { "Volume level", "’…–š —…Œ" }
 };
 const uint8_t MAINTENCE_MENU_ITEM_COUNT = ARRAY_SIZE(maintenance_menu_items_str);
 

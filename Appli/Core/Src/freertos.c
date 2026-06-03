@@ -342,16 +342,19 @@ void StartDefaultTask(void *argument)
 //		  getRData(1, get_adc_value(ADC_AMPLIFIER_MEAS)),
 //		  getRData(1, get_adc_value(ADC_DRIVER_MEAS)));
 
-  uint8_t flag = 0;
+  uint8_t check_version = 0;
   const uint32_t last_time = osKernelGetTickCount();
   /* Infinite loop */
   for (;;)
   {
-    if (!flag && (osKernelGetTickCount() - last_time) > FW_SUCCESS_TIMEOUT)
+    if (!check_version && (osKernelGetTickCount() - last_time) > FW_SUCCESS_TIMEOUT)
     {
-      metadata_status_update(FW_OK);
-      LOG_INFO("FW confirmed: v%d.%d", VER_MAJOR, VER_MINOR);
-      flag = 1;
+      if(metadata_status_update(FW_OK))
+	LOG_INFO("FW confirmed: v%d.%d", VER_MAJOR, VER_MINOR);
+      else
+	LOG_INFO("FW v%d.%d", VER_MAJOR, VER_MINOR);
+
+      check_version = 1;
 
 //      DTMFMessage_t msg;
 //      msg.event = DTMF_START;

@@ -65,7 +65,7 @@ Menu *sinusInfoMenu = NULL;
 Menu *motorolaInfoMenu = NULL;
 Menu* passwordMenu = NULL;
 Menu* volumeMenu = NULL;
-
+Menu* confirmMenu = NULL;
 //static uint8_t volumeValue = 10;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -131,7 +131,6 @@ static void passwordMenu_handle_button_press(KeyEvent_t event);
 static void handle_button_press (KeyEvent_t event);
 static void clockMenu_handle_button_press (KeyEvent_t event);
 static void languageMenu_handle_button_press (KeyEvent_t event);
-static void softwareMenu_handle_button_press (KeyEvent_t event);
 //static void sinus_info_menu_handler(KeyEvent_t event);
 static void alarm_info_menu_handler (KeyEvent_t event);
 static void message_info_menu_handler (KeyEvent_t event);
@@ -140,7 +139,7 @@ static void idle_menu_handler (KeyEvent_t event);
 static void volume_control_handler (KeyEvent_t event);
 static void maintenance_handle_button_press (KeyEvent_t event);
 static void volumeMenu_handle_button_press (KeyEvent_t event);
-
+static void confirmMenu_handle_button_press (KeyEvent_t event);
 ///////////////////////////////////////////////////////////////////
 
 static void clear_position (Menu *menu);
@@ -171,6 +170,10 @@ static void siren_info_prepare_action (void);
 static void sinus_info_prepare_action (void);
 static void draw_textFilename (void);
 static void check_playing_and_stop ();
+
+static void software_prepareAction (void);
+typedef void (*confirm_handler_t) (void);
+confirm_handler_t confirm_handler = NULL;
 
 static void BLK_ON ()
 {
@@ -280,6 +283,7 @@ void menu_init (void)
   motorolaInfoMenu = &menuPool[menuPoolIndex++];
   passwordMenu = &menuPool[menuPoolIndex++];
   volumeMenu = &menuPool[menuPoolIndex++];
+  confirmMenu = &menuPool[menuPoolIndex++];
 
   idleMenu->parent = idleMenu;
   idleMenu->type = MENU_TYPE_IDLE;
@@ -326,6 +330,7 @@ void menu_init (void)
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_EN),
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_HE) },
 	  .submenu = passwordMenu };
+//	  .submenu = maintenanceMenu };
   rootMenu->itemCount = ROOT_MENU_ITEM_COUNT;
 
 //    /////////////////////////////////////////
@@ -493,7 +498,7 @@ void menu_init (void)
   softwareMenu->type = MENU_TYPE_LIST;
   softwareMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_SOFTWARE, LANG_EN);
   softwareMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_SOFTWARE, LANG_HE);
-  softwareMenu->buttonHandler = softwareMenu_handle_button_press;
+  softwareMenu->buttonHandler = handle_button_press;
 
   motorolaInfoMenu->parent = rootMenu;
   motorolaInfoMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_MOTOROLA, LANG_EN);
@@ -509,6 +514,21 @@ void menu_init (void)
   volumeMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_VOLUME, LANG_HE);
   volumeMenu->type = MENU_TYPE_VOLUME;
   volumeMenu->buttonHandler = volumeMenu_handle_button_press;
+
+  confirmMenu->parent = rootMenu;
+  confirmMenu->type = MENU_TYPE_LIST;
+  confirmMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_CONFIRM, LANG_EN);
+  confirmMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_CONFIRM, LANG_HE);
+  confirmMenu->buttonHandler = confirmMenu_handle_button_press;
+  confirmMenu->items[0] = (MenuItem ) {
+  	  .name = {
+  	      get_sel_confirm_str(STR_SEL_CONFIRM_YES, LANG_EN),
+	      get_sel_confirm_str(STR_SEL_CONFIRM_YES, LANG_HE) } };
+  confirmMenu->items[1] = (MenuItem ) {
+  	  .name = {
+  	      get_sel_confirm_str(STR_SEL_CONFIRM_NO, LANG_EN),
+	      get_sel_confirm_str(STR_SEL_CONFIRM_NO, LANG_HE) } };
+  confirmMenu->itemCount = SEL_CONFIRM_COUNT;
 
   BLK_ON();
   isBacklightOn = true;
@@ -618,25 +638,6 @@ void MenuLoadSDCardSirens (void)
 
   clear_menu(sirenMenu);
 
-//	static const char* list[] =
-//	{
-//	  "ALARM 1",
-//	  "ALARM 2",
-//	  "ALARM 3",
-//	  "ALARM 4",
-//	  "ALARM 5",
-//	  "ALARM 6",
-//	  "ALARM 7",
-//	  "ALARM 8",
-//	  "ALARM 9",
-//	  "ALARM 10",
-//	  "ALARM 11",
-//	  "ALARM 12",
-//	  "ALARM 13",
-//	  "ALARM 14"
-//	};
-//
-//	const uint8_t count = sizeof(list) / sizeof(list[0]);
   uint8_t count = 0;
   sdfs_list_alarms(listFilenames, &count);
 
@@ -673,8 +674,11 @@ void MenuLoadSDCardSoftWare (void)
     {
       item->name[j] = listFilenames[i];
     }
+    item->submenu = confirmMenu;
   }
 
+  confirm_handler = software_prepareAction;
+  confirmMenu->parent = softwareMenu;
   softwareMenu->itemCount = count;
 }
 
@@ -685,27 +689,6 @@ void MenuLoadSDCardMessages (void)
     return;
 
   clear_menu(messagesMenu);
-
-//    static const char* dummyFilenames[] = {
-//        "msg1_hello.wav",
-//        "msg2_alert.wav",
-//        "msg3_night.wav",
-//        "msg4_test.wav",
-//		"msg5_test-00.wav",
-//		"msg6_test-11.wav",
-//		"msg7_test-22.wav",
-//		"msg8_test-33.wav",
-//		"msg9_test-44.wav",
-//		"msg10_test-55.wav",
-//		"msg11_test-66.wav",
-//		"msg12_test-77.wav",
-//		"msg13_test-77.wav",
-//		"msg14_test-77.wav",
-//		"msg15_test-77.wav",
-//		"msg16_test-77.wav"
-//    };
-//
-//    const uint8_t count = sizeof(dummyFilenames) / sizeof(dummyFilenames[0]);
 
   uint8_t count = 0;
   sdfs_list_messages(listFilenames, &count);
@@ -724,6 +707,38 @@ void MenuLoadSDCardMessages (void)
   }
 
   messagesMenu->itemCount = count;
+}
+
+static void software_prepareAction (void)
+{
+  if (!softwareMenu)
+    return;
+
+  MenuItem *item = &softwareMenu->items[softwareMenu->currentSelection];
+  if (!item)
+    return;
+
+  const char *fw_src = item->name[GetLanguage()];
+
+  char fw_path[32];
+
+  if(!sdfs_prepare_to_update(fw_src, UPDATE_FILE, fw_path, sizeof(fw_path)))
+  {
+    LOG_ERROR("Copy FW failed with error");
+    return;
+  }
+
+  if(!metadata_path_update(fw_path, sizeof(fw_path)))
+  {
+    LOG_ERROR("Write metadata status failed");
+    return;
+  }
+
+  LOG_INFO("FW is ready to update: %s", fw_src);
+  LOG_INFO("System restart");
+  osDelay(10);
+
+  HAL_NVIC_SystemReset();
 }
 
 static void prepare_sinuse_items (void)
@@ -1676,41 +1691,27 @@ static void languageMenu_handle_button_press (KeyEvent_t event)
   handle_button_press(event);
 }
 
-static void softwareMenu_handle_button_press (KeyEvent_t event)
+static void confirmMenu_handle_button_press (KeyEvent_t event)
 {
-  if (!softwareMenu || softwareMenu->itemCount == 0)
-    return;
+  if (!confirmMenu || confirmMenu->itemCount == 0)
+     return;
 
-  switch (event.button)
-  {
+   switch (event.button)
+   {
     case BTN_ENTER:
-      MenuItem *item = &softwareMenu->items[softwareMenu->currentSelection];
-      if (!item)
-        return;
-
-      const char *fw_src = item->name[GetLanguage()];
-
-      char fw_path[32];
-
-      if(!sdfs_prepare_to_update(fw_src, UPDATE_FILE, fw_path, sizeof(fw_path)))
+      if(confirmMenu->currentSelection == 0)
       {
-	LOG_ERROR("Copy failed with error");
-	return;
+	confirm_handler();
       }
-      if(!metadata_path_update(fw_path, sizeof(fw_path)))
+      else if(confirmMenu->currentSelection == 1)
       {
-	LOG_ERROR("Write metadata status failed");
-	return;
+	button_esc_handler();
       }
-
-      LOG_INFO("FW update ready");
-
-      draw_menuScreen(false);
-      return;
+     return;
     default:
       break;
-  }
-  handle_button_press(event);
+   }
+   handle_button_press(event);
 }
 
 static void draw_textFilename (void)
