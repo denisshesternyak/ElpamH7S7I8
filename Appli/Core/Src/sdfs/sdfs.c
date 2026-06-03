@@ -36,11 +36,10 @@ bool sdfs_mount_drive (void)
   if(!sdfs_state.is_init)
     return false;
 
-  bool res;
   if (sdfs_state.is_mounted)
     return true;
 
-  res = f_mount(&SDFatFs, (TCHAR const*) ROOT_DIR_PATH_U, 1) == FR_OK;
+  bool res = f_mount(&SDFatFs, (TCHAR const*) ROOT_DIR_PATH_U, 1) == FR_OK;
 
   sdfs_state.is_mounted = res;
   return res;
