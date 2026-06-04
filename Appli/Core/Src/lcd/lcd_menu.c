@@ -20,6 +20,7 @@
 #include "lcd_widget_report_indicator.h"
 #include "lcd_widget_motorola.h"
 #include "lcd_widget_volume.h"
+#include "lcd_widget_logging.h"
 #include "audio.h"
 #include "app_freertos.h"
 #include "rtc.h"
@@ -66,6 +67,7 @@ Menu *motorolaInfoMenu = NULL;
 Menu* passwordMenu = NULL;
 Menu* volumeMenu = NULL;
 Menu* confirmMenu = NULL;
+Menu* loggingMenu = NULL;
 //static uint8_t volumeValue = 10;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -284,6 +286,7 @@ void menu_init (void)
   passwordMenu = &menuPool[menuPoolIndex++];
   volumeMenu = &menuPool[menuPoolIndex++];
   confirmMenu = &menuPool[menuPoolIndex++];
+  loggingMenu = &menuPool[menuPoolIndex++];
 
   idleMenu->parent = idleMenu;
   idleMenu->type = MENU_TYPE_IDLE;
@@ -480,6 +483,12 @@ void menu_init (void)
 	      get_maintenance_menu_items_str(STR_VOLUME_UPDATE, LANG_EN),
 	      get_maintenance_menu_items_str(STR_VOLUME_UPDATE, LANG_HE) },
 	  .submenu = volumeMenu };
+  maintenanceMenu->items[3] = (MenuItem ) {
+	  .name = {
+	      get_maintenance_menu_items_str(STR_LOGGING, LANG_EN),
+	      get_maintenance_menu_items_str(STR_LOGGING, LANG_HE) },
+	  .prepareAction = &Logging_Init,
+	  .submenu = loggingMenu };
   maintenanceMenu->itemCount = MAINTENCE_MENU_ITEM_COUNT;
 
   clockMenu->parent = maintenanceMenu;
@@ -514,6 +523,12 @@ void menu_init (void)
   volumeMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_VOLUME, LANG_HE);
   volumeMenu->type = MENU_TYPE_VOLUME;
   volumeMenu->buttonHandler = volumeMenu_handle_button_press;
+
+  loggingMenu->parent = maintenanceMenu;
+  loggingMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_LOG, LANG_EN);
+  loggingMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_LOG, LANG_HE);
+  loggingMenu->type = MENU_TYPE_LOG;
+  loggingMenu->buttonHandler = handle_button_press;
 
   confirmMenu->parent = rootMenu;
   confirmMenu->type = MENU_TYPE_LIST;
@@ -1099,6 +1114,10 @@ void draw_menuScreen (bool forceFullRedraw)
   else if (currentMenu->type == MENU_TYPE_VOLUME)
   {
     Volume_UpdateValue();
+  }
+  else if (currentMenu->type == MENU_TYPE_LOG)
+  {
+    Logging_Draw();
   }
   else if (currentMenu->type == MENU_TYPE_MOTOROLA)
   {

@@ -356,11 +356,38 @@ bool sdfs_open_from_last_entry (FIL* fp, const TCHAR* path)
   return false;
 }
 
+bool sdfs_open_file (FIL* fp, const TCHAR* path)
+{
+  if (f_open(fp, path, FA_READ) == FR_OK)
+  {
+    return true;
+  }
+  return false;
+}
+
 void sdfs_write_data(FIL* fp, const void* data, uint32_t len)
 {
   UINT bytes_written;
   f_write(fp, data, len, &bytes_written);
   f_sync(fp);
+}
+
+uint32_t sdfs_read_line (FIL *fp, TCHAR *buffer, uint32_t buf_size)
+{
+  if (fp == NULL || buffer == NULL || buf_size == 0)
+    return 0;
+
+  if (f_gets(buffer, buf_size, fp) == NULL)
+    return 0;
+
+  uint32_t len = strlen((char *)buffer);
+  if (len >= 2 && buffer[len - 2] == '\r' && buffer[len - 1] == '\n')
+  {
+    buffer[len - 2] = '\n';
+    buffer[len - 1] = '\0';
+  }
+
+  return len;
 }
 
 void sdfs_delete_directory(const TCHAR* path)

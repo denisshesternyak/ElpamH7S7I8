@@ -559,6 +559,13 @@ void StartLoggerTask(void *argument)
   /* USER CODE BEGIN StartLoggerTask */
   logger_init();
   LogMessage_t msg;
+
+  LOG_DEBUG("Test DEBUG msg");
+  LOG_INFO("Test INFO msg");
+  LOG_WARN("Test WARN msg");
+  LOG_ERROR("Test ERROR msg");
+  LOG_FATAL("Test FATAL msg");
+
   /* Infinite loop */
   for (;;)
   {
