@@ -72,6 +72,9 @@ void logger_init (void)
   usart_register_tx_callback(LOGGER_HANDLER, logger_uart_tx_complete_callback);
   uart_error = false;
 #else
+  if (!sdfs_state.is_mounted)
+    return;
+
   sdfs_create_dir(LOG_DIR_PATH_U);
   sdfs_create_dir(LOG_BACKUP_DIR_PATH_U);
 
@@ -180,6 +183,11 @@ void logger_msg (LogLevel_t level, const char *fmt, ...)
   if (level < current_log_level)
     return;
 
+#if USED_SD
+  if (!sdfs_state.is_mounted)
+    return;
+#endif
+
   char *buffer = buffer_pool_alloc();
   if (!buffer)
   {
@@ -230,6 +238,9 @@ void logger_process (LogMessage_t *msg)
     HAL_UART_Abort(LOGGER_HANDLER);
     uart_error = false;
   }
+#else
+  if (!sdfs_state.is_mounted)
+    return;
 #endif
 
   logger_format_message(logger_buffer_temp, msg);

@@ -332,8 +332,8 @@ void menu_init (void)
 	  .name = {
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_EN),
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_HE) },
-	  .submenu = passwordMenu };
-//	  .submenu = maintenanceMenu };
+//	  .submenu = passwordMenu };
+	  .submenu = maintenanceMenu };
   rootMenu->itemCount = ROOT_MENU_ITEM_COUNT;
 
 //    /////////////////////////////////////////
@@ -483,7 +483,7 @@ void menu_init (void)
 	      get_maintenance_menu_items_str(STR_VOLUME_UPDATE, LANG_EN),
 	      get_maintenance_menu_items_str(STR_VOLUME_UPDATE, LANG_HE) },
 	  .submenu = volumeMenu };
-  maintenanceMenu->items[3] = (MenuItem ) {
+  maintenanceMenu->items[4] = (MenuItem ) {
 	  .name = {
 	      get_maintenance_menu_items_str(STR_LOGGING, LANG_EN),
 	      get_maintenance_menu_items_str(STR_LOGGING, LANG_HE) },

@@ -356,6 +356,12 @@ void StartDefaultTask(void *argument)
 
       check_version = 1;
 
+//      LOG_DEBUG("Test DEBUG msg");
+//      LOG_INFO("Test INFO msg");
+//      LOG_WARN("Test WARN msg");
+//      LOG_ERROR("Test ERROR msg");
+//      LOG_FATAL("Test FATAL msg");
+
 //      DTMFMessage_t msg;
 //      msg.event = DTMF_START;
 //      msg.data = NULL;
@@ -557,14 +563,10 @@ void StartKeyboardTask(void *argument)
 void StartLoggerTask(void *argument)
 {
   /* USER CODE BEGIN StartLoggerTask */
+#if !USED_SD
   logger_init();
+#endif
   LogMessage_t msg;
-
-  LOG_DEBUG("Test DEBUG msg");
-  LOG_INFO("Test INFO msg");
-  LOG_WARN("Test WARN msg");
-  LOG_ERROR("Test ERROR msg");
-  LOG_FATAL("Test FATAL msg");
 
   /* Infinite loop */
   for (;;)
@@ -587,6 +589,7 @@ void StartLoggerTask(void *argument)
 void StartSDTask(void *argument)
 {
   /* USER CODE BEGIN StartSDTask */
+  osDelay(2000);
   if (sdfs_is_detected())
   {
     osEventFlagsSet(SDEventHandle, SD_EVENT);
@@ -613,6 +616,9 @@ void StartSDTask(void *argument)
 	if (sdfs_mount_drive())
 	{
 	  LOG_INFO("uSD mounting");
+#if USED_SD
+	  logger_init();
+#endif
 	}
 	else
 	{

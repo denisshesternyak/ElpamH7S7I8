@@ -34,10 +34,11 @@ bool sdfs_send_to_backup (const TCHAR *path_old, const TCHAR *path_new);
 bool sdfs_open_from_last_entry (FIL *fp, const TCHAR *path);
 bool sdfs_open_file (FIL* fp, const TCHAR* path);
 void sdfs_write_data (FIL *fp, const void *data, uint32_t len);
-uint32_t sdfs_read_line (FIL *fp, TCHAR *buffer, uint32_t buf_size);
+uint32_t sdfs_read_line (FIL *fp, char *buffer);
 void sdfs_delete_directory (const TCHAR *path);
 
 void sdfs_convert_eom2uni (char *src, WCHAR *dest);
+void sdfs_convert_uni2eom(WCHAR *src, char *dest);
 
 extern SDFS_STATE_t sdfs_state;
 

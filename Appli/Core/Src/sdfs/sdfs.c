@@ -79,14 +79,7 @@ static bool sdfs_list_directory (const TCHAR *path,
     if (res != FR_OK || fno.fname[0] == 0)
       break;
 
-    int j = 0;
-    while (fno.fname[j] != 0 && j < FF_MAX_LFN)
-    {
-      char ch = (char) ff_uni2oem(fno.fname[j], FF_CODE_PAGE);
-      ascii_name[j] = ch;
-      j++;
-    }
-    ascii_name[j] = '\0';
+    sdfs_convert_uni2eom(fno.fname, ascii_name);
 
     if (ascii_name[0] == '.' ||
 	strcmp(ascii_name, "System Volume Information") == 0 ||
@@ -181,9 +174,20 @@ static bool sdfs_read_wav_header (AudioFileInfo_t *info)
 void sdfs_convert_eom2uni(char *src, WCHAR *dest)
 {
   int j = 0;
-  while (src[j] != 0 && j < 128)
+  while (src[j] != 0 && j < FF_MAX_LFN)
   {
     dest[j] = ff_oem2uni(src[j], FF_CODE_PAGE);
+    j++;
+  }
+  dest[j] = '\0';
+}
+
+void sdfs_convert_uni2eom(WCHAR *src, char *dest)
+{
+  int j = 0;
+  while (src != 0 && j < FF_MAX_LFN)
+  {
+    dest[j] = (char) ff_uni2oem(src[j], FF_CODE_PAGE);
     j++;
   }
   dest[j] = '\0';
@@ -358,11 +362,7 @@ bool sdfs_open_from_last_entry (FIL* fp, const TCHAR* path)
 
 bool sdfs_open_file (FIL* fp, const TCHAR* path)
 {
-  if (f_open(fp, path, FA_READ) == FR_OK)
-  {
-    return true;
-  }
-  return false;
+  return f_open(fp, path, FA_READ) == FR_OK;
 }
 
 void sdfs_write_data(FIL* fp, const void* data, uint32_t len)
@@ -372,19 +372,21 @@ void sdfs_write_data(FIL* fp, const void* data, uint32_t len)
   f_sync(fp);
 }
 
-uint32_t sdfs_read_line (FIL *fp, TCHAR *buffer, uint32_t buf_size)
+uint32_t sdfs_read_line (FIL *fp, char *buffer)
 {
-  if (fp == NULL || buffer == NULL || buf_size == 0)
+  if (fp == NULL || buffer == NULL)
     return 0;
 
-  if (f_gets(buffer, buf_size, fp) == NULL)
+  if (f_gets(w_dest_path, sizeof(w_dest_path), fp) == NULL)
     return 0;
 
-  uint32_t len = strlen((char *)buffer);
-  if (len >= 2 && buffer[len - 2] == '\r' && buffer[len - 1] == '\n')
+  sdfs_convert_uni2eom(w_dest_path, buffer);
+
+  uint32_t len = strlen(buffer);
+  if (len >= 2 && buffer[len - 1] == '\n')
   {
-    buffer[len - 2] = '\n';
     buffer[len - 1] = '\0';
+    len--;
   }
 
   return len;
