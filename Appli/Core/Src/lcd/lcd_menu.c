@@ -142,6 +142,7 @@ static void volume_control_handler (KeyEvent_t event);
 static void maintenance_handle_button_press (KeyEvent_t event);
 static void volumeMenu_handle_button_press (KeyEvent_t event);
 static void confirmMenu_handle_button_press (KeyEvent_t event);
+static void loggingMenu_handle_button_press (KeyEvent_t event);
 ///////////////////////////////////////////////////////////////////
 
 static void clear_position (Menu *menu);
@@ -528,7 +529,7 @@ void menu_init (void)
   loggingMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_LOG, LANG_EN);
   loggingMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_LOG, LANG_HE);
   loggingMenu->type = MENU_TYPE_LOG;
-  loggingMenu->buttonHandler = handle_button_press;
+  loggingMenu->buttonHandler = loggingMenu_handle_button_press;
 
   confirmMenu->parent = rootMenu;
   confirmMenu->type = MENU_TYPE_LIST;
@@ -1731,6 +1732,33 @@ static void confirmMenu_handle_button_press (KeyEvent_t event)
       break;
    }
    handle_button_press(event);
+}
+
+
+static void loggingMenu_handle_button_press (KeyEvent_t event)
+{
+  if (!loggingMenu)
+    return;
+
+  switch (event.button)
+  {
+    case BTN_LEFT:
+      Logging_Decrease();
+      Logging_ResetSeek();
+      draw_menuScreen(true);
+      return;
+    case BTN_RIGHT:
+      Logging_Increase();
+      Logging_ResetSeek();
+      draw_menuScreen(true);
+      return;
+    case BTN_ESC:
+      Logging_Close();
+      break;
+    default:
+      break;
+  }
+  handle_button_press(event);
 }
 
 static void draw_textFilename (void)

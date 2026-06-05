@@ -185,7 +185,7 @@ void sdfs_convert_eom2uni(char *src, WCHAR *dest)
 void sdfs_convert_uni2eom(WCHAR *src, char *dest)
 {
   int j = 0;
-  while (src != 0 && j < FF_MAX_LFN)
+  while (src[j] != 0 && j < FF_MAX_LFN)
   {
     dest[j] = (char) ff_uni2oem(src[j], FF_CODE_PAGE);
     j++;
