@@ -59,9 +59,9 @@ static void logger_init_msg()
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-//  LOG_INFO("**********************");
-//  LOG_INFO("System run: [%02d/%02d/%02d]", sDate.Date, sDate.Month, sDate.Year);
-//  LOG_INFO("**********************\r\n\r\n");
+  LOG_INFO("**********************");
+  LOG_INFO("System run: [%02d/%02d/%02d]", sDate.Date, sDate.Month, sDate.Year);
+  LOG_INFO("**********************\r\n\r\n");
 }
 
 void logger_init (void)

@@ -333,8 +333,8 @@ void menu_init (void)
 	  .name = {
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_EN),
 	      get_root_menu_items_str(STR_ROOT_ITEM_MAINTENANCE, LANG_HE) },
-//	  .submenu = passwordMenu };
-	  .submenu = maintenanceMenu };
+	  .submenu = passwordMenu };
+//	  .submenu = maintenanceMenu };
   rootMenu->itemCount = ROOT_MENU_ITEM_COUNT;
 
 //    /////////////////////////////////////////
