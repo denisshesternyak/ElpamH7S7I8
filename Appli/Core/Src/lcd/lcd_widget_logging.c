@@ -11,10 +11,24 @@
 #define LOGGING_Y 			101
 #define LOGGING_Y2 			125
 #define LOGGING_MAX_LVL 		4
+#define MAX_LOG_LINES   		11
 
+#if !USED_SD
 static FIL log_file;
 static bool is_log_open;
-static char buf[128];
+#endif
+
+typedef struct
+{
+  uint16_t log_line_count;
+  uint16_t log_line_index;
+  char log_lines[MAX_LOG_LINES][FF_MAX_LFN];
+}FilteredLogs_t ;
+
+static FilteredLogs_t filters[LOGGING_MAX_LVL];
+
+static char buf[FF_MAX_LFN];
+static char temp_line[FF_MAX_LFN];
 static int8_t cur_lvl;
 
 static int8_t logging_get_lvl (const char *str)
@@ -30,7 +44,7 @@ static int8_t logging_get_lvl (const char *str)
   else if (*p == 'F')
     return 3;
   else
-    return 0;
+    return -1;
 }
 
 static uint16_t logging_get_color (const uint8_t lvl)
@@ -53,7 +67,6 @@ static uint16_t logging_get_color (const uint8_t lvl)
       return COLOR_WHITE;
   }
 }
-
 
 static void logging_remove_tag (char *str)
 {
@@ -82,23 +95,75 @@ static void logging_remove_tag (char *str)
   *second_bracket = '\0';
 }
 
+static void logger_get_lines (void)
+{
+  while (1)
+  {
+#if !USED_SD
+    uint32_t len = sdfs_read_line(&log_file, buf);
+#else
+    uint32_t len = sdfs_read_line(&logger.log_file, buf);
+#endif
+    if (!len)
+      break;
+
+    if (len == 1)
+      continue;
+
+    int8_t lvl = logging_get_lvl(buf);
+    if (lvl < 0 || lvl >= LOGGING_MAX_LVL)
+      continue;
+
+    FilteredLogs_t *filter = &filters[lvl];
+
+    strncpy(filter->log_lines[filter->log_line_index], buf, FF_MAX_LFN-1);
+    filter->log_lines[filter->log_line_index][FF_MAX_LFN-1] = '\0';
+
+    filter->log_line_index = (filter->log_line_index + 1) % MAX_LOG_LINES;
+    if (filter->log_line_count < MAX_LOG_LINES)
+      filter->log_line_count++;
+  }
+}
+
 void Logging_Init (void)
 {
   if (!sdfs_is_file_exist_not_null(LOG_FILE_PATH_U))
     return;
+
+#if !USED_SD
   is_log_open = sdfs_open_file(&log_file, LOG_FILE_PATH_U);
+#else
+  if(logger.is_log_open)
+  {
+    f_lseek(&logger.log_file, 0);
+  }
+#endif
   cur_lvl = 0;
+
+  memset(&filters, 0, sizeof(filters));
+  logger_get_lines();
 }
 
 void Logging_ResetSeek (void)
 {
+#if !USED_SD
   f_lseek(&log_file, 0);
+#else
+  f_lseek(&logger.log_file, 0);
+#endif
 }
 
 void Logging_Close (void)
 {
+#if !USED_SD
   f_close(&log_file);
   is_log_open = false;
+#else
+  if(logger.is_log_open)
+  {
+    f_lseek(&logger.log_file, f_size(&logger.log_file));
+  }
+#endif
 }
 
 static void logging_draw_lvl (void)
@@ -117,8 +182,13 @@ static void logging_draw_lvl (void)
 
 void Logging_Draw (void)
 {
+#if !USED_SD
   if (!is_log_open)
+   return;
+#else
+  if (!logger.is_log_open)
     return;
+#endif
 
   FontDef *font = &Font_11x18;
   const uint8_t w = font->width;
@@ -129,32 +199,44 @@ void Logging_Draw (void)
 
   uint16_t pos_y = LOGGING_Y2;
 
-  while (sdfs_read_line(&log_file, buf) > 0)
+  FilteredLogs_t *filter = &filters[cur_lvl];
+  if(!filter)
+    return;
+
+  char temp_buf[max_char + 1];
+  uint16_t color = logging_get_color(cur_lvl);
+
+  for (uint16_t i = 0; i < filter->log_line_count; i++)
   {
-    if (pos_y + font->height > hx8357_get_height())
-      break;
+    if (pos_y + h > hx8357_get_height())
+	break;
 
-    const int8_t lvl = logging_get_lvl(buf);
-    if(lvl != cur_lvl)
-      continue;
+    uint16_t idx = (filter->log_line_index - 1 - i + MAX_LOG_LINES) % MAX_LOG_LINES;
+    char *line = filter->log_lines[idx];
 
-    uint16_t color = COLOR_BLACK;
-    const char *str = buf;
-    if (buf[0] == '\n')
+    strcpy(temp_line, line);
+    logging_remove_tag(temp_line);
+
+    uint32_t len = strlen(temp_line);
+    char *str = (len == 0) ? " " : temp_line;
+
+    uint32_t remaining = len ? len : 1;
+
+    while (remaining > 0)
     {
-      str = " ";
-    }
-    else
-    {
-      color = logging_get_color(lvl);
-      logging_remove_tag(buf);
-      buf[max_char] = '\0';
-    }
+      uint32_t chunk = (remaining > max_char) ? max_char : remaining;
+      strncpy(temp_buf, str, chunk);
+      temp_buf[chunk] = '\0';
 
-//    LOG_DEBUG("%s, %d, %d", buf, color, lvl);
+      hx8357_write_alignedX_string(LOGGING_X, pos_y, temp_buf, font, color, COLOR_BLACK, ALIGN_LEFT);
 
-    hx8357_write_alignedX_string(LOGGING_X, pos_y, str, font, color, COLOR_BLACK, ALIGN_LEFT);
-    pos_y += h;
+      pos_y += h;
+      if (pos_y + h > hx8357_get_height())
+	  return;
+
+      str += chunk;
+      remaining -= chunk;
+    }
   }
 }
 

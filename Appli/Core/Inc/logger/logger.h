@@ -4,6 +4,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "defines.h"
+#include "sdfs.h"
 
 #define LOG_BUFFER_SIZE    256
 #define LOG_QUEUE_SIZE     32
@@ -37,5 +39,17 @@ void logger_msg(LogLevel_t level, const char *fmt, ...);
 #define LOG_WARN(...)   logger_msg(LOG_WARN,  __VA_ARGS__)
 #define LOG_ERROR(...)  logger_msg(LOG_ERROR, __VA_ARGS__)
 #define LOG_FATAL(...)  logger_msg(LOG_FATAL, __VA_ARGS__)
+
+#if USED_SD
+void logger_close(void);
+
+typedef struct
+{
+  FIL log_file;
+  bool is_log_open;
+} Logger_t;
+
+extern Logger_t logger;
+#endif
 
 #endif /* INC_LOGGER_LOGGER_H_ */

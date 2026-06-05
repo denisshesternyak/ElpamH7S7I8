@@ -356,11 +356,13 @@ void StartDefaultTask(void *argument)
 
       check_version = 1;
 
-//      LOG_DEBUG("Test DEBUG msg");
-//      LOG_INFO("Test INFO msg");
-//      LOG_WARN("Test WARN msg");
-//      LOG_ERROR("Test ERROR msg");
-//      LOG_FATAL("Test FATAL msg");
+      LOG_DEBUG("Test DEBUG msg");
+      LOG_INFO("Test INFO msg");
+      LOG_WARN("Test WARN msg");
+      LOG_WARN("Creating a new test message with a long warning for displaying on the screen");
+      LOG_ERROR("Test ERROR msg");
+      LOG_ERROR("Test ERROR msg 2");
+      LOG_FATAL("Test FATAL msg");
 
 //      DTMFMessage_t msg;
 //      msg.event = DTMF_START;
@@ -606,6 +608,7 @@ void StartSDTask(void *argument)
 
       if (!sdfs_state.is_init)
       {
+	MX_FATFS_Init();
 	MX_SDMMC1_SD_Init();
 	sdfs_state.is_init = true;
 	LOG_INFO("uSD initialization");
@@ -630,6 +633,11 @@ void StartSDTask(void *argument)
     else
     {
       LOG_INFO("uSD disconnected");
+
+#if USED_SD
+      logger_close();
+#endif
+
       if (sdfs_state.is_mounted)
       {
 	sdfs_unmount_drive();

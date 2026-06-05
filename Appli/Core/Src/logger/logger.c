@@ -2,10 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "usart.h"
-#include "defines.h"
 #include "app_freertos.h"
 #include "rtc.h"
-#include "sdfs.h"
 
 #if !USED_SD
 #define LOGGER_HANDLER	&huart1
@@ -14,8 +12,8 @@ static volatile bool uart_error;
 #define BACKUP_NAME_FORMAT  	"%s/backup_%02d.txt"
 #define MAX_BACKUP_FILES    	99
 
-static FIL log_file;
-static bool is_log_open = false;
+Logger_t logger;
+
 static char w_src_path[128];
 static WCHAR w_dest_path[128];
 #endif
@@ -61,9 +59,9 @@ static void logger_init_msg()
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-  LOG_INFO("**********************");
-  LOG_INFO("System run: [%02d/%02d/%02d]", sDate.Date, sDate.Month, sDate.Year);
-  LOG_INFO("**********************\r\n\r\n");
+//  LOG_INFO("**********************");
+//  LOG_INFO("System run: [%02d/%02d/%02d]", sDate.Date, sDate.Month, sDate.Year);
+//  LOG_INFO("**********************\r\n\r\n");
 }
 
 void logger_init (void)
@@ -75,12 +73,14 @@ void logger_init (void)
   if (!sdfs_state.is_mounted)
     return;
 
+  memset(&logger, 0, sizeof(Logger_t));
+
   sdfs_create_dir(LOG_DIR_PATH_U);
   sdfs_create_dir(LOG_BACKUP_DIR_PATH_U);
 
   logger_check_log_file();
 
-  is_log_open = sdfs_open_from_last_entry(&log_file, LOG_FILE_PATH_U);
+  logger.is_log_open = sdfs_open_from_last_entry(&logger.log_file, LOG_FILE_PATH_U);
 #endif
 
   logger_init_msg();
@@ -124,6 +124,12 @@ static void buffer_pool_free (char *buffer)
 }
 
 #if USED_SD
+void logger_close(void)
+{
+  sdfs_close_file(&logger.log_file);
+  logger.is_log_open = false;
+}
+
 static uint8_t logger_get_last_backup_number (void)
 {
   uint8_t last;
@@ -142,10 +148,9 @@ static uint8_t logger_get_last_backup_number (void)
 
 static void logger_rotate (void)
 {
-  if (is_log_open)
+  if (logger.is_log_open)
   {
-    sdfs_close_file(&log_file);
-    is_log_open = false;
+    logger_close();
   }
 
   uint8_t next = logger_get_last_backup_number();
@@ -171,10 +176,10 @@ static void logger_check_log_file ()
 
 static void logger_write (const uint8_t *data, uint16_t len)
 {
-  if (!is_log_open)
+  if (!logger.is_log_open)
     return;
 
-  sdfs_write_data(&log_file, data, len);
+  sdfs_write_data(&logger.log_file, data, len);
 }
 #endif
 

@@ -1744,12 +1744,12 @@ static void loggingMenu_handle_button_press (KeyEvent_t event)
   {
     case BTN_LEFT:
       Logging_Decrease();
-      Logging_ResetSeek();
+//      Logging_ResetSeek();
       draw_menuScreen(true);
       return;
     case BTN_RIGHT:
       Logging_Increase();
-      Logging_ResetSeek();
+//      Logging_ResetSeek();
       draw_menuScreen(true);
       return;
     case BTN_ESC:
