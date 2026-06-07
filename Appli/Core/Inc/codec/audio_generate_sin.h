@@ -16,9 +16,11 @@
 #define PHASE_INC_100		9739154U
 #define PHASE_INC_250		24347887U
 #define PHASE_INC_300		29217464U
+#define PHASE_INC_400		38956619U
 #define PHASE_INC_420		40904450U
 #define PHASE_INC_425		41391408U
 #define PHASE_INC_500		48695774U
+#define PHASE_INC_800		77913238U
 #define PHASE_INC_836		81419334U
 #define PHASE_INC_856		83367165U
 #define PHASE_INC_1000		97391548U
@@ -32,6 +34,13 @@ typedef struct
   uint8_t current_step;
   uint32_t step_start_tick;
 } interval_timer_t;
+
+typedef enum {
+    STEP_RAMP_UP = 0,
+    STEP_CYCLE,
+    STEP_RAMP_DOWN,
+    STEP_FINISHED
+} ToneStep_t;
 
 typedef struct
 {

@@ -63,7 +63,9 @@ static const char* sinus_menu_items_str[][LANG_COUNT] = {
   { "ALARM 90s", "€†’—„ 90s" },
   { "ALL_CLEAR 60s", "‘‰…_€†’—„ 60s" },
   { "ALL_CLEAR 120s", "‘‰…_€†’—„ 120s" },
-  { "ABC 120s", "ABC 120s" }
+  { "ABC 120s", "ABC 120s" },
+  { "400Hz-800Hz-1.5s, 60s", "400Hz-800Hz-1.5s, 60s" },
+  { "400Hz-800Hz-3s, 60s", "400Hz-800Hz-3s, 60s" }
 };
 const uint8_t SINUS_ITEM_COUNT = ARRAY_SIZE(sinus_menu_items_str);
 

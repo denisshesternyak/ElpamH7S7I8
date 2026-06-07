@@ -21,6 +21,18 @@ static void init_cycle_tone (uint32_t start_inc,
 			     uint32_t ending_ms,
 			     uint32_t mid_ms);
 
+static void apply_fade (int16_t *left, int16_t *right, uint64_t sample_idx);
+static void apply_fade_out (int16_t *left, int16_t *right, uint64_t remaining);
+static void generate_sample (uint8_t *buffer,
+			     uint32_t idx,
+			     int16_t left,
+			     int16_t right);
+static void update_phase_and_increment (void);
+static bool handle_ramp_transition (uint8_t *buffer,
+				    Audio_Player_t *player,
+				    uint32_t samples_per_channel,
+				    uint32_t current_sample_in_buffer);
+
 void audio_init_sin_table (void)
 {
   for (int i = 0; i < WAVE_TABLE_SIZE; i++)
@@ -29,19 +41,10 @@ void audio_init_sin_table (void)
   }
 }
 
-void audio_generate_sine (Audio_Player_t *player, uint8_t *buffer, uint32_t samples_per_channel)
+void audio_generate_sine (Audio_Player_t *player,
+			  uint8_t *buffer,
+			  uint32_t samples_per_channel)
 {
-  uint32_t current_add =
-      (inc_data.current_step == 1) ? inc_data.add_inc[1] : inc_data.add_inc[0];
-
-  uint32_t start_target = inc_data.target_phase[0];
-  uint32_t max_cycle_target = inc_data.target_phase[1];
-  uint32_t min_cycle_target = inc_data.target_phase[2];
-
-  uint64_t ending_ramp = inc_data.samples_per_phase[0];
-  uint64_t cycle_ramp = inc_data.samples_per_phase[1];
-  uint64_t middle_ramp = inc_data.samples_per_phase[2];
-
   for (uint32_t i = 0; i < samples_per_channel; i++)
   {
     uint32_t buffer_idx = i * 4;
@@ -52,35 +55,24 @@ void audio_generate_sine (Audio_Player_t *player, uint8_t *buffer, uint32_t samp
     int16_t sample_left = sin_table[index_ch1];
     int16_t sample_right = sin_table[index_ch2];
 
-    inc_data.ramp_counter++;
     inc_data.total_samples_generated++;
+    inc_data.ramp_counter++;
 
     if (inc_data.total_samples_generated < FADE_IN_SAMPLE)
     {
-      uint32_t count = (uint32_t) (inc_data.total_samples_generated * FADE_IN_STEP >> 10);
-      if (count > 32767)
-	count = 32767;
-
-      sample_left = (count * sample_left) >> 15;
-      sample_right = (count * sample_right) >> 15;
+      apply_fade(&sample_left, &sample_right, inc_data.total_samples_generated);
     }
     else if (inc_data.fade_stop)
     {
-      uint32_t fade_out = inc_data.total_samples_fade - inc_data.total_samples_generated;
-      uint32_t count = (uint32_t) (fade_out * FADE_IN_STEP >> 10);
-      if (count > 32767)
-	count = 32767;
-
-      sample_left = (count * sample_left) >> 15;
-      sample_right = (count * sample_right) >> 15;
+      uint64_t fade_out = inc_data.total_samples_fade - inc_data.total_samples_generated;
+      apply_fade_out(&sample_left, &sample_right, fade_out);
 
       if (fade_out == 0)
       {
 	uint32_t bytes_to_clear = (samples_per_channel - i - 1) * 4;
 	if (bytes_to_clear > 0)
-	{
 	  memset(buffer + buffer_idx + 4, 0, bytes_to_clear);
-	}
+
 	player->duration = 100;
 	player->is_prepare_stoped = true;
 	player->is_fade_stoped = true;
@@ -89,88 +81,21 @@ void audio_generate_sine (Audio_Player_t *player, uint8_t *buffer, uint32_t samp
     }
     else if (inc_data.total_samples_generated > inc_data.duration - FADE_IN_SAMPLE)
     {
-      uint32_t fade_out = inc_data.duration - inc_data.total_samples_generated;
-      uint32_t count = (uint32_t) (fade_out * FADE_IN_STEP >> 10);
-      if (count > 32767)
-	count = 32767;
-
-      sample_left = (count * sample_left) >> 15;
-      sample_right = (count * sample_right) >> 15;
+      uint64_t fade_out = inc_data.duration - inc_data.total_samples_generated;
+      apply_fade_out(&sample_left, &sample_right, fade_out);
     }
 
-    buffer[buffer_idx] = sample_left & 0xFF;        		// Left LSB
-    buffer[buffer_idx + 1] = (sample_left >> 8) & 0xFF; 	// Left MSB
-    buffer[buffer_idx + 2] = sample_right & 0xFF;       	// Right LSB
-    buffer[buffer_idx + 3] = (sample_right >> 8) & 0xFF;	// Right MSB
+    generate_sample(buffer, buffer_idx, sample_left, sample_right);
 
-    phase_acc_ch1 += phase_inc_ch1;
-    phase_acc_ch2 += phase_inc_ch2;
+    update_phase_and_increment();
 
-    if (inc_data.current_inc < inc_data.target_inc)
+    if (handle_ramp_transition(buffer, player, samples_per_channel, i))
     {
-      inc_data.current_inc += current_add;
-      if (inc_data.current_inc > inc_data.target_inc)
-	inc_data.current_inc = inc_data.target_inc;
-    }
-    else if (inc_data.current_inc > inc_data.target_inc)
-    {
-      inc_data.current_inc -= current_add;
-      if (inc_data.current_inc < inc_data.target_inc)
-	inc_data.current_inc = inc_data.target_inc;
-    }
-
-    phase_inc_ch1 = inc_data.current_inc;
-    phase_inc_ch2 = inc_data.current_inc;
-
-    uint64_t samples_per_ramp =
-	(inc_data.current_step == 1 && !inc_data.stable_middle) ? cycle_ramp : ending_ramp;
-
-    if (inc_data.ramp_counter >= samples_per_ramp)
-    {
-      inc_data.ramp_counter = 0;
-
-      if (inc_data.current_step == 0)
-      {
-	inc_data.current_step = 1;
-
-	if (inc_data.stable_middle)
-	{
-	  inc_data.target_inc = inc_data.stable_freq_phase;
-	}
-	else
-	{
-	  inc_data.target_inc = min_cycle_target;
-	}
-      }
-      else if (inc_data.current_step == 1)
-      {
-	if (!inc_data.stable_middle)
-	{
-	  inc_data.target_inc =
-	      (inc_data.target_inc == min_cycle_target) ? max_cycle_target : min_cycle_target;
-	}
-
-	if (inc_data.total_samples_generated - ending_ramp >= middle_ramp)
-	{
-	  inc_data.current_step = 2;
-	  inc_data.target_inc = start_target;
-	}
-      }
-      else if (inc_data.current_step == 2)
-      {
-	uint32_t bytes_to_clear = (samples_per_channel - i - 1) * 4;
-	if (bytes_to_clear > 0)
-	{
-	  memset(buffer + buffer_idx + 4, 0, bytes_to_clear);
-	}
-	player->duration = 100;
-//                inc_data.total_samples_generated = 0;
-	player->is_prepare_stoped = true;
-	return;
-      }
+      return;
     }
   }
-  player->duration = (inc_data.total_samples_generated * 100) / inc_data.duration;
+
+  player->duration = (inc_data.total_samples_generated * 100ULL) / inc_data.duration;
 }
 
 void init_generation (SinTask_t sinus)
@@ -207,6 +132,12 @@ void init_generation (SinTask_t sinus)
       break;
     case SINUS_ABC_120S:
       init_cycle_tone(PHASE_INC_250, PHASE_INC_500, PHASE_INC_300, 500, 89000);
+      break;
+    case SINUS_400HZ_800HZ_1_5S_60S:
+      init_cycle_tone(PHASE_INC_400, PHASE_INC_800, PHASE_INC_400, 1500, 56000);
+      break;
+    case SINUS_400HZ_800HZ_3S_60S:
+      init_cycle_tone(PHASE_INC_400, PHASE_INC_800, PHASE_INC_400, 3000, 54000);
       break;
     default:
       set_increment(PHASE_INC_100, PHASE_INC_100);
@@ -279,4 +210,112 @@ void set_fade_stop ()
 {
   inc_data.total_samples_fade = inc_data.total_samples_generated + FADE_IN_SAMPLE;
   inc_data.fade_stop = true;
+}
+
+static void apply_fade (int16_t *left, int16_t *right, uint64_t sample_idx)
+{
+  if (sample_idx < FADE_IN_SAMPLE)
+  {
+    uint32_t count = (uint32_t) (sample_idx * FADE_IN_STEP >> 10);
+    if (count > 32767)
+      count = 32767;
+    *left = (count * *left) >> 15;
+    *right = (count * *right) >> 15;
+  }
+}
+
+static void apply_fade_out (int16_t *left, int16_t *right, uint64_t remaining)
+{
+  uint32_t count = (uint32_t) (remaining * FADE_IN_STEP >> 10);
+  if (count > 32767)
+    count = 32767;
+  *left = (count * *left) >> 15;
+  *right = (count * *right) >> 15;
+}
+
+static void generate_sample (uint8_t *buffer,
+			     uint32_t idx,
+			     int16_t left,
+			     int16_t right)
+{
+  buffer[idx] = left & 0xFF;
+  buffer[idx + 1] = (left >> 8) & 0xFF;
+  buffer[idx + 2] = right & 0xFF;
+  buffer[idx + 3] = (right >> 8) & 0xFF;
+}
+
+static void update_phase_and_increment (void)
+{
+  phase_acc_ch1 += phase_inc_ch1;
+  phase_acc_ch2 += phase_inc_ch2;
+
+  if (inc_data.current_inc < inc_data.target_inc)
+  {
+    inc_data.current_inc += inc_data.add_inc[inc_data.current_step == 1 ? 1 : 0];
+    if (inc_data.current_inc > inc_data.target_inc)
+      inc_data.current_inc = inc_data.target_inc;
+  }
+  else if (inc_data.current_inc > inc_data.target_inc)
+  {
+    inc_data.current_inc -= inc_data.add_inc[inc_data.current_step == 1 ? 1 : 0];
+    if (inc_data.current_inc < inc_data.target_inc)
+      inc_data.current_inc = inc_data.target_inc;
+  }
+
+  phase_inc_ch1 = inc_data.current_inc;
+  phase_inc_ch2 = inc_data.current_inc;
+}
+
+static bool handle_ramp_transition (uint8_t *buffer,
+				    Audio_Player_t *player,
+				    uint32_t samples_per_channel,
+				    uint32_t current_sample_in_buffer)
+{
+  uint64_t ending_ramp = inc_data.samples_per_phase[0];
+  uint64_t cycle_ramp = inc_data.samples_per_phase[1];
+  uint64_t middle_ramp = inc_data.samples_per_phase[2];
+
+  uint64_t samples_per_ramp =
+      (inc_data.current_step == 1 && !inc_data.stable_middle) ? cycle_ramp : ending_ramp;
+
+  if (++inc_data.ramp_counter < samples_per_ramp)
+    return false;
+
+  inc_data.ramp_counter = 0;
+
+  switch (inc_data.current_step)
+  {
+    case STEP_RAMP_UP:
+      inc_data.current_step = STEP_CYCLE;
+      inc_data.target_inc =
+	  inc_data.stable_middle ? inc_data.stable_freq_phase : inc_data.target_phase[2];
+      break;
+
+    case STEP_CYCLE:
+      if (!inc_data.stable_middle)
+      {
+	inc_data.target_inc =
+	    (inc_data.target_inc == inc_data.target_phase[2]) ? inc_data.target_phase[1] : inc_data.target_phase[2];
+      }
+
+      if (inc_data.total_samples_generated - ending_ramp >= middle_ramp)
+      {
+	inc_data.current_step = STEP_RAMP_DOWN;
+	inc_data.target_inc = inc_data.target_phase[0];
+      }
+      break;
+
+    case STEP_RAMP_DOWN:
+    {
+      uint32_t bytes_to_clear = (samples_per_channel - current_sample_in_buffer - 1) * 4;
+      if (bytes_to_clear > 0)
+      {
+	memset(buffer + (current_sample_in_buffer + 1) * 4, 0, bytes_to_clear);
+      }
+      player->duration = 100;
+      player->is_prepare_stoped = true;
+      return true;
+    }
+  }
+  return false;
 }
