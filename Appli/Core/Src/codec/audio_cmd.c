@@ -329,14 +329,16 @@ void audio_cmd_IN3L_enable (void)
 
 void audio_cmd_IN1R_enable (void)
 {
-  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);			// Page 1
-  audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x80);// Route IN1R to RIGHT_P with 20K input impedance
+  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
+  audio_cmd_write_cmd(AIC32X4_OUTPWRCTL, 0x3F); 	// Power up HPL/HPR and LOL/LOR drivers
+  audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x80);	// Route IN1R to RIGHT_P with 20K input impedance
+  audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); 	// Route CM1 to RIGHT_N with 20K input impedance
 
   audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x01); 		// MAR -> HPL
   audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x02); 		// MAR -> HPR
 
   audio_cmd_write_cmd(AIC32X4_LOLROUTE, 0x01); 		// LOR -> LOL
-  audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x02);   		// MAR -> LOR
+  audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x02);   	// MAR -> LOR
 
   audio_cmd_unmute_LO();
   audio_cmd_unmute_HP();

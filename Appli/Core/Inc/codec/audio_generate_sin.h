@@ -42,6 +42,12 @@ typedef enum {
     STEP_FINISHED
 } ToneStep_t;
 
+typedef enum {
+    TONE_MODE_CONSTANT = 0,
+    TONE_MODE_CYCLE,
+    TONE_MODE_CYCLE_NORAMP
+} ToneMode_t;
+
 typedef struct
 {
   uint64_t samples_per_phase[3];
@@ -53,7 +59,6 @@ typedef struct
   uint32_t current_inc;
   uint32_t target_inc;
   uint32_t add_inc[2];
-  uint32_t stable_freq_phase;
   uint8_t current_step;
   bool stable_middle;
   bool fade_stop;
