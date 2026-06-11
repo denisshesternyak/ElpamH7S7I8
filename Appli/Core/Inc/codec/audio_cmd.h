@@ -33,7 +33,7 @@ void audio_cmd_IN2L_enable (void);
 void audio_cmd_IN3L_enable (void);
 
 void audio_cmd_IN1R_enable (void);
-void audio_cmd_INR_disable (void);
+void audio_cmd_IN1R_disable (void);
 
 void audio_cmd_quiet_enable (void);
 void audio_cmd_quiet_disable (void);

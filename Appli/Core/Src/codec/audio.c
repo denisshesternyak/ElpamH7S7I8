@@ -311,6 +311,7 @@ static void audio_timer (void)
 	  .button = BTN_ESC,
 	  .pressed = true } };
       xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
+      audio_notify_low(AUDIO_STOP, AUDIO_MIC);
     }
   }
 
@@ -532,7 +533,7 @@ static void audio_stop_mic (void)
 {
 //	audio_cmd_playback_disable();
   player.is_announcement = false;
-  audio_cmd_INR_disable();
+  audio_cmd_IN1R_disable();
 
   LOG_INFO("Stop playback announcement");
 }
@@ -562,7 +563,7 @@ static void audio_stop_motorola (void)
   player.event = AUDIO_IDLE;
   player.priority = AUDIO_PRIORITY_IDLE;
 
-  audio_cmd_INR_disable();
+  audio_cmd_IN1R_disable();
 
   LOG_INFO("Stop playback motorola");
 }

@@ -84,21 +84,21 @@ osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
   .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityBelowNormal,
 };
 /* Definitions for UartTask */
 osThreadId_t UartTaskHandle;
 const osThreadAttr_t UartTask_attributes = {
   .name = "UartTask",
   .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for AudioTask */
 osThreadId_t AudioTaskHandle;
 const osThreadAttr_t AudioTask_attributes = {
   .name = "AudioTask",
   .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for LcdTask */
 osThreadId_t LcdTaskHandle;
@@ -126,14 +126,14 @@ osThreadId_t SDTaskHandle;
 const osThreadAttr_t SDTask_attributes = {
   .name = "SDTask",
   .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for DTMFTask */
 osThreadId_t DTMFTaskHandle;
 const osThreadAttr_t DTMFTask_attributes = {
   .name = "DTMFTask",
   .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for xLCDQueue */
 osMessageQueueId_t xLCDQueueHandle;
@@ -356,13 +356,13 @@ void StartDefaultTask(void *argument)
 
       check_version = 1;
 
-      LOG_DEBUG("Test DEBUG msg");
-      LOG_INFO("Test INFO msg");
-      LOG_WARN("Test WARN msg");
-      LOG_WARN("Creating a new test message with a long warning for displaying on the screen");
-      LOG_ERROR("Test ERROR msg");
-      LOG_ERROR("Test ERROR msg 2");
-      LOG_FATAL("Test FATAL msg");
+//      LOG_DEBUG("Test DEBUG msg");
+//      LOG_INFO("Test INFO msg");
+//      LOG_WARN("Test WARN msg");
+//      LOG_WARN("Creating a new test message with a long warning for displaying on the screen");
+//      LOG_ERROR("Test ERROR msg");
+//      LOG_ERROR("Test ERROR msg 2");
+//      LOG_FATAL("Test FATAL msg");
 
 //      DTMFMessage_t msg;
 //      msg.event = DTMF_START;

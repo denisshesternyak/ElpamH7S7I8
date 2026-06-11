@@ -89,7 +89,7 @@ void audio_cmd_init_playback (void)
   audio_cmd_write_cmd(AIC32X4_LORGAIN, 0x40);  // LOR gain 0 dB, driver is muted
 //	audio_cmd_write_cmd(AIC32X4_OUTPWRCTL, 0x0C); 	// Power up LOL and LOR drivers
 
-  audio_cmd_write_cmd(AIC32X4_OUTPWRCTL, 0x3F); // Power up HPL/HPR and LOL/LOR drivers
+  audio_cmd_write_cmd(AIC32X4_OUTPWRCTL, 0x3F); // Power up HPL/HPR and LOL/LOR and MAL/MAR
 
   osDelay(200);	// Wait for soft stepping (2.5 sec in TI example)
 
@@ -175,6 +175,7 @@ void audio_cmd_enable_LO (void)
 void audio_cmd_unmute_LO (void)
 {
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
+
 //    audio_cmd_write_cmd(AIC32X4_DACMUTE, 0x00); 	// Unute both DACs
   audio_cmd_write_cmd(AIC32X4_LOLGAIN, 0x00); // LOL gain 0 dB, driver is not unmuted
   audio_cmd_write_cmd(AIC32X4_LORGAIN, 0x00); // LOR gain 0 dB, driver is not unmuted
@@ -183,14 +184,16 @@ void audio_cmd_unmute_LO (void)
 void audio_cmd_mute_LO (void)
 {
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
+
 //    audio_cmd_write_cmd(AIC32X4_DACMUTE, 0x0C); 		// Mute both DACs
-  audio_cmd_write_cmd(AIC32X4_LOLGAIN, 0x40); // LOL gain 0 dB, driver is not muted
-  audio_cmd_write_cmd(AIC32X4_LORGAIN, 0x40); // LOR gain 0 dB, driver is not muted
+  audio_cmd_write_cmd(AIC32X4_LOLGAIN, 0x40); // LOL gain 0 dB, driver is muted
+  audio_cmd_write_cmd(AIC32X4_LORGAIN, 0x40); // LOR gain 0 dB, driver is muted
 }
 
 void audio_cmd_unmute_HP (void)
 {
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
+
   audio_cmd_write_cmd(AIC32X4_HPLGAIN, 0x00); // HPL gain 0 dB, driver is not unmuted
   audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x00); // HPR gain 0 dB, driver is not unmuted
 }
@@ -198,8 +201,9 @@ void audio_cmd_unmute_HP (void)
 void audio_cmd_mute_HP (void)
 {
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
-  audio_cmd_write_cmd(AIC32X4_HPLGAIN, 0x40); // HPL gain 0 dB, driver is not muted
-  audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x40); // HPR gain 0 dB, driver is not muted
+
+  audio_cmd_write_cmd(AIC32X4_HPLGAIN, 0x40); // HPL gain 0 dB, driver is muted
+  audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x40); // HPR gain 0 dB, driver is muted
 }
 
 void audio_cmd_playback_pwr_up (void)
@@ -217,10 +221,11 @@ void audio_cmd_playback_pwr_down (void)
 void audio_cmd_playback_enable (void)
 {
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
+
   audio_cmd_write_cmd(AIC32X4_LOLROUTE, 0x08); 		// LDAC -> LOL
   audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x08);   	// RDAC -> LOR
 
-//	audio_cmd_playback_pwr_up();
+  //	audio_cmd_playback_pwr_up();
   audio_cmd_unmute_LO();
   audio_cmd_unmute_HP();
 }
@@ -330,7 +335,8 @@ void audio_cmd_IN3L_enable (void)
 void audio_cmd_IN1R_enable (void)
 {
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
-  audio_cmd_write_cmd(AIC32X4_OUTPWRCTL, 0x3F); 	// Power up HPL/HPR and LOL/LOR drivers
+
+//  audio_cmd_write_cmd(AIC32X4_OUTPWRCTL, 0x3F); 	// Power up HPL/HPR and LOL/LOR and MAL/MAR
   audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x80);	// Route IN1R to RIGHT_P with 20K input impedance
   audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); 	// Route CM1 to RIGHT_N with 20K input impedance
 
@@ -344,10 +350,21 @@ void audio_cmd_IN1R_enable (void)
   audio_cmd_unmute_HP();
 }
 
-void audio_cmd_INR_disable (void)
+void audio_cmd_IN1R_disable (void)
 {
-  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);			// Page 1
-  audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x00);// No route IN1R to RIGHT_P with 20K input impedance
+  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
+
+////  audio_cmd_write_cmd(AIC32X4_OUTPWRCTL, 0x3C); 	// Power up HPL/HPR and LOL/LOR
+
+  audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x08); // Route IN3R to RIGHT_P with 20K input impedance
+//  audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); // Route CM1 to RIGHT_N with 20K input impedance
+
+  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x08); 		// LDAC -> HPL
+  audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x08);   	// RDAC -> HPR
+
+  audio_cmd_write_cmd(AIC32X4_LOLROUTE, 0x08); 		// LDAC -> LOL
+  audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x08);   	// RDAC -> LOR
+
   audio_cmd_mute_LO();
   audio_cmd_mute_HP();
 }
