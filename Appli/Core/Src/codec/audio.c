@@ -104,12 +104,12 @@ void audio_init (void)
   osDelay(10);
 
   memset(&player, 0, sizeof(player));
-  memcpy(player.valid_volume_levels, valid_volume_levels, NUM_VALID_LEVELS);
+//  memcpy(player.valid_volume_levels, valid_volume_levels, NUM_VALID_LEVELS);
 
   player.volume_level = 15;
   if (player.volume_level < 1)
     player.volume_level = 1;
-  player.volume = player.valid_volume_levels[player.volume_level - 1];
+  player.volume = valid_volume_levels[player.volume_level - 1];
 //    player.volume = DEF_VALUE_VOLUME;
 
   audio_init_sin_table();
@@ -350,10 +350,10 @@ static int audio_find_closest_valid_volume (uint8_t target)
 
   for (int i = 0; i < NUM_VOLUME_BARS; i++)
   {
-    if (player.valid_volume_levels[i] >= target)
+    if (valid_volume_levels[i] >= target)
     {
       player.volume_level = i + 1;
-      return player.valid_volume_levels[i];
+      return valid_volume_levels[i];
     }
   }
   return MAX_VOLUME;

@@ -117,9 +117,9 @@ typedef struct
   AudioType_t type;
   AudioPriority_t priority;
 
-  uint32_t last_time_arming;
-  uint32_t last_time_announcement;
-  uint32_t last_time_recording;
+  volatile uint32_t last_time_arming;
+  volatile uint32_t last_time_announcement;
+  volatile uint32_t last_time_recording;
 
   volatile bool is_playing;
   volatile bool is_recording;
@@ -132,11 +132,9 @@ typedef struct
   volatile bool is_announcement;
   volatile bool is_motorola;
 
-  uint8_t valid_volume_levels[NUM_VALID_LEVELS];
-
-  uint8_t volume_level;
-  uint8_t volume;
-  uint8_t duration;
+  volatile uint8_t volume_level;
+  volatile uint8_t volume;
+  volatile uint8_t duration;
 } Audio_Player_t;
 
 typedef struct

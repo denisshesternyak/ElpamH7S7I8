@@ -25,5 +25,6 @@ void audio_notify_high (AudioEvent_t event, AudioType_t type);
 void audio_notify_start_task_low (AudioType_t type, SinTask_t task, const char *name);
 
 extern Audio_Player_t player;
+extern const uint8_t valid_volume_levels[];
 
 #endif /* INC_CODEC_AUDIO_H_ */

@@ -800,10 +800,10 @@ void menu_init_language (void)
   languageMenu->itemCount = LANG_COUNT;
 }
 
-static void change_volume (void)
+static void change_volume ()
 {
-  player.volume = player.valid_volume_levels[player.volume_level - 1];
-  volume_indicator_draw_bar(player.volume_level, player.valid_volume_levels[player.volume_level - 1]);
+  player.volume = valid_volume_levels[player.volume_level - 1];
+  volume_indicator_draw_bar(player.volume_level, player.volume);
 
   audio_notify_low(AUDIO_VOLUME, AUDIO_NONE);
 }
@@ -885,7 +885,7 @@ void Draw_MENU_TYPE_ANNOUNCEMENT (void)
 {
   menu_draw_image(currentMenu);
 
-  volume_indicator_set_level_silent(player.volume_level, player.valid_volume_levels[player.volume_level - 1]);
+  volume_indicator_set_level_silent(player.volume_level, valid_volume_levels[player.volume_level - 1]);
   volume_indicators_draw();
 }
 
