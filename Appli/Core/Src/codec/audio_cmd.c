@@ -130,8 +130,8 @@ void audio_cmd_init_record (void)
 //  audio_cmd_write_cmd(AIC32X4_LMICPGAVOL, 0x0C);  // Left MicPGA enable, +6 dB
   audio_cmd_write_cmd(AIC32X4_RMICPGAVOL, 0x0C);  // Right MicPGA enable, +6 dB
 
-//    audio_cmd_write_cmd(AIC32X4_LMIXAMPL, 0x00);  		// Mixer Amplifier Left Volume Control, 0 dB
-//    audio_cmd_write_cmd(AIC32X4_RMIXAMPL, 0x00);		// Mixer Amplifier Right Volume Control, 0 dB
+  audio_cmd_write_cmd(AIC32X4_LMIXAMPL, 0x00);  		// Mixer Amplifier Left Volume Control, 0 dB
+  audio_cmd_write_cmd(AIC32X4_RMIXAMPL, 0x00);		// Mixer Amplifier Right Volume Control, 0 dB
 
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x00);		// Page 0
 //  audio_cmd_write_cmd(AIC32X4_ADCSETUP, 0xC0); 	// Left + Right ADC powered up
@@ -148,6 +148,7 @@ void audio_cmd_send_volume_announc (uint8_t lvl)
 //	LOG_DEBUG("lvl %d", lvl);
 
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
+  audio_cmd_write_cmd(AIC32X4_LMIXAMPL, lvl); // Mixer Amplifier Left Volume Control
   audio_cmd_write_cmd(AIC32X4_RMIXAMPL, lvl); // Mixer Amplifier Right Volume Control
 }
 
@@ -337,13 +338,16 @@ void audio_cmd_IN1R_enable (void)
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
 
 //  audio_cmd_write_cmd(AIC32X4_OUTPWRCTL, 0x3F); 	// Power up HPL/HPR and LOL/LOR and MAL/MAR
+  audio_cmd_write_cmd(AIC32X4_LMICPGAPIN, 0x02);	// Route IN1R to LEFT_P with 20K input impedance
+  audio_cmd_write_cmd(AIC32X4_LMICPGANIN, 0x80); 	// Route CM1 to LEFT_N with 20K input impedance
+
   audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x80);	// Route IN1R to RIGHT_P with 20K input impedance
   audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); 	// Route CM1 to RIGHT_N with 20K input impedance
 
   audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x01); 		// MAR -> HPL
   audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x02); 		// MAR -> HPR
 
-  audio_cmd_write_cmd(AIC32X4_LOLROUTE, 0x01); 		// LOR -> LOL
+  audio_cmd_write_cmd(AIC32X4_LOLROUTE, 0x02); 		// MAL -> LOL
   audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x02);   	// MAR -> LOR
 
   audio_cmd_unmute_LO();
