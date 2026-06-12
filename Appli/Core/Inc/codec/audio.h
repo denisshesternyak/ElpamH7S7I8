@@ -18,13 +18,23 @@ void audio_init (void);
 void audio_process (AudioNotify_t *audio_notify);
 void audio_set_volume (uint8_t level);
 void audio_set_volume_playback (uint8_t level);
+void audio_get_volume_level(uint8_t *level, uint8_t *value);
 
 void audio_notify_low (AudioEvent_t event, AudioType_t type);
 void audio_notify_medium (AudioEvent_t event, AudioType_t type);
 void audio_notify_high (AudioEvent_t event, AudioType_t type);
 void audio_notify_start_task_low (AudioType_t type, SinTask_t task, const char *name);
+void audio_notify_arming (bool val);
+
+bool audio_is_playing ();
+bool audio_is_stoped ();
+bool audio_is_recording ();
+bool audio_is_announcement ();
+bool audio_is_arming ();
+bool audio_is_motorola ();
+
+AudioType_t audio_get_type ();
 
 extern Audio_Player_t player;
-extern const uint8_t valid_volume_levels[];
 
 #endif /* INC_CODEC_AUDIO_H_ */

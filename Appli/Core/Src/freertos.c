@@ -207,7 +207,7 @@ void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef *hrtc)
   {
     static AudioNotify_t audio_notify = {
 	.event = AUDIO_TIMER,
-	.type = AUDIO_NONE,
+	.sample.type = AUDIO_NONE,
 	.priority = AUDIO_PRIORITY_LOW };
     osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
   }
@@ -493,12 +493,22 @@ void StartLcdTask(void *argument)
 #ifndef SELFTEST
   hx8357_init();
 #endif
-  menu_init();
 
-//  osDelay(1000);
+  //  osDelay(1000);
 //  audio_notify_start_task_low(AUDIO_SIN, SINUS_1000HZ_120S, NULL);
 //  osDelay(5000);
 //  audio_notify_low(AUDIO_PREPARE_STOP, AUDIO_SIN);
+
+  lcd_is_playing (audio_is_playing);
+  lcd_is_stoped (audio_is_stoped);
+  lcd_is_recording (audio_is_recording);
+  lcd_is_announcement (audio_is_announcement);
+  lcd_is_motorola (audio_is_motorola);
+  lcd_is_arming (audio_is_arming);
+
+  lcd_volume_indicator (audio_get_volume_level);
+
+  menu_init();
 
   LCDTaskEvent_t lcd_event;
   /* Infinite loop */

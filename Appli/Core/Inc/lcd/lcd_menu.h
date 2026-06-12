@@ -6,6 +6,7 @@
 #include "lcd_lang.h"
 #include "lcd_strings_menu.h"
 #include "stm32h7rsxx_hal.h"
+#include "audio_types.h"
 
 //#include "ds3231.h"
 //#include "lcd_widget_volume_indicator.h"
@@ -58,9 +59,12 @@ typedef enum
 typedef struct
 {
   LCDEvent event;
-  KeyEvent_t btn;
-  MenuType screen;
-  uint32_t value;
+  union
+  {
+    KeyEvent_t btn;
+    MenuType screen;
+    uint32_t value;
+  };
 } LCDTaskEvent_t;
 
 typedef void (*MenuButtonHandler) (KeyEvent_t event);
@@ -90,6 +94,18 @@ typedef struct Menu
 
   MenuButtonHandler buttonHandler;
 } Menu;
+
+typedef bool (*state_handler_t) (void);
+typedef void (*volume_indicator) (uint8_t *, uint8_t *);
+
+void lcd_is_playing (state_handler_t h);
+void lcd_is_stoped (state_handler_t h);
+void lcd_is_recording (state_handler_t h);
+void lcd_is_announcement (state_handler_t h);
+void lcd_is_motorola (state_handler_t h);
+void lcd_is_arming (state_handler_t h);
+
+void lcd_volume_indicator (volume_indicator h);
 
 void menu_init (void);
 void menu_handle_button (KeyEvent_t event);

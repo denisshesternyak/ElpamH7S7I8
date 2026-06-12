@@ -21,7 +21,6 @@
 #include "lcd_widget_motorola.h"
 #include "lcd_widget_volume.h"
 #include "lcd_widget_logging.h"
-#include "audio.h"
 #include "app_freertos.h"
 #include "rtc.h"
 #include "sdfs.h"
@@ -123,10 +122,12 @@ void RunSilentTest (void);
 void RunBatteriesTest (void);
 void RunAmplifiresTest (void);
 void RunDriversTest (void);
+static void lcd_audio_notify(AudioEvent_t event, AudioType_t type);
+static void lcd_notify_start_task_low (AudioType_t type,
+				  SinTask_t task,
+				  const char *name);
+static void lcd_notify_arming (bool val);
 static void menu_init_language (void);
-//static void change_volume (void);
-static void increase_volume (void);
-static void decrease_volume (void);
 
 static bool hot_key_handle_button (KeyEvent_t event);
 static void passwordMenu_handle_button_press(KeyEvent_t event);
@@ -177,6 +178,15 @@ static void check_playing_and_stop ();
 static void software_prepareAction (void);
 typedef void (*confirm_handler_t) (void);
 confirm_handler_t confirm_handler = NULL;
+
+static state_handler_t is_playing_handler = NULL;
+static state_handler_t is_stoped_handler = NULL;
+static state_handler_t is_recording_handler = NULL;
+static state_handler_t is_announcement_handler = NULL;
+static state_handler_t is_arming_handler = NULL;
+static state_handler_t is_motorola_handler = NULL;
+
+static volume_indicator lcd_volume_indicator_handler = NULL;
 
 static void BLK_ON ()
 {
@@ -800,32 +810,6 @@ void menu_init_language (void)
   languageMenu->itemCount = LANG_COUNT;
 }
 
-static void change_volume ()
-{
-  player.volume = valid_volume_levels[player.volume_level - 1];
-  volume_indicator_draw_bar(player.volume_level, player.volume);
-
-  audio_notify_low(AUDIO_VOLUME, AUDIO_NONE);
-}
-
-static void increase_volume (void)
-{
-  if (currentMenu != announcementMenu || player.volume_level >= NUM_VALID_LEVELS)
-    return;
-
-  player.volume_level++;
-  change_volume();
-}
-
-static void decrease_volume (void)
-{
-  if (currentMenu != announcementMenu || player.volume_level == 1)
-    return;
-
-  player.volume_level--;
-  change_volume();
-}
-
 static void siren_info_prepare_action (void)
 {
   if (!currentMenu || currentMenu->currentSelection >= currentMenu->itemCount)
@@ -837,7 +821,7 @@ static void siren_info_prepare_action (void)
 
   item->submenu->textFilename = item->name[GetLanguage()];
 
-  audio_notify_start_task_low(AUDIO_SD, SINUS_NONE, item->name[GetLanguage()]);
+  lcd_notify_start_task_low(AUDIO_SD, SINUS_NONE, item->name[GetLanguage()]);
 
   MenuResetProgressBar();
 }
@@ -853,14 +837,14 @@ static void sinus_info_prepare_action (void)
 
   item->submenu->textFilename = item->name[GetLanguage()];
 
-  audio_notify_start_task_low(AUDIO_SIN, (SinTask_t) currentMenu->currentSelection, item->name[GetLanguage()]);
+  lcd_notify_start_task_low(AUDIO_SIN, (SinTask_t) currentMenu->currentSelection, item->name[GetLanguage()]);
 
   MenuResetProgressBar();
 }
 
 static void prepare_announcement (void)
 {
-  audio_notify_low(AUDIO_START, AUDIO_MIC);
+  lcd_audio_notify(AUDIO_START, AUDIO_MIC);
 }
 
 void Draw_MENU_TYPE_IDLE ()
@@ -884,8 +868,9 @@ void Draw_MENU_TYPE_IDLE ()
 void Draw_MENU_TYPE_ANNOUNCEMENT (void)
 {
   menu_draw_image(currentMenu);
-
-  volume_indicator_set_level_silent(player.volume_level, valid_volume_levels[player.volume_level - 1]);
+  uint8_t level, value;
+  lcd_volume_indicator_handler(&level, &value);
+  volume_indicator_set_level_silent(level, value);
   volume_indicators_draw();
 }
 
@@ -1177,13 +1162,13 @@ void update_date_time ()
   if (!isBacklightOn)
     return;
 
-  if (player.is_motorola)
+  if (is_motorola_handler())
     motorola_update();
 
-  if (player.is_announcement)
+  if (is_announcement_handler())
     volume_indicator_blink_bar();
 
-  if (!(player.is_playing || player.is_announcement))
+  if (!(is_playing_handler() || is_announcement_handler()))
     lastInteractionTick++;
 
   if (currentMenu != idleMenu && lastInteractionTick >= INACTIVITY_TIMEOUT_MS)
@@ -1207,7 +1192,7 @@ void update_date_time ()
 
 void update_progress_bar (uint8_t value)
 {
-  if (!player.is_playing || (currentMenu != sinusInfoMenu && currentMenu != alarm_info_menu && currentMenu != messagePlayMenu))
+  if (!is_playing_handler() || (currentMenu != sinusInfoMenu && currentMenu != alarm_info_menu && currentMenu != messagePlayMenu))
     return;
   MenuDrawProgress(value);
 }
@@ -1247,7 +1232,7 @@ void menu_handle_button (KeyEvent_t event)
 
   if (!isBacklightOn)
   {
-    if (player.is_motorola)
+    if (is_motorola_handler())
     {
       currentMenu = motorolaInfoMenu;
       draw_menuScreen(true);
@@ -1270,7 +1255,7 @@ void menu_handle_button (KeyEvent_t event)
 
 bool hot_key_handle_button (KeyEvent_t event)
 {
-  if (player.is_motorola)
+  if (is_motorola_handler())
     return false;
 
   switch (event.button)
@@ -1286,7 +1271,7 @@ bool hot_key_handle_button (KeyEvent_t event)
     case BTN_ANNOUNCEMENT:
       if (currentMenu == announcementMenu)
 	return true;
-      player.is_fade_stoped = true;
+//      player.is_fade_stoped = true;
       check_playing_and_stop();
       prepare_announcement();
       currentMenu = announcementMenu;
@@ -1312,8 +1297,7 @@ bool hot_key_handle_button (KeyEvent_t event)
       draw_menuScreen(true);
       return true;
     case BTN_ARM:
-      player.last_time_arming = 0;
-      player.is_arming = true;
+      lcd_notify_arming(true);
       return true;
     case BTN_CXL:
       check_playing_and_stop();
@@ -1453,8 +1437,8 @@ static void alarm_info_menu_handler (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_ESC:
-      if (player.is_playing)
-	audio_notify_low(AUDIO_PREPARE_STOP, AUDIO_SD);
+      if (is_playing_handler())
+	lcd_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SD);
 
       if (alarm_info_menu->parent == NULL)
 	return;
@@ -1475,8 +1459,8 @@ static void sinus_info_menu_handler (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_ESC:
-      if (player.is_playing)
-	audio_notify_low(AUDIO_PREPARE_STOP, AUDIO_SIN);
+      if (is_playing_handler())
+	lcd_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SIN);
 
       if (sinusInfoMenu->parent == NULL)
 	return;
@@ -1598,8 +1582,8 @@ static void message_info_menu_handler (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_ESC:
-      if (player.is_playing)
-	audio_notify_low(AUDIO_PREPARE_STOP, AUDIO_SD);
+      if (is_playing_handler())
+	lcd_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SD);
 
       if (messagePlayMenu->parent == NULL)
 	return;
@@ -1635,17 +1619,25 @@ static void volume_control_handler (KeyEvent_t event)
   if (!currentMenu)
     return;
 
+  AudioNotify_t audio_notify = {
+  	  .event = AUDIO_VOLUME,
+  	  .volume.handler = &volume_indicator_draw_bar,
+  	  .priority = AUDIO_PRIORITY_LOW
+  };
+
   switch (event.button)
   {
     case BTN_UP:
-      increase_volume();
+      audio_notify.volume.event = VOLUME_INCREASE;
+      osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
       break;
     case BTN_DOWN:
-      decrease_volume();
+      audio_notify.volume.event = VOLUME_DECREASE;
+      osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
       break;
     case BTN_ESC:
-      if (player.is_announcement)
-	audio_notify_low(AUDIO_STOP, AUDIO_MIC);
+      if (is_announcement_handler())
+	lcd_audio_notify(AUDIO_STOP, AUDIO_MIC);
 
       currentMenu = currentMenu->parent;
       draw_menuScreen(true);
@@ -1799,9 +1791,69 @@ static void draw_textFilename (void)
 
 static void check_playing_and_stop ()
 {
-  if (player.is_playing || player.is_announcement)
+  if (is_playing_handler() || is_announcement_handler())
   {
-    audio_notify_low(AUDIO_STOP, player.type);
+    lcd_audio_notify(AUDIO_STOP, AUDIO_CURRENT_TYPE);
   }
 }
 
+static void lcd_audio_notify(AudioEvent_t event, AudioType_t type)
+{
+  AudioNotify_t audio_notify = {
+      .event = event,
+      .sample.type = type,
+      .priority = AUDIO_PRIORITY_LOW };
+
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
+}
+
+static void lcd_notify_start_task_low (AudioType_t type,
+				  SinTask_t task,
+				  const char *name)
+{
+  AudioNotify_t audio_notify = {
+      .event = AUDIO_START,
+      .sample.type = type,
+      .sample.sin_task = task,
+      .sample.filename = name,
+      .priority = AUDIO_PRIORITY_LOW };
+
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
+}
+
+static void lcd_notify_arming (bool val)
+{
+  AudioNotify_t audio_notify = { .event = AUDIO_ARMIG, .priority = AUDIO_PRIORITY_LOW, .arming = val };
+
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
+}
+
+void lcd_is_playing (state_handler_t h)
+{
+  is_playing_handler = h;
+}
+void lcd_is_stoped (state_handler_t h)
+{
+  is_stoped_handler = h;
+}
+void lcd_is_recording (state_handler_t h)
+{
+  is_recording_handler = h;
+}
+void lcd_is_announcement (state_handler_t h)
+{
+  is_announcement_handler = h;
+}
+void lcd_is_motorola (state_handler_t h)
+{
+  is_motorola_handler = h;
+}
+void lcd_is_arming (state_handler_t h)
+{
+  is_arming_handler = h;
+}
+
+void lcd_volume_indicator (volume_indicator h)
+{
+  lcd_volume_indicator_handler = h;
+}

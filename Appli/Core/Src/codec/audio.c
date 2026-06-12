@@ -50,7 +50,8 @@ static void audio_stop (AudioNotify_t *audio_notify);
 static void audio_prepare_stop (AudioNotify_t *audio_notify);
 static void audio_pause (void);
 static void audio_timer (void);
-static void audio_volume (void);
+static void audio_volume (AudioVolume_t *volume);
+static void audio_arming (bool val);
 
 // SINUS
 static void audio_start_sinus (AudioNotify_t *audio_notify);
@@ -109,8 +110,8 @@ void audio_init (void)
   player.volume_level = 15;
   if (player.volume_level < 1)
     player.volume_level = 1;
-  player.volume = valid_volume_levels[player.volume_level - 1];
-//    player.volume = DEF_VALUE_VOLUME;
+  player.volume_value = valid_volume_levels[player.volume_level - 1];
+//    player.volume_value = DEF_VALUE_VOLUME;
 
   audio_init_sin_table();
 
@@ -130,11 +131,14 @@ void audio_process (AudioNotify_t *audio_notify)
   {
     case AUDIO_IDLE:
       break;
+    case AUDIO_ARMIG:
+      audio_arming(audio_notify->arming);
+      break;
     case AUDIO_TIMER:
       audio_timer();
       break;
     case AUDIO_VOLUME:
-      audio_volume();
+      audio_volume(&audio_notify->volume);
       break;
     default:
       audio_event(audio_notify);
@@ -149,7 +153,8 @@ static void audio_event (AudioNotify_t *audio_notify)
   if (audio_notify->priority < player.priority)
     return;
   player.priority = audio_notify->priority;
-  player.type = audio_notify->type;
+  if(audio_notify->sample.type != AUDIO_CURRENT_TYPE)
+    player.type = audio_notify->sample.type;
 
   switch (audio_notify->event)
   {
@@ -286,6 +291,12 @@ static void audio_pause (void)
 
 }
 
+static void audio_arming (bool val)
+{
+  player.last_time_arming = 0;
+  player.is_arming = val;
+}
+
 static void audio_timer (void)
 {
   if (player.is_arming)
@@ -333,12 +344,30 @@ static void audio_timer (void)
   }
 }
 
-static void audio_volume (void)
+static void audio_volume (AudioVolume_t *volume)
 {
-  if (!player.is_playing || !player.is_announcement)
+  if (player.is_playing || !player.is_announcement)
+    return;
+
+  switch(volume->event)
   {
-    audio_set_volume(player.volume);
+    case VOLUME_INCREASE:
+      if(player.volume_level >= NUM_VALID_LEVELS)
+	return;
+      player.volume_level++;
+      break;
+    case VOLUME_DECREASE:
+      if(player.volume_level == 1)
+	return;
+      player.volume_level--;
+      break;
+    default:
+      break;
   }
+
+  player.volume_value = valid_volume_levels[player.volume_level - 1];
+  audio_set_volume(player.volume_value);
+  volume->handler(player.volume_level, player.volume_value);
 }
 
 static int audio_find_closest_valid_volume (uint8_t target)
@@ -359,11 +388,11 @@ static int audio_find_closest_valid_volume (uint8_t target)
   return MAX_VOLUME;
 }
 
-void audio_set_volume (uint8_t level)
+void audio_set_volume (uint8_t value)
 {
-  uint8_t corrected_vol = audio_find_closest_valid_volume(level);
+  uint8_t corrected_vol = audio_find_closest_valid_volume(value);
 
-  player.volume = corrected_vol;
+  player.volume_value = corrected_vol;
 
   uint8_t vol;
   if (corrected_vol >= MAX_VOLUME)
@@ -391,12 +420,18 @@ void audio_set_volume_playback (uint8_t level)
   audio_cmd_send_volume_dac(vol);
 }
 
+void audio_get_volume_level(uint8_t *level, uint8_t *value)
+{
+  *level = player.volume_level;
+  *value = player.volume_value;
+}
+
 // SINUS
 static void audio_start_sinus (AudioNotify_t *audio_notify)
 {
   LOG_INFO("Start playback sinus");
 
-  init_generation(audio_notify->sin_task);
+  init_generation(audio_notify->sample.sin_task);
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
 
   audio_cmd_playback_enable();
@@ -444,10 +479,10 @@ static void audio_prepare_stop_sinus (void)
 // SD
 static void audio_start_sd (AudioNotify_t *audio_notify)
 {
-  if (!audio_notify->filename)
+  if (!audio_notify->sample.filename)
     return;
 
-  player.file_info.filename = audio_notify->filename;
+  player.file_info.filename = audio_notify->sample.filename;
 
   LOG_INFO("Start playback from uSD: %s", player.file_info.filename);
 
@@ -675,7 +710,7 @@ static void audio_start_quiet (AudioNotify_t *audio_notify)
 {
   LOG_INFO("Start playback quiet test");
 
-  init_generation(audio_notify->sin_task);
+  init_generation(audio_notify->sample.sin_task);
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
 
   audio_cmd_quiet_enable();
@@ -818,7 +853,7 @@ static osStatus_t send_audio_notify (AudioNotify_t *audio_notify,
 				     uint32_t timeout)
 {
   audio_notify->event = event;
-  audio_notify->type = type;
+  audio_notify->sample.type = type;
   audio_notify->priority = priority;
   return osMessageQueuePut(xAudioQueueHandle, audio_notify, 0, timeout);
 }
@@ -853,7 +888,7 @@ void audio_notify_start_task_low (AudioType_t type,
 				  SinTask_t task,
 				  const char *name)
 {
-  AudioNotify_t audio_notify = { .sin_task = task, .filename = name };
+  AudioNotify_t audio_notify = { .sample.sin_task = task, .sample.filename = name };
 
   if (send_audio_notify(&audio_notify, AUDIO_START, type, AUDIO_PRIORITY_LOW, 10) != osOK)
   {
@@ -865,7 +900,7 @@ void audio_notify_stop_task_low (AudioType_t type,
 				  SinTask_t task,
 				  const char *name)
 {
-  AudioNotify_t audio_notify = { .sin_task = task, .filename = name };
+  AudioNotify_t audio_notify = { .sample.sin_task = task, .sample.filename = name };
 
   if (send_audio_notify(&audio_notify, AUDIO_STOP, type, AUDIO_PRIORITY_LOW, 10) != osOK)
   {
@@ -891,4 +926,41 @@ void audio_notify_medium (AudioEvent_t event, AudioType_t type)
   {
     LOG_WARN("The event from DTMF cannot be handled. The audio queue is full");
   }
+}
+
+void audio_notify_arming (bool val)
+{
+  AudioNotify_t audio_notify = { .event = AUDIO_ARMIG, .priority = AUDIO_PRIORITY_LOW, .arming = val };
+
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
+}
+
+bool audio_is_playing ()
+{
+  return player.is_playing;
+}
+bool audio_is_stoped ()
+{
+  return player.is_stoped;
+}
+bool audio_is_recording ()
+{
+  return player.is_recording;
+}
+bool audio_is_announcement ()
+{
+  return player.is_announcement;
+}
+bool audio_is_arming ()
+{
+  return player.is_arming;
+}
+bool audio_is_motorola ()
+{
+  return player.is_motorola;
+}
+
+AudioType_t audio_get_type ()
+{
+  return player.type;
 }

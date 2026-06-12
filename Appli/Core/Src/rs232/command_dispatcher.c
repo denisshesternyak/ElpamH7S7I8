@@ -42,8 +42,7 @@ static void send_screen_notify (MenuType screen);
 void handle_arm (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ARMING);
-  player.last_time_arming = 0;
-  player.is_arming = true;
+  audio_notify_arming(true);
   LOG_INFO("'*_ARM__' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -61,7 +60,7 @@ void handle_arm (UART_HandleTypeDef *huart)
 void handle_all_clear_1 (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_1);
-  if (player.is_arming && !player.is_motorola)
+  if (audio_is_arming() && !audio_is_motorola())
   {
     LOG_INFO("'*A_CLR1' - got the command");
     audio_notify_high(AUDIO_STOP, player.type);
@@ -84,7 +83,7 @@ void handle_all_clear_1 (UART_HandleTypeDef *huart)
 void handle_all_clear_2 (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_2);
-  if (player.is_arming && !player.is_motorola)
+  if (audio_is_arming() && !audio_is_motorola())
   {
     LOG_INFO("'*A_CLR2' - got the command");
     audio_notify_high(AUDIO_STOP, player.type);
@@ -107,7 +106,7 @@ void handle_all_clear_2 (UART_HandleTypeDef *huart)
 void handle_alarm (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ALARM_WAIL);
-  if (player.is_arming && !player.is_motorola)
+  if (audio_is_arming() && !audio_is_motorola())
   {
     LOG_INFO("'*I_WAIL' - got the command");
     audio_notify_high(AUDIO_STOP, player.type);
@@ -130,7 +129,7 @@ void handle_alarm (UART_HandleTypeDef *huart)
 void handle_chemical (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_CHEMICAL);
-  if (player.is_arming && !player.is_motorola)
+  if (audio_is_arming() && !audio_is_motorola())
   {
     LOG_INFO("'*CHEM_A' - got the command");
     audio_notify_high(AUDIO_STOP, player.type);
@@ -153,7 +152,7 @@ void handle_chemical (UART_HandleTypeDef *huart)
 void handle_disarm (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
-  player.is_arming = false;
+  audio_notify_arming(false);
   LOG_INFO("'*DISARM' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -170,7 +169,7 @@ void handle_disarm (UART_HandleTypeDef *huart)
  */
 void handle_cancel (UART_HandleTypeDef *huart)
 {
-  if (player.is_motorola)
+  if (audio_is_motorola())
   {
     LOG_INFO("'*CANCEL' - got the command");
 
@@ -300,7 +299,7 @@ void handle_reset (UART_HandleTypeDef *huart)
 void volume_up_handler (int value)
 {
 //  system_set_volume(value);
-  player.volume = value;
+  player.volume_value = value;
 
   audio_notify_high(AUDIO_VOLUME, AUDIO_NONE);
 
@@ -320,7 +319,7 @@ void volume_up_handler (int value)
 void volume_down_handler (int value)
 {
 //  system_set_volume(value);
-  player.volume = value;
+  player.volume_value = value;
 
   audio_notify_high(AUDIO_VOLUME, AUDIO_NONE);
 

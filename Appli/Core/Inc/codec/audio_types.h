@@ -13,6 +13,8 @@
 
 #define AUDIO_HEADER_SIZE  			44
 
+typedef void (* volume_handler_t) (uint8_t, uint8_t );
+
 typedef enum
 {
   AUDIO_IDLE,
@@ -22,6 +24,7 @@ typedef enum
   AUDIO_PREPARE_STOP,
   AUDIO_PAUSE,
   AUDIO_TIMER,
+  AUDIO_ARMIG,
   AUDIO_VOLUME
 } AudioEvent_t;
 
@@ -34,6 +37,7 @@ typedef enum
   AUDIO_MOTOROLA,
   AUDIO_DTMF,
   AUDIO_QUIET,
+  AUDIO_CURRENT_TYPE
 } AudioType_t;
 
 typedef enum
@@ -133,17 +137,39 @@ typedef struct
   volatile bool is_motorola;
 
   volatile uint8_t volume_level;
-  volatile uint8_t volume;
+  volatile uint8_t volume_value;
   volatile uint8_t duration;
 } Audio_Player_t;
 
 typedef struct
 {
-  AudioEvent_t event;
   AudioType_t type;
-  AudioPriority_t priority;
   SinTask_t sin_task;
   const char *filename;
+} AudioSample_t;
+
+typedef enum
+{
+  VOLUME_INCREASE,
+  VOLUME_DECREASE
+} AudioVolumeEvent_t;
+
+typedef struct
+{
+  AudioVolumeEvent_t event;
+  volume_handler_t handler;
+} AudioVolume_t;
+
+typedef struct
+{
+  AudioEvent_t event;
+  AudioPriority_t priority;
+  union
+  {
+    AudioSample_t sample;
+    AudioVolume_t volume;
+    bool arming;
+  };
 } AudioNotify_t;
 
 #endif /* INC_CODEC_AUDIO_TYPES_H_ */
