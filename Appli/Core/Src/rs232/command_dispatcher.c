@@ -9,18 +9,18 @@
 #include <stdio.h>
 #include <stdbool.h>
 //#include "audio_types.h"
-#include "lcd_menu.h"
+#include "lcd_types.h"
 #include "usart.h"
 #include "stm32h7rsxx_hal.h"
 #include "logger.h"
 #include "app_freertos.h"
-#include "audio.h"
 #include "keyboard.h"
 
 // Extern UART handler for debug output (optional)
 
 static void send_btn_notify (KeyCode_t btn);
-static void send_screen_notify (MenuType screen);
+static void notify_arming (bool val);
+static void notify_audio (AudioEvent_t event, AudioType_t type);
 
 // Buffer for debug messages
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -42,7 +42,8 @@ static void send_screen_notify (MenuType screen);
 void handle_arm (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ARMING);
-  audio_notify_arming(true);
+  notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
+  notify_arming(true);
   LOG_INFO("'*_ARM__' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -60,13 +61,8 @@ void handle_arm (UART_HandleTypeDef *huart)
 void handle_all_clear_1 (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_1);
-  if (audio_is_arming() && !audio_is_motorola())
-  {
-    LOG_INFO("'*A_CLR1' - got the command");
-    audio_notify_high(AUDIO_STOP, player.type);
-    audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
-    send_screen_notify(MENU_TYPE_MOTOROLA);
-  }
+  LOG_INFO("'*A_CLR1' - got the command");
+  notify_audio(AUDIO_START, AUDIO_MOTOROLA);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: ALL CLEAR 1\r\n");
@@ -83,13 +79,8 @@ void handle_all_clear_1 (UART_HandleTypeDef *huart)
 void handle_all_clear_2 (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_2);
-  if (audio_is_arming() && !audio_is_motorola())
-  {
-    LOG_INFO("'*A_CLR2' - got the command");
-    audio_notify_high(AUDIO_STOP, player.type);
-    audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
-    send_screen_notify(MENU_TYPE_MOTOROLA);
-  }
+  LOG_INFO("'*A_CLR2' - got the command");
+  notify_audio(AUDIO_START, AUDIO_MOTOROLA);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: ALL CLEAR 2\r\n");
@@ -106,13 +97,9 @@ void handle_all_clear_2 (UART_HandleTypeDef *huart)
 void handle_alarm (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ALARM_WAIL);
-  if (audio_is_arming() && !audio_is_motorola())
-  {
+
     LOG_INFO("'*I_WAIL' - got the command");
-    audio_notify_high(AUDIO_STOP, player.type);
-    audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
-    send_screen_notify(MENU_TYPE_MOTOROLA);
-  }
+    notify_audio(AUDIO_START, AUDIO_MOTOROLA);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: ALARM (WAIL)\r\n");
@@ -129,13 +116,8 @@ void handle_alarm (UART_HandleTypeDef *huart)
 void handle_chemical (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_CHEMICAL);
-  if (audio_is_arming() && !audio_is_motorola())
-  {
-    LOG_INFO("'*CHEM_A' - got the command");
-    audio_notify_high(AUDIO_STOP, player.type);
-    audio_notify_high(AUDIO_START, AUDIO_MOTOROLA);
-    send_screen_notify(MENU_TYPE_MOTOROLA);
-  }
+  LOG_INFO("'*CHEM_A' - got the command");
+  notify_audio(AUDIO_START, AUDIO_MOTOROLA);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: CHEMICAL ALARM\r\n");
@@ -152,7 +134,8 @@ void handle_chemical (UART_HandleTypeDef *huart)
 void handle_disarm (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
-  audio_notify_arming(false);
+  notify_audio(AUDIO_STOP, AUDIO_MOTOROLA);
+  notify_arming(false);
   LOG_INFO("'*DISARM' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -169,15 +152,9 @@ void handle_disarm (UART_HandleTypeDef *huart)
  */
 void handle_cancel (UART_HandleTypeDef *huart)
 {
-  if (audio_is_motorola())
-  {
     LOG_INFO("'*CANCEL' - got the command");
-
     system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
-
-    audio_notify_high(AUDIO_STOP, AUDIO_MOTOROLA);
-    send_screen_notify(MENU_TYPE_PREVIOUS);
-  }
+    notify_audio(AUDIO_STOP, AUDIO_MOTOROLA);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: CANCEL\r\n");
@@ -299,9 +276,9 @@ void handle_reset (UART_HandleTypeDef *huart)
 void volume_up_handler (int value)
 {
 //  system_set_volume(value);
-  player.volume_value = value;
+//  player.volume_value = value;
 
-  audio_notify_high(AUDIO_VOLUME, AUDIO_NONE);
+  notify_audio(AUDIO_VOLUME, AUDIO_NONE);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "VOL UP: %d (now: %d)\r\n", value, system_get_volume());
@@ -319,9 +296,9 @@ void volume_up_handler (int value)
 void volume_down_handler (int value)
 {
 //  system_set_volume(value);
-  player.volume_value = value;
+//  player.volume_value = value;
 
-  audio_notify_high(AUDIO_VOLUME, AUDIO_NONE);
+  notify_audio(AUDIO_VOLUME, AUDIO_NONE);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "VOL DOWN: %d (now: %d)\r\n", value, system_get_volume());
@@ -555,7 +532,7 @@ void handle_btn_right_command (UART_HandleTypeDef *huart)
 
 static void send_btn_notify (KeyCode_t btn)
 {
-  player.priority = AUDIO_PRIORITY_LOW;
+//  player.priority = AUDIO_PRIORITY_LOW;
 
   LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
       .button = btn,
@@ -567,13 +544,18 @@ static void send_btn_notify (KeyCode_t btn)
   }
 }
 
-static void send_screen_notify (MenuType screen)
+static void notify_arming (bool val)
 {
-  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN };
-  lcd_event.screen = screen;
+  AudioNotify_t audio_notify = { .event = AUDIO_ARMIG, .priority = AUDIO_PRIORITY_HIGH, .arming = val };
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
+}
 
-  if (osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0) != osOK)
+static void notify_audio (AudioEvent_t event, AudioType_t type)
+{
+  AudioNotify_t audio_notify = { .event = event, .sample.type = type, .priority = AUDIO_PRIORITY_HIGH };
+
+  if (osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10) != osOK)
   {
-    LOG_WARN("The lcd queue is full");
+    LOG_WARN("The event from MOTOROLA cannot be handled. The audio queue is full");
   }
 }

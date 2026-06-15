@@ -971,7 +971,12 @@ static void display_menu_item (uint8_t visualIndex,
 
 static void lcd_inactivity_timeout ()
 {
-  if (currentMenu != idleMenu)
+  if(is_motorola)
+  {
+    BLK_OFF();
+    isBacklightOn = false;
+  }
+  else if (currentMenu != idleMenu)
   {
     currentMenu = idleMenu;
     draw_menuScreen(true);

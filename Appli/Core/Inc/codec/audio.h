@@ -26,15 +26,6 @@ void audio_notify_high (AudioEvent_t event, AudioType_t type);
 void audio_notify_start_task_low (AudioType_t type, SinTask_t task, const char *name);
 void audio_notify_arming (bool val);
 
-bool audio_is_playing ();
-bool audio_is_stoped ();
-bool audio_is_recording ();
-bool audio_is_announcement ();
-bool audio_is_arming ();
-bool audio_is_motorola ();
-
-AudioType_t audio_get_type ();
-
 extern Audio_Player_t player;
 
 #endif /* INC_CODEC_AUDIO_H_ */

@@ -1,4 +1,5 @@
 #include <audio.h>
+#include "lcd_types.h"
 #include "math.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
@@ -8,7 +9,7 @@
 #include "audio_regs.h"
 #include "audio_generate_sin.h"
 #include "sdfs.h"
-#include "lcd_menu.h"
+//#include "lcd_menu.h"
 #include "system_status.h"
 #include "logger.h"
 #include "i2s.h"
@@ -96,6 +97,8 @@ static osStatus_t send_audio_notify (AudioNotify_t *audio_notify,
 				     AudioType_t type,
 				     AudioPriority_t priority,
 				     uint32_t timeout);
+
+static void send_screen_notify (MenuType screen);
 
 void audio_init (void)
 {
@@ -583,10 +586,15 @@ static void audio_prepare_stop_mic (void)
 // MOTOROLA
 static void audio_start_motorola (void)
 {
+  if(player.is_motorola)
+    return;
+
   player.is_motorola = true;
   audio_cmd_IN1R_enable();
 
   LOG_INFO("Start playback motorola");
+
+  send_screen_notify(MENU_TYPE_MOTOROLA);
 }
 
 static void audio_play_motorola (void)
@@ -603,6 +611,7 @@ static void audio_stop_motorola (void)
   audio_cmd_IN1R_disable();
 
   LOG_INFO("Stop playback motorola");
+  send_screen_notify(MENU_TYPE_PREVIOUS);
 }
 
 static void audio_prepare_stop_motorola (void)
@@ -940,32 +949,13 @@ void audio_notify_arming (bool val)
   osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
 }
 
-bool audio_is_playing ()
+static void send_screen_notify (MenuType screen)
 {
-  return player.is_playing;
-}
-bool audio_is_stoped ()
-{
-  return player.is_stoped;
-}
-bool audio_is_recording ()
-{
-  return player.is_recording;
-}
-bool audio_is_announcement ()
-{
-  return player.is_announcement;
-}
-bool audio_is_arming ()
-{
-  return player.is_arming;
-}
-bool audio_is_motorola ()
-{
-  return player.is_motorola;
-}
+  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN };
+  lcd_event.screen = screen;
 
-AudioType_t audio_get_type ()
-{
-  return player.type;
+  if (osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0) != osOK)
+  {
+    LOG_WARN("The lcd queue is full");
+  }
 }

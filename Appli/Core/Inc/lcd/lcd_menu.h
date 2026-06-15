@@ -2,9 +2,9 @@
 #define INC_SCREENS_LCD_MENU_H_
 
 #include "hx8357d.h"
-#include "keyboard.h"
 #include "lcd_lang.h"
 #include "lcd_strings_menu.h"
+#include "lcd_types.h"
 #include "stm32h7rsxx_hal.h"
 #include "audio_types.h"
 
@@ -22,47 +22,6 @@ typedef struct
   uint16_t x, y;
   uint16_t w, h;
 } MenuImage;
-
-typedef enum
-{
-  MENU_TYPE_UNK,
-  MENU_TYPE_LIST,
-  MENU_TYPE_MAIN,
-  MENU_TYPE_PASSWORD,
-  MENU_TYPE_SIREN_INFO,
-  //MENU_TYPE_SCREEN,
-  MENU_TYPE_MESSAGE_PLAY,
-  MENU_TYPE_IDLE,
-  MENU_TYPE_ANNOUNCEMENT,
-  MENU_TYPE_REPORT,
-  MENU_TYPE_TEST_BAT,
-  MENU_TYPE_TEST_AMP,
-  MENU_TYPE_TEST_DRIV,
-  MENU_TYPE_CLOCK,
-  MENU_TYPE_VOLUME,
-  MENU_TYPE_LOG,
-  MENU_TYPE_MOTOROLA,
-  MENU_TYPE_PREVIOUS
-} MenuType;
-
-typedef enum
-{
-  LCD_EVENT_BTN,
-  LCD_EVENT_PROGRESS,
-  LCD_EVENT_RTC,
-  LCD_EVENT_SCREEN
-} LCDEvent;
-
-typedef struct
-{
-  LCDEvent event;
-  union
-  {
-    KeyEvent_t btn;
-    MenuType screen;
-    uint32_t value;
-  };
-} LCDTaskEvent_t;
 
 typedef void (*MenuButtonHandler) (KeyEvent_t event);
 typedef void (*MenuAction) (void);
