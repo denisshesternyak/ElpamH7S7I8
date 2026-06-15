@@ -121,10 +121,6 @@ typedef struct
   AudioType_t type;
   AudioPriority_t priority;
 
-  volatile uint32_t last_time_arming;
-  volatile uint32_t last_time_announcement;
-  volatile uint32_t last_time_recording;
-
   volatile bool is_playing;
   volatile bool is_recording;
   volatile bool is_paused;

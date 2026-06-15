@@ -6,9 +6,6 @@
 #include "defines.h"
 #include "stm32h7rsxx_hal.h"
 
-#define ARMING_TIME  			10U
-#define ANNOUNCEMENT_TIME  		180U
-#define RECORDING_TIME			10U
 #define COUNT_PROGRESS  		10U
 
 //#define CNVR_VOL(vol) 			((MIN_VOLUME_CODEC + ((vol) - MIN_VOLUME) * 55 / 42))
@@ -19,6 +16,9 @@ void audio_process (AudioNotify_t *audio_notify);
 void audio_set_volume (uint8_t level);
 void audio_set_volume_playback (uint8_t level);
 void audio_get_volume_level(uint8_t *level, uint8_t *value);
+void audio_arm_timeout (void);
+void audio_announcement_timeout (void);
+void audio_recording_timeout (void);
 
 void audio_notify_low (AudioEvent_t event, AudioType_t type);
 void audio_notify_medium (AudioEvent_t event, AudioType_t type);

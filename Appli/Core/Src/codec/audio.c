@@ -293,8 +293,12 @@ static void audio_pause (void)
 
 static void audio_arming (bool val)
 {
-  player.last_time_arming = 0;
   player.is_arming = val;
+
+  if(player.is_arming)
+    osTimerStart(ArmTimerHandle, ARMING_TIME);
+  else
+    osTimerStop(ArmTimerHandle);
 }
 
 static void audio_timer (void)
@@ -302,50 +306,6 @@ static void audio_timer (void)
   if (player.is_announcement || player.is_playing || player.is_recording)
   {
     osTimerStart(BacklightTimerHandle, INACTIVITY_TIMEOUT_MS);
-  }
-
-  if (player.is_arming)
-  {
-    player.last_time_arming++;
-    player.is_arming = player.last_time_arming < ARMING_TIME;
-    if (!player.is_arming)
-    {
-      player.last_time_arming = 0;
-      LOG_DEBUG("ARM time's up");
-    }
-  }
-
-  if (player.is_announcement)
-  {
-    player.last_time_announcement++;
-    player.is_announcement = player.last_time_announcement < ANNOUNCEMENT_TIME;
-    if (!player.is_announcement)
-    {
-      player.last_time_announcement = 0;
-      LOG_DEBUG("ANNOUNCEMENT time's up");
-      LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
-	  .button = BTN_ESC,
-	  .pressed = true } };
-      xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
-      audio_notify_low(AUDIO_STOP, AUDIO_MIC);
-    }
-  }
-
-  if (player.is_recording)
-  {
-    player.last_time_recording++;
-    player.is_recording = player.last_time_recording < RECORDING_TIME;
-    if (!player.is_recording)
-    {
-      player.is_recording = false;
-      player.last_time_recording = 0;
-      LOG_DEBUG("DTMF listening time's up");
-
-      DTMFMessage_t msg;
-      msg.event = DTMF_STOP;
-      msg.data = NULL;
-      osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
-    }
   }
 }
 
@@ -431,6 +391,33 @@ void audio_get_volume_level(uint8_t *level, uint8_t *value)
   *value = player.volume_value;
 }
 
+void audio_arm_timeout (void)
+{
+  player.is_arming = false;
+  LOG_DEBUG("ARM time's up");
+}
+
+void audio_announcement_timeout (void)
+{
+  player.is_announcement = false;
+  LOG_DEBUG("ANNOUNCEMENT time's up");
+
+  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
+    .button = BTN_ESC,
+    .pressed = true } };
+  xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
+  audio_notify_low(AUDIO_STOP, AUDIO_MIC);
+}
+
+void audio_recording_timeout (void)
+{
+  player.is_recording = false;
+  LOG_DEBUG("DTMF listening time's up");
+
+  DTMFMessage_t msg = { .event = DTMF_STOP, .data = NULL };
+  osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+}
+
 // SINUS
 static void audio_start_sinus (AudioNotify_t *audio_notify)
 {
@@ -466,6 +453,9 @@ static void audio_play_sinus (void)
 
 static void audio_stop_sinus (void)
 {
+  if (!player.is_playing)
+    return;
+
   stop_playback();
   audio_cmd_playback_disable();
 
@@ -534,6 +524,9 @@ static void audio_play_sd (void)
 
 static void audio_stop_sd (void)
 {
+  if (!player.is_playing)
+    return;
+
   stop_playback();
   audio_cmd_playback_disable();
 
@@ -559,9 +552,9 @@ static void audio_start_mic (void)
   LOG_INFO("Start playback announcement");
 
 //	audio_cmd_playback_enable();
-  player.last_time_announcement = 0;
   player.is_announcement = true;
   audio_cmd_IN1R_enable();
+  osTimerStart(AnnouncementTimerHandle, ANNOUNCEMENT_TIME);
 }
 
 static void audio_play_mic (void)
@@ -571,9 +564,13 @@ static void audio_play_mic (void)
 
 static void audio_stop_mic (void)
 {
+  if (!player.is_announcement)
+    return;
+
 //	audio_cmd_playback_disable();
   player.is_announcement = false;
   audio_cmd_IN1R_disable();
+  osTimerStop(AnnouncementTimerHandle);
 
   LOG_INFO("Stop playback announcement");
 }
@@ -624,7 +621,7 @@ static void audio_start_dtmf (void)
 //  player.is_prepare_stoped = false;
 //  player.is_fade_stoped = false;
   player.event = AUDIO_PLAY;
-  player.last_time_recording = 0;
+  osTimerStart(RecordingTimerHandle, RECORDING_TIME);
 
 //  int16_t amp = 512;
 //  for (int i = 0; i < DTMF_BUFFER_RX_SIZE; i++)
@@ -703,6 +700,8 @@ static void audio_stop_dtmf (void)
   HAL_I2S_DMAStop(CODEC_I2S_HANDLER);
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
   HAL_I2S_Init(CODEC_I2S_HANDLER);
+
+  osTimerStop(RecordingTimerHandle);
 }
 
 static void audio_prepare_stop_dtmf (void)
@@ -724,6 +723,9 @@ static void audio_start_quiet (AudioNotify_t *audio_notify)
 
 static void audio_stop_quiet (void)
 {
+  if (!player.is_playing)
+    return;
+
   audio_cmd_quiet_disable();
   stop_playback();
 
@@ -757,8 +759,6 @@ static void start_playback (void)
 
 static void stop_playback (void)
 {
-  if (!player.is_playing)
-    return;
   player.is_playing = false;
   player.is_stoped = true;
   player.duration = 0;

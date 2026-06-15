@@ -95,13 +95,6 @@ typedef struct Menu
 typedef bool (*state_handler_t) (void);
 typedef void (*volume_indicator) (uint8_t *, uint8_t *);
 
-void lcd_is_playing (state_handler_t h);
-void lcd_is_stoped (state_handler_t h);
-void lcd_is_recording (state_handler_t h);
-void lcd_is_announcement (state_handler_t h);
-void lcd_is_motorola (state_handler_t h);
-void lcd_is_arming (state_handler_t h);
-
 void lcd_volume_indicator (volume_indicator h);
 
 void menu_init (void);

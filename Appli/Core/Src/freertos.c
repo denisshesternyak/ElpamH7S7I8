@@ -165,6 +165,21 @@ osTimerId_t BacklightTimerHandle;
 const osTimerAttr_t BacklightTimer_attributes = {
   .name = "BacklightTimer"
 };
+/* Definitions for ArmTimer */
+osTimerId_t ArmTimerHandle;
+const osTimerAttr_t ArmTimer_attributes = {
+  .name = "ArmTimer"
+};
+/* Definitions for AnnouncementTimer */
+osTimerId_t AnnouncementTimerHandle;
+const osTimerAttr_t AnnouncementTimer_attributes = {
+  .name = "AnnouncementTimer"
+};
+/* Definitions for RecordingTimer */
+osTimerId_t RecordingTimerHandle;
+const osTimerAttr_t RecordingTimer_attributes = {
+  .name = "RecordingTimer"
+};
 /* Definitions for LoggerMutex */
 osMutexId_t LoggerMutexHandle;
 const osMutexAttr_t LoggerMutex_attributes = {
@@ -198,6 +213,13 @@ const osEventFlagsAttr_t DTMFEvent_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+static LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_RTC };
+static AudioNotify_t audio_notify = {
+    .event = AUDIO_TIMER,
+    .sample.type = AUDIO_NONE,
+    .priority = AUDIO_PRIORITY_LOW
+};
+
 void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef *hrtc)
 {
 #ifdef SELFTEST
@@ -205,17 +227,8 @@ void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef *hrtc)
     return;
 #endif
 
-  static LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_RTC };
   osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
-
-  if (player.is_playing || player.is_arming || player.is_announcement || player.is_recording)
-  {
-    static AudioNotify_t audio_notify = {
-	.event = AUDIO_TIMER,
-	.sample.type = AUDIO_NONE,
-	.priority = AUDIO_PRIORITY_LOW };
-    osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
-  }
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
 }
 /* USER CODE END FunctionPrototypes */
 
@@ -228,6 +241,9 @@ void StartLoggerTask(void *argument);
 void StartSDTask(void *argument);
 void StartDTMFTask(void *argument);
 void BacklightCallback(void *argument);
+void ArmCallback(void *argument);
+void AnnouncementCallback(void *argument);
+void RecordingCallback(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -262,6 +278,15 @@ void MX_FREERTOS_Init(void) {
   /* Create the timer(s) */
   /* creation of BacklightTimer */
   BacklightTimerHandle = osTimerNew(BacklightCallback, osTimerOnce, NULL, &BacklightTimer_attributes);
+
+  /* creation of ArmTimer */
+  ArmTimerHandle = osTimerNew(ArmCallback, osTimerOnce, NULL, &ArmTimer_attributes);
+
+  /* creation of AnnouncementTimer */
+  AnnouncementTimerHandle = osTimerNew(AnnouncementCallback, osTimerOnce, NULL, &AnnouncementTimer_attributes);
+
+  /* creation of RecordingTimer */
+  RecordingTimerHandle = osTimerNew(RecordingCallback, osTimerOnce, NULL, &RecordingTimer_attributes);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -509,13 +534,6 @@ void StartLcdTask(void *argument)
 //  osDelay(5000);
 //  audio_notify_low(AUDIO_PREPARE_STOP, AUDIO_SIN);
 
-  lcd_is_playing (audio_is_playing);
-  lcd_is_stoped (audio_is_stoped);
-  lcd_is_recording (audio_is_recording);
-  lcd_is_announcement (audio_is_announcement);
-  lcd_is_motorola (audio_is_motorola);
-  lcd_is_arming (audio_is_arming);
-
   lcd_volume_indicator (audio_get_volume_level);
 
   menu_init();
@@ -712,6 +730,30 @@ void BacklightCallback(void *argument)
     LOG_WARN("The lcd queue is full");
   }
   /* USER CODE END BacklightCallback */
+}
+
+/* ArmCallback function */
+void ArmCallback(void *argument)
+{
+  /* USER CODE BEGIN ArmCallback */
+  audio_arm_timeout();
+  /* USER CODE END ArmCallback */
+}
+
+/* AnnouncementCallback function */
+void AnnouncementCallback(void *argument)
+{
+  /* USER CODE BEGIN AnnouncementCallback */
+  audio_announcement_timeout ();
+  /* USER CODE END AnnouncementCallback */
+}
+
+/* RecordingCallback function */
+void RecordingCallback(void *argument)
+{
+  /* USER CODE BEGIN RecordingCallback */
+  audio_recording_timeout();
+  /* USER CODE END RecordingCallback */
 }
 
 /* Private application code --------------------------------------------------*/
