@@ -23,7 +23,7 @@
 #define MAINTENANCE_PASSWORD 	"9999"
 
 #define VER_MAJOR  		0
-#define VER_MINOR  		20
+#define VER_MINOR  		21
 
 #define LCD_USART_TEXT_Y        300
 #define LCD_USART_TEXT_X        5
@@ -49,5 +49,8 @@
 #define NUM_VOLUME_BARS     	NUM_VALID_LEVELS
 
 #define MAX_MENU_ITEMS 		25
+
+#define INACTIVITY_TIMEOUT_MS 	60000
+#define BACKLIGHT_TIMEOUT_MS 	10000
 
 #endif /* INC_DEFINES_H_ */

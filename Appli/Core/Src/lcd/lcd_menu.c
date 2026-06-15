@@ -36,7 +36,6 @@ static bool isBacklightOn = false;
 
 #define MAX_MENU_POOL 40
 
-static uint32_t lastInteractionTick = 0;
 static Menu menuPool[MAX_MENU_POOL];
 static uint8_t menuPoolIndex = 0;
 
@@ -169,6 +168,7 @@ static void MenuLoadSDCardSoftWare (void);
 static void prepare_announcement (void);
 static void prepare_sinuse_items (void);
 static void draw_menu_motorola (void);
+static void lcd_inactivity_timeout ();
 
 static void siren_info_prepare_action (void);
 static void sinus_info_prepare_action (void);
@@ -558,6 +558,7 @@ void menu_init (void)
 
   BLK_ON();
   isBacklightOn = true;
+  osTimerStart(BacklightTimerHandle, INACTIVITY_TIMEOUT_MS);
 
   currentMenu = rootMenu;
 
@@ -974,6 +975,21 @@ static void display_menu_item (uint8_t visualIndex,
   hx8357_write_alignedX_string(MENU_BASE_X, y_pos, upd_text, font, text_color, bg_color, align);
 }
 
+static void lcd_inactivity_timeout ()
+{
+  if (currentMenu != idleMenu)
+  {
+    currentMenu = idleMenu;
+    draw_menuScreen(true);
+    osTimerStart(BacklightTimerHandle, BACKLIGHT_TIMEOUT_MS);
+  }
+  else if (currentMenu == idleMenu && isBacklightOn)
+  {
+    BLK_OFF();
+    isBacklightOn = false;
+  }
+}
+
 void Draw_MENU_TYPE_LIST ()
 {
   if (currentMenu->itemCount == 0)
@@ -1168,23 +1184,6 @@ void update_date_time ()
   if (is_announcement_handler())
     volume_indicator_blink_bar();
 
-  if (!(is_playing_handler() || is_announcement_handler()))
-    lastInteractionTick++;
-
-  if (currentMenu != idleMenu && lastInteractionTick >= INACTIVITY_TIMEOUT_MS)
-  {
-    currentMenu = idleMenu;
-    draw_menuScreen(true);
-    lastInteractionTick = 0;
-  }
-  else if (currentMenu == idleMenu && isBacklightOn && (lastInteractionTick >= BACKLIGHT_TIMEOUT_MS))
-  {
-    BLK_OFF();
-    isBacklightOn = false;
-    lastInteractionTick = 0;
-    return;
-  }
-
   DateTime_HeaderClock();
 
   return;
@@ -1211,6 +1210,8 @@ void change_screen (MenuType type)
       currentMenu = currentMenu->parent;
       draw_menuScreen(true);
       break;
+    case MENU_TYPE_IDLE:
+      lcd_inactivity_timeout();
     default:
       break;
   }
@@ -1228,8 +1229,6 @@ void menu_handle_button (KeyEvent_t event)
   if (!currentMenu || (event.button == BTN_NONE))
     return;
 
-  lastInteractionTick = 0;
-
   if (!isBacklightOn)
   {
     if (is_motorola_handler())
@@ -1240,8 +1239,11 @@ void menu_handle_button (KeyEvent_t event)
 
     BLK_ON();
     isBacklightOn = true;
+    osTimerStart(BacklightTimerHandle, BACKLIGHT_TIMEOUT_MS);
     return;
   }
+
+  osTimerStart(BacklightTimerHandle, INACTIVITY_TIMEOUT_MS);
 
   if (hot_key_handle_button(event))
     return;

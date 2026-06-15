@@ -14,9 +14,6 @@
 //#include "audiofs.h"
 #include "logger.h"
 
-#define INACTIVITY_TIMEOUT_MS 	60
-#define BACKLIGHT_TIMEOUT_MS 	10
-
 #define MAX_MENU_ITEMS 		25
 
 typedef struct

@@ -3,6 +3,8 @@
 
 #include "cmsis_os2.h"
 
+extern osTimerId_t BacklightTimerHandle;
+
 extern osMessageQueueId_t xLoggerQueueHandle;
 extern osSemaphoreId_t LoggerBinarySemHandle;
 extern osMutexId_t LoggerMutexHandle;

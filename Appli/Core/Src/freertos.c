@@ -160,6 +160,11 @@ osMessageQueueId_t xDTMFQueueHandle;
 const osMessageQueueAttr_t xDTMFQueue_attributes = {
   .name = "xDTMFQueue"
 };
+/* Definitions for BacklightTimer */
+osTimerId_t BacklightTimerHandle;
+const osTimerAttr_t BacklightTimer_attributes = {
+  .name = "BacklightTimer"
+};
 /* Definitions for LoggerMutex */
 osMutexId_t LoggerMutexHandle;
 const osMutexAttr_t LoggerMutex_attributes = {
@@ -203,7 +208,7 @@ void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef *hrtc)
   static LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_RTC };
   osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
 
-  if (player.is_arming || player.is_announcement || player.is_recording)
+  if (player.is_playing || player.is_arming || player.is_announcement || player.is_recording)
   {
     static AudioNotify_t audio_notify = {
 	.event = AUDIO_TIMER,
@@ -222,6 +227,7 @@ void StartKeyboardTask(void *argument);
 void StartLoggerTask(void *argument);
 void StartSDTask(void *argument);
 void StartDTMFTask(void *argument);
+void BacklightCallback(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -252,6 +258,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
+
+  /* Create the timer(s) */
+  /* creation of BacklightTimer */
+  BacklightTimerHandle = osTimerNew(BacklightCallback, osTimerOnce, NULL, &BacklightTimer_attributes);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -688,6 +698,20 @@ void StartDTMFTask(void *argument)
     }
   }
   /* USER CODE END StartDTMFTask */
+}
+
+/* BacklightCallback function */
+void BacklightCallback(void *argument)
+{
+  /* USER CODE BEGIN BacklightCallback */
+  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN };
+  lcd_event.screen = MENU_TYPE_IDLE;
+
+  if (osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0) != osOK)
+  {
+    LOG_WARN("The lcd queue is full");
+  }
+  /* USER CODE END BacklightCallback */
 }
 
 /* Private application code --------------------------------------------------*/

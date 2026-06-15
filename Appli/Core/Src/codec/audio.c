@@ -299,6 +299,11 @@ static void audio_arming (bool val)
 
 static void audio_timer (void)
 {
+  if (player.is_announcement || player.is_playing || player.is_recording)
+  {
+    osTimerStart(BacklightTimerHandle, INACTIVITY_TIMEOUT_MS);
+  }
+
   if (player.is_arming)
   {
     player.last_time_arming++;
