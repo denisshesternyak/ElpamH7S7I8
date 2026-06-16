@@ -596,7 +596,7 @@ static void audio_start_motorola (void)
     return;
 
   player.is_motorola = true;
-  audio_cmd_IN1R_enable();
+  audio_cmd_IN2R_enable();
 
   LOG_INFO("Start playback motorola");
 
@@ -612,7 +612,7 @@ static void audio_stop_motorola (void)
 {
   player.is_motorola = false;
 
-  audio_cmd_IN1R_disable();
+  audio_cmd_IN2R_disable();
 
   LOG_INFO("Stop playback motorola");
   send_screen_notify(MENU_TYPE_PREVIOUS);
