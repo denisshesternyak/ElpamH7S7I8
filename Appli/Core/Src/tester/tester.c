@@ -38,7 +38,18 @@ static void tester_amp_turn_off (tester_signals_t n)
   }
 }
 
-void tester_init (void)
+void tester_all_on (void)
+{
+  AMP_ON_ACT_ON;
+  DRV_ON_ACT_ON;
+
+  for(uint8_t i = 0; i < AMP_COUNT; i++)
+  {
+    tester_amp_turn_on((tester_signals_t)i);
+  }
+}
+
+void tester_all_off (void)
 {
   AMP_ON_ACT_OFF;
   DRV_ON_ACT_OFF;

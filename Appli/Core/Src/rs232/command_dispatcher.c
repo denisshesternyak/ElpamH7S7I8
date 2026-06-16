@@ -19,8 +19,11 @@
 // Extern UART handler for debug output (optional)
 
 static void send_btn_notify (KeyCode_t btn);
-static void notify_arming (bool val);
+static void notify_arming (bool arming);
 static void notify_audio (AudioEvent_t event, AudioType_t type);
+
+static outputs_handler_t all_outputs_on_handler = NULL;
+static outputs_handler_t all_outputs_off_handler = NULL;
 
 // Buffer for debug messages
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -44,6 +47,7 @@ void handle_arm (UART_HandleTypeDef *huart)
   system_status_set_mode(SYSTEM_MODE_ARMING);
   notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
   notify_arming(true);
+  all_outputs_on_handler();
   LOG_INFO("'*_ARM__' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -134,7 +138,7 @@ void handle_chemical (UART_HandleTypeDef *huart)
 void handle_disarm (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
-  notify_audio(AUDIO_STOP, AUDIO_MOTOROLA);
+//  notify_audio(AUDIO_STOP, AUDIO_MOTOROLA);
   notify_arming(false);
   LOG_INFO("'*DISARM' - got the command");
 
@@ -154,7 +158,8 @@ void handle_cancel (UART_HandleTypeDef *huart)
 {
     LOG_INFO("'*CANCEL' - got the command");
     system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
-    notify_audio(AUDIO_STOP, AUDIO_MOTOROLA);
+    notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
+    all_outputs_off_handler();
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: CANCEL\r\n");
@@ -364,6 +369,16 @@ void system_fill_report (UART_HandleTypeDef *huart)
   HAL_UART_Transmit(huart, (uint8_t*) response_22, 22, HAL_MAX_DELAY);
 }
 
+void prepare_outputs_on(outputs_handler_t h)
+{
+  all_outputs_on_handler = h;
+}
+
+void prepare_outputs_off(outputs_handler_t h)
+{
+  all_outputs_off_handler = h;
+}
+
 /**
  * @brief Handle unknown or malformed command
  */
@@ -544,15 +559,21 @@ static void send_btn_notify (KeyCode_t btn)
   }
 }
 
-static void notify_arming (bool val)
+static void notify_arming (bool arming)
 {
-  AudioNotify_t audio_notify = { .event = AUDIO_ARMIG, .priority = AUDIO_PRIORITY_HIGH, .arming = val };
+  AudioNotify_t audio_notify = {
+      .event = AUDIO_ARMIG,
+      .priority = AUDIO_PRIORITY_HIGH,
+      .arming = arming };
   osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
 }
 
 static void notify_audio (AudioEvent_t event, AudioType_t type)
 {
-  AudioNotify_t audio_notify = { .event = event, .sample.type = type, .priority = AUDIO_PRIORITY_HIGH };
+  AudioNotify_t audio_notify = {
+      .event = event,
+      .priority = AUDIO_PRIORITY_HIGH,
+      .sample = { .type = type } };
 
   if (osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10) != osOK)
   {

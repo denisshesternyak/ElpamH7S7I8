@@ -20,12 +20,6 @@ void audio_arm_timeout (void);
 void audio_announcement_timeout (void);
 void audio_recording_timeout (void);
 
-void audio_notify_low (AudioEvent_t event, AudioType_t type);
-void audio_notify_medium (AudioEvent_t event, AudioType_t type);
-void audio_notify_high (AudioEvent_t event, AudioType_t type);
-void audio_notify_start_task_low (AudioType_t type, SinTask_t task, const char *name);
-void audio_notify_arming (bool val);
-
 extern Audio_Player_t player;
 
 #endif /* INC_CODEC_AUDIO_H_ */

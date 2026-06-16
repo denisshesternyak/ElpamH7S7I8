@@ -99,6 +99,7 @@ static osStatus_t send_audio_notify (AudioNotify_t *audio_notify,
 				     uint32_t timeout);
 
 static void send_screen_notify (MenuType screen);
+static void audio_notify (AudioEvent_t event, AudioType_t type);
 
 void audio_init (void)
 {
@@ -261,6 +262,8 @@ static void audio_stop (AudioNotify_t *audio_notify)
     default:
       break;
   }
+  player.type = AUDIO_NONE;
+  player.priority = AUDIO_PRIORITY_IDLE;
 }
 
 static void audio_prepare_stop (AudioNotify_t *audio_notify)
@@ -294,9 +297,9 @@ static void audio_pause (void)
 
 }
 
-static void audio_arming (bool val)
+static void audio_arming (bool arming)
 {
-  player.is_arming = val;
+  player.is_arming = arming;
 
   if(player.is_arming)
     osTimerStart(ArmTimerHandle, ARMING_TIME);
@@ -409,7 +412,7 @@ void audio_announcement_timeout (void)
     .button = BTN_ESC,
     .pressed = true } };
   xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
-  audio_notify_low(AUDIO_STOP, AUDIO_MIC);
+  audio_notify(AUDIO_STOP, AUDIO_MIC);
 }
 
 void audio_recording_timeout (void)
@@ -424,6 +427,9 @@ void audio_recording_timeout (void)
 // SINUS
 static void audio_start_sinus (AudioNotify_t *audio_notify)
 {
+  if(player.is_playing || !player.is_arming)
+    return;
+
   LOG_INFO("Start playback sinus");
 
   init_generation(audio_notify->sample.sin_task);
@@ -477,7 +483,7 @@ static void audio_prepare_stop_sinus (void)
 // SD
 static void audio_start_sd (AudioNotify_t *audio_notify)
 {
-  if (!audio_notify->sample.filename)
+  if (!audio_notify->sample.filename || !player.is_arming)
     return;
 
   player.file_info.filename = audio_notify->sample.filename;
@@ -586,7 +592,7 @@ static void audio_prepare_stop_mic (void)
 // MOTOROLA
 static void audio_start_motorola (void)
 {
-  if(player.is_motorola)
+  if(player.is_motorola || !player.is_arming)
     return;
 
   player.is_motorola = true;
@@ -605,8 +611,6 @@ static void audio_play_motorola (void)
 static void audio_stop_motorola (void)
 {
   player.is_motorola = false;
-  player.event = AUDIO_IDLE;
-  player.priority = AUDIO_PRIORITY_IDLE;
 
   audio_cmd_IN1R_disable();
 
@@ -702,9 +706,7 @@ static void audio_stop_dtmf (void)
 
   player.is_recording = false;
   player.is_stoped = true;
-  player.event = AUDIO_IDLE;
   player.buff_state = BUFFER_IDLE;
-  player.priority = AUDIO_PRIORITY_IDLE;
 
   HAL_I2S_DMAStop(CODEC_I2S_HANDLER);
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
@@ -771,9 +773,7 @@ static void stop_playback (void)
   player.is_playing = false;
   player.is_stoped = true;
   player.duration = 0;
-  player.event = AUDIO_IDLE;
   player.buff_state = BUFFER_IDLE;
-  player.priority = AUDIO_PRIORITY_IDLE;
 
 //	LOG_DEBUG("STOP");
 
@@ -888,7 +888,7 @@ static void send_audio_notify_playing (BufferState_t buff_state)
   }
 }
 
-void audio_notify_low (AudioEvent_t event, AudioType_t type)
+static void audio_notify (AudioEvent_t event, AudioType_t type)
 {
   AudioNotify_t audio_notify;
 
@@ -896,57 +896,6 @@ void audio_notify_low (AudioEvent_t event, AudioType_t type)
   {
     LOG_WARN("The event from KEYBOARD cannot be handled. The audio queue is full");
   }
-}
-
-void audio_notify_start_task_low (AudioType_t type,
-				  SinTask_t task,
-				  const char *name)
-{
-  AudioNotify_t audio_notify = { .sample.sin_task = task, .sample.filename = name };
-
-  if (send_audio_notify(&audio_notify, AUDIO_START, type, AUDIO_PRIORITY_LOW, 10) != osOK)
-  {
-    LOG_WARN("The event from KEYBOARD cannot be handled. The audio queue is full");
-  }
-}
-
-void audio_notify_stop_task_low (AudioType_t type,
-				  SinTask_t task,
-				  const char *name)
-{
-  AudioNotify_t audio_notify = { .sample.sin_task = task, .sample.filename = name };
-
-  if (send_audio_notify(&audio_notify, AUDIO_STOP, type, AUDIO_PRIORITY_LOW, 10) != osOK)
-  {
-    LOG_WARN("The event from KEYBOARD cannot be handled. The audio queue is full");
-  }
-}
-
-void audio_notify_high (AudioEvent_t event, AudioType_t type)
-{
-  AudioNotify_t audio_notify;
-
-  if (send_audio_notify(&audio_notify, event, type, AUDIO_PRIORITY_HIGH, 10) != osOK)
-  {
-    LOG_WARN("The event from MOTOROLA cannot be handled. The audio queue is full");
-  }
-}
-
-void audio_notify_medium (AudioEvent_t event, AudioType_t type)
-{
-  AudioNotify_t audio_notify;
-
-  if (send_audio_notify(&audio_notify, event, type, AUDIO_PRIORITY_MEDIUM, 10) != osOK)
-  {
-    LOG_WARN("The event from DTMF cannot be handled. The audio queue is full");
-  }
-}
-
-void audio_notify_arming (bool val)
-{
-  AudioNotify_t audio_notify = { .event = AUDIO_ARMIG, .priority = AUDIO_PRIORITY_LOW, .arming = val };
-
-  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
 }
 
 static void send_screen_notify (MenuType screen)

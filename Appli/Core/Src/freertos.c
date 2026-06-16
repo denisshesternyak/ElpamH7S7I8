@@ -47,6 +47,7 @@
 #include "metadata.h"
 #include "iwdg.h"
 #include "dtmf.h"
+#include "tester.h"
 
 /* USER CODE END Includes */
 
@@ -427,6 +428,9 @@ void StartUartTask(void *argument)
   rs232_init();
 
   // === Register all handlers from  command_dispatcher ===
+  prepare_outputs_on(tester_all_on);
+  prepare_outputs_off(tester_all_off);
+
   rs232_register_arm(handle_arm);
   rs232_register_all_clear_1(handle_all_clear_1);
   rs232_register_all_clear_2(handle_all_clear_2);

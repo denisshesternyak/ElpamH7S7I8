@@ -23,6 +23,10 @@ void volume_down_handler (int step);
 
 void system_fill_report (UART_HandleTypeDef *huart);
 
+typedef void (* outputs_handler_t) (void);
+void prepare_outputs_on(outputs_handler_t h);
+void prepare_outputs_off(outputs_handler_t h);
+
 void handle_unknown_command (UART_HandleTypeDef *huart);
 
 void handle_enter_command (UART_HandleTypeDef *huart);

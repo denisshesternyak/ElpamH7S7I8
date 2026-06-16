@@ -2,7 +2,6 @@
 #include <math.h>
 #include "main.h"
 #include "gpio.h"
-#include "audio.h"
 #include "logger.h"
 #include "app_freertos.h"
 #include "events.h"
@@ -28,6 +27,7 @@ static void post_test (void);
 static void dtmf_start (void);
 static void dtmf_check (DTMFMessage_t *msg);
 static void dtmf_stop (void);
+static void audio_notify (AudioEvent_t event, AudioType_t type);
 
 //void sin_data (int f_row, int col)
 //{
@@ -99,7 +99,7 @@ void dtmf_process (DTMFMessage_t *msg)
 static void dtmf_start (void)
 {
   LOG_DEBUG("DTMF Start");
-  audio_notify_medium(AUDIO_START, AUDIO_DTMF);
+  audio_notify(AUDIO_START, AUDIO_DTMF);
 }
 
 static void dtmf_check (DTMFMessage_t *msg)
@@ -135,13 +135,13 @@ static void dtmf_check (DTMFMessage_t *msg)
   post_test();
 
   osDelay(1000);
-  audio_notify_medium(AUDIO_PLAY, AUDIO_DTMF);
+  audio_notify(AUDIO_PLAY, AUDIO_DTMF);
 }
 
 static void dtmf_stop (void)
 {
   LOG_DEBUG("DTMF Stop");
-  audio_notify_medium(AUDIO_STOP, AUDIO_DTMF);
+  audio_notify(AUDIO_STOP, AUDIO_DTMF);
 }
 
 static int32_t goertzel (const int16_t *sample, int32_t coeff)
@@ -199,4 +199,14 @@ static void post_test (void)
 
   char digit = row_col[row][col];
   LOG_DEBUG("digit: %c (power: %u / %u)\n", digit, max_row, max_col);
+}
+
+static void audio_notify(AudioEvent_t event, AudioType_t type)
+{
+  AudioNotify_t audio_notify = {
+      .event = event,
+      .priority = AUDIO_PRIORITY_MEDIUM,
+      .sample = { .type = type } };
+
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
 }

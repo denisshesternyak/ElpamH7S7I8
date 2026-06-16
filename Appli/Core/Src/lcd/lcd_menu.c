@@ -126,7 +126,7 @@ static void lcd_audio_notify(AudioEvent_t event, AudioType_t type);
 static void lcd_notify_start_task_low (AudioType_t type,
 				  SinTask_t task,
 				  const char *name);
-static void lcd_notify_arming (bool val);
+static void lcd_notify_arming (bool arming);
 static void menu_init_language (void);
 
 static bool hot_key_handle_button (KeyEvent_t event);
@@ -556,7 +556,7 @@ void menu_init (void)
 
   currentMenu = rootMenu;
 
-  tester_init();
+  tester_all_off();
   Volume_Init();
   draw_status_bar();
   update_date_time();
@@ -1301,10 +1301,12 @@ bool hot_key_handle_button (KeyEvent_t event)
       return true;
     case BTN_ARM:
       lcd_notify_arming(true);
+      tester_all_on();
       return true;
     case BTN_CXL:
-      lcd_notify_arming(false);
       check_playing_and_stop();
+      lcd_notify_arming(false);
+      tester_all_off();
       return true;
     default:
       return false;
@@ -1794,8 +1796,8 @@ static void lcd_audio_notify(AudioEvent_t event, AudioType_t type)
 {
   AudioNotify_t audio_notify = {
       .event = event,
-      .sample.type = type,
-      .priority = AUDIO_PRIORITY_LOW };
+      .priority = AUDIO_PRIORITY_LOW,
+      .sample = { .type = type } };
 
   osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
 }
@@ -1806,18 +1808,21 @@ static void lcd_notify_start_task_low (AudioType_t type,
 {
   AudioNotify_t audio_notify = {
       .event = AUDIO_START,
-      .sample.type = type,
-      .sample.sin_task = task,
-      .sample.filename = name,
-      .priority = AUDIO_PRIORITY_LOW };
+      .priority = AUDIO_PRIORITY_LOW,
+      .sample = {
+	  .type = type,
+	  .sin_task = task,
+	  .filename = name } };
 
   osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
 }
 
-static void lcd_notify_arming (bool val)
+static void lcd_notify_arming (bool arming)
 {
-  AudioNotify_t audio_notify = { .event = AUDIO_ARMIG, .priority = AUDIO_PRIORITY_LOW, .arming = val };
-
+  AudioNotify_t audio_notify = {
+        .event = AUDIO_ARMIG,
+        .priority = AUDIO_PRIORITY_LOW,
+        .arming = arming };
   osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
 }
 
