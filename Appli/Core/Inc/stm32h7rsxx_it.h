@@ -69,6 +69,7 @@ void UART4_IRQHandler(void);
 void UART5_IRQHandler(void);
 void UART7_IRQHandler(void);
 void SDMMC1_IRQHandler(void);
+void OTG_FS_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

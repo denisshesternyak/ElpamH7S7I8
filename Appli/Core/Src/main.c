@@ -32,6 +32,7 @@
 #include "sdmmc.h"
 #include "spi.h"
 #include "usart.h"
+#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
