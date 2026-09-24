@@ -23,7 +23,7 @@
 #define MAINTENANCE_PASSWORD 	"9999"
 
 #define VER_MAJOR  		1
-#define VER_MINOR  		0
+#define VER_MINOR  		1
 
 #define LCD_USART_TEXT_Y        300
 #define LCD_USART_TEXT_X        5
