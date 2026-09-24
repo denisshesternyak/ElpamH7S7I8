@@ -32,12 +32,10 @@
 /* Configure GPIO                                                             */
 /*----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
-#define DEBOUNCE_KEY_TIME_MS    50
 #define DEBOUNCE_SD_TIME_MS    50
 #define DEBOUNCE_LOCAL_TIME_MS    50
 #define DEBOUNCE_RING_TIME_MS    50
 
-static uint32_t last_key_event_time = 0;
 static uint32_t last_sd_event_time = 0;
 static uint32_t last_local_event_time = 0;
 static uint32_t last_ring_event_time = 0;
@@ -268,11 +266,7 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
   switch (GPIO_Pin)
   {
     case KEYPAD_INT_Pin:
-      if ((now - last_key_event_time) > DEBOUNCE_KEY_TIME_MS)
-      {
-	last_key_event_time = now;
 	osEventFlagsSet(KeyboardEventHandle, KEYBOARD_EVENT);
-      }
       break;
     case SD_DETECT_Pin:
       if ((now - last_sd_event_time) > DEBOUNCE_SD_TIME_MS)
