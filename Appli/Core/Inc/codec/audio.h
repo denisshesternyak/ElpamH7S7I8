@@ -19,6 +19,7 @@ void audio_get_volume_level(uint8_t *level, uint8_t *value);
 void audio_arm_timeout (void);
 void audio_announcement_timeout (void);
 void audio_recording_timeout (void);
+bool audio_get_arming(void);
 
 extern Audio_Player_t player;
 

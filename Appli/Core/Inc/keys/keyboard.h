@@ -47,6 +47,7 @@ typedef enum
   BTN_HASH = 33, // #
 
   BTN_ALARM = 70,
+  BTN_RETURN_MENU,
   BTN_A,
   BTN_B,
   BTN_NONE

@@ -54,7 +54,10 @@ typedef struct Menu
 typedef bool (*state_handler_t) (void);
 typedef void (*volume_indicator) (uint8_t *, uint8_t *);
 
+void lcd_register_arming(bool (*fn)(void));
+
 void lcd_volume_indicator (volume_indicator h);
+void lcd_double_cancel_timeout (void);
 
 void menu_init (void);
 void menu_handle_button (KeyEvent_t event);

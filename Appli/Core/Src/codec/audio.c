@@ -569,7 +569,7 @@ static void audio_prepare_stop_sd (void)
   {
     player.event = AUDIO_PLAY;
     player.is_stoped = true;
-    player.is_fade_stoped = true;
+//    player.is_fade_stoped = true;
   }
 }
 
@@ -811,15 +811,15 @@ static void stop_playback (void)
 
   audio_stop_amp_drv();
 
-//	LOG_DEBUG("STOP");
+	LOG_DEBUG("STOP");
 
-  if (!player.is_fade_stoped)
-  {
+//  if (!player.is_fade_stoped)
+//  {
     LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
-	.button = BTN_ESC,
+	.button = BTN_RETURN_MENU,
 	.pressed = true } };
     xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
-  }
+//  }
 
   HAL_I2S_DMAStop(CODEC_I2S_HANDLER);
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
@@ -837,6 +837,11 @@ static void check_progress (void)
 	.value = player.duration };
     xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
   }
+}
+
+bool audio_get_arming(void)
+{
+    return player.is_arming;
 }
 
 void HAL_I2S_TxHalfCpltCallback (I2S_HandleTypeDef *hi2s)

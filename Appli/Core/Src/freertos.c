@@ -181,6 +181,11 @@ osTimerId_t RecordingTimerHandle;
 const osTimerAttr_t RecordingTimer_attributes = {
   .name = "RecordingTimer"
 };
+/* Definitions for DoubleCancelTimer */
+osTimerId_t DoubleCancelTimerHandle;
+const osTimerAttr_t DoubleCancelTimer_attributes = {
+  .name = "DoubleCancelTimer"
+};
 /* Definitions for LoggerMutex */
 osMutexId_t LoggerMutexHandle;
 const osMutexAttr_t LoggerMutex_attributes = {
@@ -245,6 +250,7 @@ void BacklightCallback(void *argument);
 void ArmCallback(void *argument);
 void AnnouncementCallback(void *argument);
 void RecordingCallback(void *argument);
+void DoubleCancelCallback(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -288,6 +294,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of RecordingTimer */
   RecordingTimerHandle = osTimerNew(RecordingCallback, osTimerOnce, NULL, &RecordingTimer_attributes);
+
+  /* creation of DoubleCancelTimer */
+  DoubleCancelTimerHandle = osTimerNew(DoubleCancelCallback, osTimerOnce, NULL, &DoubleCancelTimer_attributes);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -538,6 +547,8 @@ void StartLcdTask(void *argument)
 //  osDelay(5000);
 //  audio_notify_low(AUDIO_PREPARE_STOP, AUDIO_SIN);
 
+  lcd_register_arming(audio_get_arming);
+
   lcd_volume_indicator (audio_get_volume_level);
 
   menu_init();
@@ -758,6 +769,14 @@ void RecordingCallback(void *argument)
   /* USER CODE BEGIN RecordingCallback */
   audio_recording_timeout();
   /* USER CODE END RecordingCallback */
+}
+
+/* DoubleCancelCallback function */
+void DoubleCancelCallback(void *argument)
+{
+  /* USER CODE BEGIN DoubleCancelCallback */
+  lcd_double_cancel_timeout();
+  /* USER CODE END DoubleCancelCallback */
 }
 
 /* Private application code --------------------------------------------------*/

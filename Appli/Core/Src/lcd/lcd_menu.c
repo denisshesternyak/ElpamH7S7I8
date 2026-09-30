@@ -34,6 +34,7 @@
 
 static bool isBacklightOn = false;
 static bool is_motorola = false;
+static bool is_double_cancel = false;
 
 #define MAX_MENU_POOL 40
 
@@ -179,6 +180,7 @@ static void check_playing_and_stop ();
 static void software_prepareAction (void);
 typedef void (*confirm_handler_t) (void);
 confirm_handler_t confirm_handler = NULL;
+static bool (*lcd_get_arming)(void) = NULL;
 
 static volume_indicator lcd_volume_indicator_handler = NULL;
 
@@ -1386,6 +1388,12 @@ static void button_enter_handler (void)
   if (currentMenu->itemCount == 0)
     return;
 
+  if ((currentMenu == sirenMenu ||
+       currentMenu == messagesMenu ||
+       currentMenu == sinusMenu) &&
+      (!lcd_get_arming || !lcd_get_arming()))
+      return;
+
   MenuItem *item = &currentMenu->items[currentMenu->currentSelection];
   if (!item)
     return;
@@ -1435,6 +1443,14 @@ static void idle_menu_handler (KeyEvent_t event)
   }
 }
 
+static void lcd_esc (Menu *menu)
+{
+  if (menu->parent == NULL)
+    return;
+  currentMenu = menu->parent;
+  draw_menuScreen(true);
+}
+
 static void alarm_info_menu_handler (KeyEvent_t event)
 {
   if (!alarm_info_menu)
@@ -1443,12 +1459,47 @@ static void alarm_info_menu_handler (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_ESC:
-      lcd_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SD);
-      if (alarm_info_menu->parent == NULL)
+      if (!is_double_cancel)
+      {
+	is_double_cancel = true;
+	osTimerStart(DoubleCancelTimerHandle, DOUBLE_CANCEL);
+	lcd_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SD);
 	return;
-      currentMenu = alarm_info_menu->parent;
-      draw_menuScreen(true);
+      }
+      lcd_audio_notify(AUDIO_STOP, AUDIO_SD);
+      lcd_esc(alarm_info_menu);
       break;
+
+    case BTN_RETURN_MENU:
+      lcd_esc(alarm_info_menu);
+      break;
+
+    default:
+      break;
+  }
+}
+
+static void message_info_menu_handler (KeyEvent_t event)
+{
+  if (!messagePlayMenu)
+    return;
+
+  switch (event.button)
+  {
+    case BTN_ESC:
+      if (!is_double_cancel)
+      {
+	is_double_cancel = true;
+	osTimerStart(DoubleCancelTimerHandle, DOUBLE_CANCEL);
+	lcd_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SD);
+	return;
+      }
+      lcd_audio_notify(AUDIO_STOP, AUDIO_SD);
+      lcd_esc(messagePlayMenu);
+      break;
+
+    case BTN_RETURN_MENU:
+      lcd_esc(messagePlayMenu);
 
     default:
       break;
@@ -1463,12 +1514,19 @@ static void sinus_info_menu_handler (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_ESC:
-      lcd_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SIN);
-      if (sinusInfoMenu->parent == NULL)
+      if (!is_double_cancel)
+      {
+	is_double_cancel = true;
+	osTimerStart(DoubleCancelTimerHandle, DOUBLE_CANCEL);
+	lcd_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SIN);
 	return;
-      currentMenu = sinusInfoMenu->parent;
-      draw_menuScreen(true);
+      }
+      lcd_audio_notify(AUDIO_STOP, AUDIO_SIN);
+      lcd_esc(sinusInfoMenu);
       break;
+
+    case BTN_RETURN_MENU:
+      lcd_esc(sinusInfoMenu);
 
     default:
       break;
@@ -1570,26 +1628,6 @@ static void volumeMenu_handle_button_press (KeyEvent_t event)
       currentMenu = volumeMenu->parent;
       draw_menuScreen(true);
       return;
-
-    default:
-      break;
-  }
-}
-
-static void message_info_menu_handler (KeyEvent_t event)
-{
-  if (!messagePlayMenu)
-    return;
-
-  switch (event.button)
-  {
-    case BTN_ESC:
-      lcd_audio_notify(AUDIO_PREPARE_STOP, AUDIO_SD);
-      if (messagePlayMenu->parent == NULL)
-	return;
-      currentMenu = messagePlayMenu->parent;
-      draw_menuScreen(true);
-      break;
 
     default:
       break;
@@ -1829,4 +1867,15 @@ static void lcd_notify_arming (bool arming)
 void lcd_volume_indicator (volume_indicator h)
 {
   lcd_volume_indicator_handler = h;
+}
+
+void lcd_double_cancel_timeout (void)
+{
+  is_double_cancel = false;
+  LOG_DEBUG("Double_Cancel time's up");
+}
+
+void lcd_register_arming(bool (*fn)(void))
+{
+  lcd_get_arming = fn;
 }

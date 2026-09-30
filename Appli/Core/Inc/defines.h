@@ -55,5 +55,6 @@
 #define ARMING_TIME  		10000
 #define ANNOUNCEMENT_TIME  	180000
 #define RECORDING_TIME		10000
+#define DOUBLE_CANCEL		200
 
 #endif /* INC_DEFINES_H_ */
