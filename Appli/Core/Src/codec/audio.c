@@ -424,11 +424,27 @@ void audio_recording_timeout (void)
   osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
 }
 
+static void audio_start_amp_drv ()
+{
+  HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_SET);
+  osDelay(20);
+  HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_SET);
+  osDelay(2);
+}
+
+static void audio_stop_amp_drv ()
+{
+  HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
+}
+
 // SINUS
 static void audio_start_sinus (AudioNotify_t *audio_notify)
 {
   if(player.is_playing || !player.is_arming)
     return;
+
+  audio_start_amp_drv();
 
   LOG_INFO("Start playback sinus");
 
@@ -485,6 +501,8 @@ static void audio_start_sd (AudioNotify_t *audio_notify)
 {
   if (!audio_notify->sample.filename || !player.is_arming)
     return;
+
+  audio_start_amp_drv();
 
   player.file_info.filename = audio_notify->sample.filename;
 
@@ -560,6 +578,8 @@ static void audio_start_mic (void)
 {
   LOG_INFO("Start playback announcement");
 
+  audio_start_amp_drv();
+
 //	audio_cmd_playback_enable();
   player.is_announcement = true;
   audio_cmd_IN1R_enable();
@@ -575,6 +595,8 @@ static void audio_stop_mic (void)
 {
   if (!player.is_announcement)
     return;
+
+  audio_stop_amp_drv();
 
 //	audio_cmd_playback_disable();
   player.is_announcement = false;
@@ -595,6 +617,8 @@ static void audio_start_motorola (void)
   if(player.is_motorola || !player.is_arming)
     return;
 
+  audio_start_amp_drv();
+
   player.is_motorola = true;
   audio_cmd_IN2R_enable();
 
@@ -610,6 +634,8 @@ static void audio_play_motorola (void)
 
 static void audio_stop_motorola (void)
 {
+  audio_stop_amp_drv();
+
   player.is_motorola = false;
 
   audio_cmd_IN2R_disable();
@@ -626,6 +652,8 @@ static void audio_prepare_stop_motorola (void)
 // DTMF
 static void audio_start_dtmf (void)
 {
+  audio_start_amp_drv();
+
   LOG_INFO("Start record DTMF");
 //  audio_cmd_I2S_to_DAC();
 
@@ -704,6 +732,8 @@ static void audio_stop_dtmf (void)
   if (!player.is_recording)
     return;
 
+  audio_stop_amp_drv();
+
   player.is_recording = false;
   player.is_stoped = true;
   player.buff_state = BUFFER_IDLE;
@@ -725,6 +755,8 @@ static void audio_start_quiet (AudioNotify_t *audio_notify)
 {
   LOG_INFO("Start playback quiet test");
 
+//  audio_start_amp_drv();
+
   init_generation(audio_notify->sample.sin_task);
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
 
@@ -736,6 +768,8 @@ static void audio_stop_quiet (void)
 {
   if (!player.is_playing)
     return;
+
+//  audio_stop_amp_drv();
 
   audio_cmd_quiet_disable();
   stop_playback();
@@ -774,6 +808,8 @@ static void stop_playback (void)
   player.is_stoped = true;
   player.duration = 0;
   player.buff_state = BUFFER_IDLE;
+
+  audio_stop_amp_drv();
 
 //	LOG_DEBUG("STOP");
 

@@ -1301,7 +1301,7 @@ bool hot_key_handle_button (KeyEvent_t event)
       return true;
     case BTN_ARM:
       lcd_notify_arming(true);
-      tester_all_on();
+//      tester_all_on();
       return true;
     case BTN_CXL:
       check_playing_and_stop();
