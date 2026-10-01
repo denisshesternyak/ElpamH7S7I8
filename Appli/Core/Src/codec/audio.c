@@ -811,7 +811,7 @@ static void stop_playback (void)
 
   audio_stop_amp_drv();
 
-	LOG_DEBUG("STOP");
+//  LOG_DEBUG("STOP");
 
 //  if (!player.is_fade_stoped)
 //  {
