@@ -67,6 +67,9 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#define VER_MAJOR  		0
+#define VER_MINOR  		5
+
 #define SELFTEST
 
 #ifdef SELFTEST
@@ -168,7 +171,8 @@ int main(void)
   }
 #endif
 
-  printf("Bootloader running\r\n");
+  printf("Bootloader FW v%d.%d\r\n", VER_MAJOR, VER_MINOR);
+
   fw_process();
   /* USER CODE END 2 */
 
