@@ -45,9 +45,9 @@ static outputs_handler_t all_outputs_off_handler = NULL;
 void handle_arm (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ARMING);
-  notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
+//  notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
   notify_arming(true);
-  all_outputs_on_handler();
+//  all_outputs_on_handler();
   LOG_INFO("'*_ARM__' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -159,7 +159,7 @@ void handle_cancel (UART_HandleTypeDef *huart)
     LOG_INFO("'*CANCEL' - got the command");
     system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
     notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
-    all_outputs_off_handler();
+//    all_outputs_off_handler();
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: CANCEL\r\n");

@@ -67,7 +67,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-//#define SELFTEST
+#define SELFTEST
 
 #ifdef SELFTEST
 uint8_t data_tx[] = "Hello world from H7s7!";

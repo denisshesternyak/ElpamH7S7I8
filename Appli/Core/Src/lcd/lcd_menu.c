@@ -1579,6 +1579,7 @@ void passwordMenu_handle_button_press(KeyEvent_t event)
 		      Password_Enter();
 		      if (Password_IsCorrect())
 		      {
+			      Password_Reset(false);
 			      currentMenu = maintenanceMenu;
 			      draw_menuScreen(true);
 		      }
