@@ -43,6 +43,12 @@ typedef enum
   BTN_7 = 21,
   BTN_8 = 22,
   BTN_9 = 23,
+
+  BTN_CHEMICAL = 24,
+  BTN_ALL_CLEAR_60 = 25,
+  BTN_ALL_CLEAR_120 = 26,
+  BTN_ABC = 27,
+
   BTN_ASTERISK = 31, // *
   BTN_HASH = 33, // #
 

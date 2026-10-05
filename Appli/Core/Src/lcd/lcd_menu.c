@@ -1273,6 +1273,7 @@ bool hot_key_handle_button (KeyEvent_t event)
       clear_position(currentMenu);
       draw_menuScreen(true);
       return true;
+
     case BTN_ANNOUNCEMENT:
       if (currentMenu == announcementMenu)
 	return true;
@@ -1283,6 +1284,7 @@ bool hot_key_handle_button (KeyEvent_t event)
       clear_position(currentMenu);
       draw_menuScreen(true);
       return true;
+
     case BTN_MESSAGE:
       if (currentMenu == messagesMenu)
 	return true;
@@ -1292,6 +1294,7 @@ bool hot_key_handle_button (KeyEvent_t event)
       clear_position(currentMenu);
       draw_menuScreen(true);
       return true;
+
     case BTN_ALARM:
       if (currentMenu == sirenMenu)
 	return true;
@@ -1301,15 +1304,42 @@ bool hot_key_handle_button (KeyEvent_t event)
       clear_position(currentMenu);
       draw_menuScreen(true);
       return true;
+
     case BTN_ARM:
       lcd_notify_arming(true);
 //      tester_all_on();
       return true;
+
     case BTN_CXL:
       check_playing_and_stop();
       lcd_notify_arming(false);
 //      tester_all_off();
       return true;
+
+    case BTN_CHEMICAL:
+      check_playing_and_stop();
+      if (!lcd_get_arming || !lcd_get_arming()) return true;
+      lcd_notify_start_task_low(AUDIO_SIN, SINUS_ALARM_90S, NULL);
+      return true;
+
+    case BTN_ALL_CLEAR_60:
+      check_playing_and_stop();
+      if (!lcd_get_arming || !lcd_get_arming()) return true;
+      lcd_notify_start_task_low(AUDIO_SIN, SINUS_ALL_CLEAR_60S, NULL);
+      return true;
+
+    case BTN_ALL_CLEAR_120:
+      check_playing_and_stop();
+      if (!lcd_get_arming || !lcd_get_arming()) return true;
+      lcd_notify_start_task_low(AUDIO_SIN, SINUS_ALL_CLEAR_120S, NULL);
+      return true;
+
+    case BTN_ABC:
+      check_playing_and_stop();
+      if (!lcd_get_arming || !lcd_get_arming()) return true;
+      lcd_notify_start_task_low(AUDIO_SIN, SINUS_ABC_120S, NULL);
+      return true;
+
     default:
       return false;
   }
