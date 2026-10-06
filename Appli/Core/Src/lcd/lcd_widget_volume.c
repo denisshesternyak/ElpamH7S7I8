@@ -4,7 +4,9 @@
 #include "hx8357d.h"
 #include "fonts.h"
 #include "audio.h"
+#include "metadata.h"
 #include <stdio.h>
+#include "logger.h"
 
 #define STATUS_BAR_LINE_Y_POS  		35
 
@@ -29,7 +31,11 @@ static void volume_change_status (const char *str)
 void Volume_Init (void)
 {
   volumeIndex = 0;
-  uint16_t volume = CUR_VOLUME_PLAYBACK;
+  uint8_t volume;
+  if (!eeprom_read_object(EEPROM_SLOT_VOLUME, &volume, sizeof(volume)))
+    LOG_ERROR("Failure to read volume from EEPROM");
+  else
+    LOG_INFO("Read volume from EEPROM: %d", volume);
 
   volumeBuffer[0] = volume / 100;
   volumeBuffer[1] = (volume / 10) % 10;
@@ -78,10 +84,12 @@ void Volume_SendVolume (void)
 {
   // send to SPI
   uint8_t level = (volumeBuffer[0] * 100) + (volumeBuffer[1] * 10) + volumeBuffer[2];
-  printf("lvl %d\r\n", level);
-
   audio_set_volume_playback(level);
   volume_change_status(MAX_UPDATE_STR);
+  if (eeprom_write_object(EEPROM_SLOT_VOLUME, &level, sizeof(level)))
+    LOG_INFO("Save volume to EEPROM: %d", level);
+  else
+    LOG_ERROR("Failure to save volume to EEPROM");
 }
 
 void Volume_UpdateValue (void)
