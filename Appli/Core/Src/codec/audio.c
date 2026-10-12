@@ -16,6 +16,7 @@
 #include "app_freertos.h"
 #include "dtmf_types.h"
 #include <math.h>
+#include "metadata.h"
 
 #define CODEC_I2S_HANDLER	&hi2s6
 
@@ -126,7 +127,36 @@ void audio_init (void)
   audio_cmd_init_power();
   audio_cmd_init_playback();
   audio_cmd_init_record();
-  audio_set_volume_playback(CUR_VOLUME_PLAYBACK);
+  audio_read_volume();
+}
+
+uint8_t audio_read_volume (void)
+{
+  uint8_t volume;
+  if (!eeprom_read_object(EEPROM_SLOT_VOLUME, &volume, sizeof(volume)))
+  {
+    LOG_ERROR("Failure to read volume from EEPROM");
+    volume = MAX_VOLUME_PLAYBACK;
+  }
+  else {
+    LOG_INFO("Read volume from EEPROM: %d", volume);
+  }
+
+  player.volume_task = volume;
+  player.volume_current = volume;
+  audio_set_volume_playback(volume);
+  return volume;
+}
+
+void audio_write_volume (uint8_t volume)
+{
+  if (eeprom_write_object(EEPROM_SLOT_VOLUME, &volume, sizeof(volume)))
+  {
+    LOG_INFO("Save volume to EEPROM: %d", volume);
+    player.volume_task = volume;
+  }
+  else
+    LOG_ERROR("Failure to save volume to EEPROM");
 }
 
 void audio_process (AudioNotify_t *audio_notify)
@@ -385,8 +415,8 @@ void audio_set_volume_playback (uint8_t level)
 {
   uint8_t vol = 0;
   if (level == 0) vol = MAX_VOLUME_PLAYBACK;
-  else if (level >= 150) vol = MIN_VOLUME_PLAYBACK;
-  else vol = (uint8_t)(129 + (level * 127 / 150));
+  else if (level >= MAX_VOLUME_PLAYBACK) vol = MIN_VOLUME_PLAYBACK;
+  else vol = (uint8_t)(129 + (level * 127 / MAX_VOLUME_PLAYBACK));
 
   audio_cmd_send_volume_dac(vol);
 }
@@ -395,6 +425,11 @@ void audio_get_volume_level(uint8_t *level, uint8_t *value)
 {
   *level = player.volume_level;
   *value = player.volume_value;
+}
+
+uint8_t audio_get_volume_task()
+{
+  return player.volume_task;
 }
 
 void audio_arm_timeout (void)
@@ -560,6 +595,10 @@ static void audio_stop_sd (void)
   sdfs_close_audiofile(&player.file_info);
   memset(&player.file_info, 0, sizeof(player.file_info));
 
+  osDelay(10);
+  player.volume_current = player.volume_task;
+  audio_set_volume_playback(player.volume_current);
+
   LOG_INFO("Stop playback from uSD");
 }
 
@@ -568,7 +607,8 @@ static void audio_prepare_stop_sd (void)
   if (player.is_playing && !player.is_stoped)
   {
     player.event = AUDIO_PLAY;
-    player.is_stoped = true;
+    osTimerStart(VolumeTimerHandle, VOLUME_TIMER);
+
 //    player.is_fade_stoped = true;
   }
 }
@@ -798,7 +838,6 @@ static void start_playback (void)
   hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_44K;
   HAL_I2S_Init(CODEC_I2S_HANDLER);
   HAL_I2S_Transmit_DMA(CODEC_I2S_HANDLER, (uint16_t*) dma_buffer_tx, AUDIO_HALF_BUFFER_SIZE);
-
 //	audio_set_volume(player.volume);
 }
 
@@ -808,7 +847,6 @@ static void stop_playback (void)
   player.is_stoped = true;
   player.duration = 0;
   player.buff_state = BUFFER_IDLE;
-
   audio_stop_amp_drv();
 
 //  LOG_DEBUG("STOP");
@@ -842,6 +880,28 @@ static void check_progress (void)
 bool audio_get_arming(void)
 {
     return player.is_arming;
+}
+
+void audio_volume_timeout (void)
+{
+  if(VOLUME_FADE_STEP > player.volume_current)
+  {
+    player.volume_current = 0;
+    player.is_stoped = true;
+    goto end;
+  }
+  else
+  {
+    player.volume_current -= VOLUME_FADE_STEP;
+  }
+
+  audio_set_volume_playback(player.volume_current);
+  osTimerStart(VolumeTimerHandle, VOLUME_TIMER);
+  return;
+
+end:
+  audio_set_volume_playback(player.volume_current);
+  osTimerStop(VolumeTimerHandle);
 }
 
 void HAL_I2S_TxHalfCpltCallback (I2S_HandleTypeDef *hi2s)

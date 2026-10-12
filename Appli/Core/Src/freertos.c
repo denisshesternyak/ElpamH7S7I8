@@ -186,6 +186,11 @@ osTimerId_t DoubleCancelTimerHandle;
 const osTimerAttr_t DoubleCancelTimer_attributes = {
   .name = "DoubleCancelTimer"
 };
+/* Definitions for VolumeTimer */
+osTimerId_t VolumeTimerHandle;
+const osTimerAttr_t VolumeTimer_attributes = {
+  .name = "VolumeTimer"
+};
 /* Definitions for LoggerMutex */
 osMutexId_t LoggerMutexHandle;
 const osMutexAttr_t LoggerMutex_attributes = {
@@ -251,6 +256,7 @@ void ArmCallback(void *argument);
 void AnnouncementCallback(void *argument);
 void RecordingCallback(void *argument);
 void DoubleCancelCallback(void *argument);
+void VolumeCallback(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -297,6 +303,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of DoubleCancelTimer */
   DoubleCancelTimerHandle = osTimerNew(DoubleCancelCallback, osTimerOnce, NULL, &DoubleCancelTimer_attributes);
+
+  /* creation of VolumeTimer */
+  VolumeTimerHandle = osTimerNew(VolumeCallback, osTimerOnce, NULL, &VolumeTimer_attributes);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -777,6 +786,14 @@ void DoubleCancelCallback(void *argument)
   /* USER CODE BEGIN DoubleCancelCallback */
   lcd_double_cancel_timeout();
   /* USER CODE END DoubleCancelCallback */
+}
+
+/* VolumeCallback function */
+void VolumeCallback(void *argument)
+{
+  /* USER CODE BEGIN VolumeCallback */
+  audio_volume_timeout();
+  /* USER CODE END VolumeCallback */
 }
 
 /* Private application code --------------------------------------------------*/

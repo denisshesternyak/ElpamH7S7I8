@@ -1310,11 +1310,11 @@ bool hot_key_handle_button (KeyEvent_t event)
 //      tester_all_on();
       return true;
 
-    case BTN_CXL:
-      check_playing_and_stop();
-      lcd_notify_arming(false);
-//      tester_all_off();
-      return true;
+//    case BTN_CXL:
+//      check_playing_and_stop();
+//      lcd_notify_arming(false);
+////      tester_all_off();
+//      return true;
 
     case BTN_CHEMICAL:
       check_playing_and_stop();
@@ -1488,6 +1488,8 @@ static void alarm_info_menu_handler (KeyEvent_t event)
 
   switch (event.button)
   {
+    case BTN_CXL:
+      lcd_notify_arming(false);
     case BTN_ESC:
       if (!is_double_cancel)
       {
@@ -1516,6 +1518,8 @@ static void message_info_menu_handler (KeyEvent_t event)
 
   switch (event.button)
   {
+    case BTN_CXL:
+      lcd_notify_arming(false);
     case BTN_ESC:
       if (!is_double_cancel)
       {
@@ -1543,6 +1547,8 @@ static void sinus_info_menu_handler (KeyEvent_t event)
 
   switch (event.button)
   {
+    case BTN_CXL:
+      lcd_notify_arming(false);
     case BTN_ESC:
       if (!is_double_cancel)
       {

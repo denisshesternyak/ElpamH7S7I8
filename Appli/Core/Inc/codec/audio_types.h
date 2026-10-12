@@ -134,6 +134,8 @@ typedef struct
 
   volatile uint8_t volume_level;
   volatile uint8_t volume_value;
+  volatile uint8_t volume_current;
+  volatile uint8_t volume_task;
   volatile uint8_t duration;
 } Audio_Player_t;
 

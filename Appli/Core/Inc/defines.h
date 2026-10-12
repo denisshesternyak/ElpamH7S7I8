@@ -23,7 +23,7 @@
 #define MAINTENANCE_PASSWORD 	"9999"
 
 #define VER_MAJOR  		1
-#define VER_MINOR  		5
+#define VER_MINOR  		6
 
 #define LCD_USART_TEXT_Y        300
 #define LCD_USART_TEXT_X        5
@@ -56,5 +56,7 @@
 #define ANNOUNCEMENT_TIME  	180000
 #define RECORDING_TIME		10000
 #define DOUBLE_CANCEL		200
+#define VOLUME_TIMER		10
+#define VOLUME_FADE_STEP	7
 
 #endif /* INC_DEFINES_H_ */

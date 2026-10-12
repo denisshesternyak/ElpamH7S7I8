@@ -8,6 +8,7 @@ extern osTimerId_t ArmTimerHandle;
 extern osTimerId_t AnnouncementTimerHandle;
 extern osTimerId_t RecordingTimerHandle;
 extern osTimerId_t DoubleCancelTimerHandle;
+extern osTimerId_t VolumeTimerHandle;
 
 extern osMessageQueueId_t xLoggerQueueHandle;
 extern osSemaphoreId_t LoggerBinarySemHandle;
