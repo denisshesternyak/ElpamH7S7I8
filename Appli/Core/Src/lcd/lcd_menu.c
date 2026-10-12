@@ -1258,6 +1258,20 @@ void menu_handle_button (KeyEvent_t event)
   }
 }
 
+static void run_hot_playback(SinTask_t task)
+{
+  if (currentMenu == sinusInfoMenu || currentMenu == alarm_info_menu || currentMenu == messagePlayMenu)
+    return;
+
+  lcd_notify_start_task_low(AUDIO_SIN, task, NULL);
+  currentMenu = sinusInfoMenu;
+  currentMenu->parent = rootMenu;
+  currentMenu->type = MENU_TYPE_SIREN_INFO;
+  currentMenu->textFilename = get_sinus_menu_items_str(task, GetLanguage());
+  clear_position(currentMenu);
+  draw_menuScreen(true);
+}
+
 bool hot_key_handle_button (KeyEvent_t event)
 {
   if (is_motorola)
@@ -1317,27 +1331,23 @@ bool hot_key_handle_button (KeyEvent_t event)
 //      return true;
 
     case BTN_CHEMICAL:
-      check_playing_and_stop();
       if (!lcd_get_arming || !lcd_get_arming()) return true;
-      lcd_notify_start_task_low(AUDIO_SIN, SINUS_ALARM_90S, NULL);
+      run_hot_playback(SINUS_ALARM_90S);
       return true;
 
     case BTN_ALL_CLEAR_60:
-      check_playing_and_stop();
       if (!lcd_get_arming || !lcd_get_arming()) return true;
-      lcd_notify_start_task_low(AUDIO_SIN, SINUS_ALL_CLEAR_60S, NULL);
+      run_hot_playback(SINUS_ALL_CLEAR_60S);
       return true;
 
     case BTN_ALL_CLEAR_120:
-      check_playing_and_stop();
       if (!lcd_get_arming || !lcd_get_arming()) return true;
-      lcd_notify_start_task_low(AUDIO_SIN, SINUS_ALL_CLEAR_120S, NULL);
+      run_hot_playback(SINUS_ALL_CLEAR_120S);
       return true;
 
     case BTN_ABC:
-      check_playing_and_stop();
       if (!lcd_get_arming || !lcd_get_arming()) return true;
-      lcd_notify_start_task_low(AUDIO_SIN, SINUS_ABC_120S, NULL);
+      run_hot_playback(SINUS_ABC_120S);
       return true;
 
     default:

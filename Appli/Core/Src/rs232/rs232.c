@@ -59,6 +59,8 @@ static rs232_cmd_handler_t handle_btn_8 = NULL;
 static rs232_cmd_handler_t handle_btn_9 = NULL;
 static rs232_cmd_handler_t handle_btn_left = NULL;
 static rs232_cmd_handler_t handle_btn_right = NULL;
+static rs232_cmd_handler_t handle_btn_hot_chem = NULL;
+static rs232_cmd_handler_t handle_btn_hot_abc = NULL;
 
 typedef struct {
     uint32_t last_rx_time;
@@ -288,6 +290,12 @@ void rs232_process (UartMessage_t *msg)
     case UART_EVENT_BTN_RIGHT:
       call_or_default(msg->huart, handle_btn_right);
       break;
+    case UART_EVENT_BTN_HOT_CHEM:
+      call_or_default(msg->huart, handle_btn_hot_chem);
+      break;
+    case UART_EVENT_BTN_HOT_ABC:
+      call_or_default(msg->huart, handle_btn_hot_abc);
+      break;
   }
 }
 
@@ -467,6 +475,14 @@ static void process_command (UART_HandleTypeDef *huart, char *cmd)
   else if (strncmp(cmd, "*BTNRGT", CMD_LENGTH) == 0)
   {
     event = UART_EVENT_BTN_RIGHT;
+  }
+  else if (strncmp(cmd, "*HOTCHM", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_BTN_HOT_CHEM;
+  }
+  else if (strncmp(cmd, "*HOTABC", CMD_LENGTH) == 0)
+  {
+    event = UART_EVENT_BTN_HOT_ABC;
   }
 
   else if (strncmp(cmd, "*VOL", 4) == 0)
@@ -696,4 +712,12 @@ void rs232_register_btn_left (rs232_cmd_handler_t h)
 void rs232_register_btn_right (rs232_cmd_handler_t h)
 {
   handle_btn_right = h;
+}
+void rs232_register_btn_hot_chem (rs232_cmd_handler_t h)
+{
+  handle_btn_hot_chem = h;
+}
+void rs232_register_btn_hot_abc (rs232_cmd_handler_t h)
+{
+  handle_btn_hot_abc = h;
 }

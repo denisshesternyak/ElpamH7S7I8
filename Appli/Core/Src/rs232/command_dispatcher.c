@@ -543,7 +543,14 @@ void handle_btn_right_command (UART_HandleTypeDef *huart)
 {
   send_btn_notify(BTN_RIGHT);
 }
-
+void handle_btn_hot_chem_command (UART_HandleTypeDef *huart)
+{
+  send_btn_notify(BTN_CHEMICAL);
+}
+void handle_btn_hot_abc_command (UART_HandleTypeDef *huart)
+{
+  send_btn_notify(BTN_ABC);
+}
 
 static void send_btn_notify (KeyCode_t btn)
 {

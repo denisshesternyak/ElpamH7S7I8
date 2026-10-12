@@ -851,17 +851,17 @@ static void stop_playback (void)
 
 //  LOG_DEBUG("STOP");
 
-//  if (!player.is_fade_stoped)
-//  {
-    LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
-	.button = BTN_RETURN_MENU,
-	.pressed = true } };
-    xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
-//  }
-
   HAL_I2S_DMAStop(CODEC_I2S_HANDLER);
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
   HAL_I2S_Init(CODEC_I2S_HANDLER);
+
+  //  if (!player.is_fade_stoped)
+  //  {
+      LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
+  	.button = BTN_RETURN_MENU,
+  	.pressed = true } };
+      xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
+  //  }
 }
 
 static void check_progress (void)

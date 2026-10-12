@@ -58,7 +58,9 @@ typedef enum
   UART_EVENT_BTN_8,
   UART_EVENT_BTN_9,
   UART_EVENT_BTN_LEFT,
-  UART_EVENT_BTN_RIGHT
+  UART_EVENT_BTN_RIGHT,
+  UART_EVENT_BTN_HOT_CHEM,
+  UART_EVENT_BTN_HOT_ABC
 } UartEvent_t;
 
 typedef struct
@@ -123,5 +125,7 @@ void rs232_register_btn_8 (rs232_cmd_handler_t h);
 void rs232_register_btn_9 (rs232_cmd_handler_t h);
 void rs232_register_btn_left (rs232_cmd_handler_t h);
 void rs232_register_btn_right (rs232_cmd_handler_t h);
+void rs232_register_btn_hot_chem (rs232_cmd_handler_t h);
+void rs232_register_btn_hot_abc (rs232_cmd_handler_t h);
 
 #endif /* INC_RS232_RS232_H_ */

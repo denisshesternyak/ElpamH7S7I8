@@ -498,6 +498,8 @@ void StartUartTask(void *argument)
   rs232_register_btn_9(handle_btn_9_command);
   rs232_register_btn_left(handle_btn_left_command);
   rs232_register_btn_right(handle_btn_right_command);
+  rs232_register_btn_hot_chem(handle_btn_hot_chem_command);
+  rs232_register_btn_hot_abc(handle_btn_hot_abc_command);
 
   system_status_init();
   UartMessage_t msg;
