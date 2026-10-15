@@ -626,6 +626,8 @@ void RunBatteriesTest (void)
 
 void RunAmplifiresTest (void)
 {
+  LOG_INFO("Start amplifiers test");
+
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
   osDelay(10);
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_SET);
@@ -643,32 +645,59 @@ void RunAmplifiresTest (void)
     bool is_cur = check_voltage(ADC_CURRENT_MEAS, ADC_CUR_DIV, ADC_TASK_CUR, 100);
     osDelay(10);
 
+    lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
+    osDelay(10);
+
     tester_amp_turn_off(i);
 
-    lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
-
-//    TestAmplDisplay_SetStatus(i, is_amp);
+    TestAmplDisplay_SetStatus(i, is_amp);
     osDelay(10);
   }
 
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
   osDelay(10);
-//  audio_notify_stop_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
+
+  LOG_INFO("Stop amplifiers test");
 }
 
 void RunDriversTest (void)
 {
-//  audio_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
-  OSC_ON;
+  LOG_INFO("Start drivers test");
+
+  HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
+  osDelay(10);
+  HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_SET);
+  osDelay(10);
 
   for(uint8_t i = 0; i < DRV_COUNT; i++)
   {
-    bool res = tester_check_driver(i);
-    TestDrvDisplay_SetStatus(i, res);
+    tester_amp_turn_on(i);
+    osDelay(5);
+    OSC_ON;
+    osDelay(5);
+
+    lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_20MS, NULL);
+    osDelay(10);
+
+    bool is_drv = check_voltage(ADC_DRIVER_MEAS, ADC_DRV_DIV, ADC_TASK_DRV, 100);
+    bool is_cur = check_voltage(ADC_CURRENT_MEAS, ADC_CUR_DIV, ADC_TASK_CUR, 100);
+    osDelay(10);
+
+    lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
+    osDelay(10);
+
+    OSC_OFF;
+    osDelay(5);
+    tester_amp_turn_off(i);
+
+    TestDrvDisplay_SetStatus(i, is_drv);
+    osDelay(10);
   }
 
-  OSC_OFF;
-//  audio_notify_stop_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
+  HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
+  osDelay(10);
+
+  LOG_INFO("Stop drivers test");
 }
 
 void MenuLoadSDCardSirens (void)

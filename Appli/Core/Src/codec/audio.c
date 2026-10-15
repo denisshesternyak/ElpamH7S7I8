@@ -809,9 +809,10 @@ static void audio_prepare_stop_dtmf (void)
 // QUIET
 static void audio_start_quiet (AudioNotify_t *audio_notify)
 {
-  LOG_INFO("Start playback quiet test");
+//  LOG_INFO("Start playback quiet test");
 
 //  audio_start_amp_drv();
+  audio_set_volume_playback(120);
 
   init_generation(audio_notify->sample.sin_task);
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
@@ -829,8 +830,9 @@ static void audio_stop_quiet (void)
 
   audio_cmd_quiet_disable();
   stop_playback();
+  audio_set_volume_playback(player.volume_task);
 
-  LOG_INFO("Stop playback quiet test");
+//  LOG_INFO("Stop playback quiet test");
 }
 
 // TEST
@@ -876,8 +878,6 @@ static void audio_stop_test (void)
   stop_playback();
   audio_cmd_playback_disable();
   audio_set_volume_playback(player.volume_task);
-
-
 //  LOG_INFO("Stop playback test");
 }
 
