@@ -37,7 +37,8 @@ typedef enum
   AUDIO_MOTOROLA,
   AUDIO_DTMF,
   AUDIO_QUIET,
-  AUDIO_CURRENT_TYPE
+  AUDIO_CURRENT_TYPE,
+  AUDIO_TEST
 } AudioType_t;
 
 typedef enum
@@ -68,6 +69,7 @@ typedef enum
   SINUS_ABC_120S,
   SINUS_400HZ_800HZ_1_5S_60S,
   SINUS_400HZ_800HZ_3S_60S,
+  SINUS_420HZ_20MS,
   SINUS_NONE
 } SinTask_t;
 

@@ -61,6 +61,8 @@ typedef enum {
   SYSTEM_CU_RESET_ACT
 } tester_signals_t;
 
+void tester_amp_turn_on (tester_signals_t n);
+void tester_amp_turn_off (tester_signals_t n);
 void tester_all_on (void);
 void tester_all_off (void);
 bool tester_check_amplifier (tester_signals_t n);

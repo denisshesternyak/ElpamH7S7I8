@@ -626,16 +626,33 @@ void RunBatteriesTest (void)
 
 void RunAmplifiresTest (void)
 {
-//  audio_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
-  OSC_ON;
+  HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
+  osDelay(10);
+  HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_SET);
+  osDelay(10);
 
   for(uint8_t i = 0; i < AMP_COUNT; i++)
   {
-    bool res = tester_check_amplifier(i);
-    TestAmplDisplay_SetStatus(i, res);
+    tester_amp_turn_on(i);
+    osDelay(10);
+
+    lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_20MS, NULL);
+    osDelay(10);
+
+    bool is_amp = check_voltage(ADC_AMPLIFIER_MEAS, ADC_AMP_DIV, ADC_TASK_AMP, 20);
+    bool is_cur = check_voltage(ADC_CURRENT_MEAS, ADC_CUR_DIV, ADC_TASK_CUR, 100);
+    osDelay(10);
+
+    tester_amp_turn_off(i);
+
+    lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
+
+//    TestAmplDisplay_SetStatus(i, is_amp);
+    osDelay(10);
   }
 
-  OSC_OFF;
+  HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
+  osDelay(10);
 //  audio_notify_stop_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
 }
 

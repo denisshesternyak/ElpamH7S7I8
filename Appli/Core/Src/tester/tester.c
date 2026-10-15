@@ -2,7 +2,7 @@
 #include "analog.h"
 #include "cmsis_os2.h"
 
-static void tester_amp_turn_on (tester_signals_t n)
+void tester_amp_turn_on (tester_signals_t n)
 {
   switch(n)
   {
@@ -20,7 +20,7 @@ static void tester_amp_turn_on (tester_signals_t n)
   }
 }
 
-static void tester_amp_turn_off (tester_signals_t n)
+void tester_amp_turn_off (tester_signals_t n)
 {
   switch(n)
   {
@@ -64,12 +64,7 @@ bool tester_check_amplifier (tester_signals_t n)
 {
   tester_amp_turn_on(n);
 
-  AMP_ON_ACT_ON;
-  osDelay(1);
-
   bool is_amp = check_voltage(ADC_AMPLIFIER_MEAS, ADC_AMP_DIV, ADC_TASK_AMP, 100);
-
-  AMP_ON_ACT_OFF;
 
   tester_amp_turn_off(n);
 

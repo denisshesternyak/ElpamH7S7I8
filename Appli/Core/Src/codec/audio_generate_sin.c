@@ -8,6 +8,8 @@ static uint32_t phase_inc_ch2;
 static int16_t sin_table[WAVE_TABLE_SIZE];
 static uint32_t phase_acc_ch1 = 0;
 static uint32_t phase_acc_ch2 = 0;
+static uint32_t fade_in_sample;
+static uint32_t fade_in_step;
 
 //interval_timer_t interval_timer;
 inc_data_t inc_data;
@@ -53,7 +55,7 @@ void audio_generate_sine (Audio_Player_t *player,
 
     inc_data.total_samples_generated++;
 
-    if (inc_data.total_samples_generated < FADE_IN_SAMPLE)
+    if (inc_data.total_samples_generated < fade_in_sample)
     {
       apply_fade(&sample_left, &sample_right, inc_data.total_samples_generated);
     }
@@ -74,7 +76,7 @@ void audio_generate_sine (Audio_Player_t *player,
 	return;
       }
     }
-    else if (inc_data.total_samples_generated > inc_data.duration - FADE_IN_SAMPLE)
+    else if (inc_data.total_samples_generated > inc_data.duration - fade_in_sample)
     {
       uint64_t fade_out = inc_data.duration - inc_data.total_samples_generated;
       apply_fade(&sample_left, &sample_right, fade_out);
@@ -98,6 +100,8 @@ void init_generation (SinTask_t sinus)
 //	memset(&interval_timer, 0, sizeof(interval_timer));
 //	interval_timer.current_step = 0;
 //	interval_timer.step_start_tick = osKernelGetTickCount();
+  fade_in_sample = FADE_IN_SAMPLE;
+  fade_in_step = FADE_IN_STEP;
 
   switch (sinus)
   {
@@ -134,6 +138,10 @@ void init_generation (SinTask_t sinus)
     case SINUS_400HZ_800HZ_3S_60S:
       init_tone(TONE_MODE_CYCLE_NORAMP, PHASE_INC_400, PHASE_INC_800, 0, 3000, 54000);
       break;
+    case SINUS_420HZ_20MS:
+      init_tone(TONE_MODE_CONSTANT, PHASE_INC_420, PHASE_INC_420, 0, 20, 0);
+      fade_in_sample = FADE_IN_SAMPLE_TEST;
+      fade_in_step = FADE_IN_STEP_TEST;
     default:
       set_increment(PHASE_INC_100, PHASE_INC_100);
       break;
@@ -232,7 +240,7 @@ void set_fade_stop ()
 
 static void apply_fade (int16_t *left, int16_t *right, uint64_t sample_idx)
 {
-  uint32_t count = (uint32_t) (sample_idx * FADE_IN_STEP >> 10);
+  uint32_t count = (uint32_t) (sample_idx * fade_in_step >> 10);
   if (count > 32767)
     count = 32767;
   *left = (count * (*left)) >> 15;

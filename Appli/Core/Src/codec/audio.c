@@ -89,6 +89,11 @@ static void audio_prepare_stop_dtmf (void);
 static void audio_start_quiet (AudioNotify_t *audio_notify);
 static void audio_stop_quiet (void);
 
+// TEST
+static void audio_start_test (AudioNotify_t *audio_notify);
+static void audio_play_test (void);
+static void audio_stop_test (void);
+
 static void start_playback (void);
 static void stop_playback (void);
 static void check_progress (void);
@@ -235,6 +240,10 @@ static void audio_start (AudioNotify_t *audio_notify)
       break;
     case AUDIO_QUIET:
       audio_start_quiet(audio_notify);
+      break;
+    case AUDIO_TEST:
+      audio_start_test(audio_notify);
+      break;
     default:
       break;
   }
@@ -260,6 +269,9 @@ static void audio_play (AudioNotify_t *audio_notify)
       break;
     case AUDIO_DTMF:
       audio_play_dtmf();
+      break;
+    case AUDIO_TEST:
+      audio_play_test();
       break;
     default:
       break;
@@ -289,6 +301,10 @@ static void audio_stop (AudioNotify_t *audio_notify)
       break;
     case AUDIO_QUIET:
       audio_stop_quiet();
+      break;
+    case AUDIO_TEST:
+      audio_stop_test();
+      break;
     default:
       break;
   }
@@ -815,6 +831,54 @@ static void audio_stop_quiet (void)
   stop_playback();
 
   LOG_INFO("Stop playback quiet test");
+}
+
+// TEST
+static void audio_start_test (AudioNotify_t *audio_notify)
+{
+  if(player.is_playing)
+    return;
+
+//  LOG_INFO("Start playback test");
+  audio_set_volume_playback(120);
+
+  init_generation(audio_notify->sample.sin_task);
+  audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
+
+  audio_cmd_playback_enable();
+
+  start_playback();
+}
+
+static void audio_play_test (void)
+{
+  if (player.is_prepare_stoped)
+  {
+    player.is_stoped = true;
+    return;
+  }
+
+  uint32_t offset =
+      (player.buff_state == BUFFER_HALF) ? 0 : AUDIO_HALF_BUFFER_SIZE;
+  uint8_t *buf_ptr = dma_buffer_tx + offset;
+
+  audio_generate_sine(&player, buf_ptr, AUDIO_STEREO_PAIRS_HALF);
+
+  player.buff_state = BUFFER_IDLE;
+  player.event = AUDIO_PLAY;
+}
+
+static void audio_stop_test (void)
+{
+  if (!player.is_playing)
+    return;
+
+  stop_playback();
+  audio_cmd_playback_disable();
+  audio_set_volume_playback(player.volume_task);
+
+
+//  LOG_INFO("Stop playback test");
 }
 
 ////

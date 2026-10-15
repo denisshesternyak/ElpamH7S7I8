@@ -7,7 +7,9 @@
 #define WAVE_TABLE_SIZE 	1024
 #define SAMPLE_RATE     	44100
 #define FADE_IN_SAMPLE     	8820	// 200ms * 44100 / 1000
-#define FADE_IN_STEP     	3805	// 32767 / 8820 * 1024
+#define FADE_IN_STEP     	3805	// 32767 / FADE_IN_SAMPLE * 1024
+#define FADE_IN_SAMPLE_TEST     220	// 5ms * 44100 / 1000
+#define FADE_IN_STEP_TEST     	152516	// 32767 / FADE_IN_SAMPLE_TEST * 1024
 
 #define FREQ_836 		836
 #define FREQ_856		856
