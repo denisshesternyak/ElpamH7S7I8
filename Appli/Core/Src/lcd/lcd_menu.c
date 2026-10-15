@@ -616,10 +616,13 @@ void RunSilentTest (void)
 
 void RunBatteriesTest (void)
 {
-  bool is_12v = check_voltage(ADC_12V, ADC_12V_DIV, ADC_TASK_12V, 500);
+//  bool is_12v = check_voltage(ADC_12V, ADC_12V_DIV, ADC_TASK_12V, 500);
   bool is_24v = check_voltage(ADC_24V, ADC_24V_DIV, ADC_TASK_24V, 1000);
 
-  BatteriesDisplay_SetStatus(SYSTEM_MAINS, is_12v && is_24v);
+  system_status.battery_voltage = is_24v;
+
+//  BatteriesDisplay_SetStatus(SYSTEM_MAINS, is_12v && is_24v);
+  BatteriesDisplay_SetStatus(SYSTEM_MAINS, IS_POW_DET);
   BatteriesDisplay_SetStatus(SYSTEM_UNDER_VO, IS_OVER_VO);
   BatteriesDisplay_SetStatus(SYSTEM_OVER_VO, IS_UNDER_VO);
 }

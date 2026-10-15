@@ -426,6 +426,9 @@ void StartDefaultTask(void *argument)
 
     HAL_IWDG_Refresh(&hiwdg);
 
+    system_status.door_sensor = IS_PPF_PD0_DOOR;
+    system_status.flood_sensor = IS_PPF_PD1_FLOOD;
+
     HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
 //    LOG_DEBUG("DefaultTask %d", count++);
     osDelay(500);
