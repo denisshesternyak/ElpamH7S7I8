@@ -44,10 +44,10 @@ typedef enum
   BTN_8 = 22,
   BTN_9 = 23,
 
-  BTN_CHEMICAL = 24,
-  BTN_ALL_CLEAR_60 = 25,
-  BTN_ALL_CLEAR_120 = 26,
-  BTN_ABC = 27,
+  BTN_ABC = 24,
+  BTN_ALL_CLEAR_120 = 25,
+  BTN_ALL_CLEAR_60 = 26,
+  BTN_CHEMICAL = 27,
 
   BTN_ASTERISK = 31, // *
   BTN_HASH = 33, // #
