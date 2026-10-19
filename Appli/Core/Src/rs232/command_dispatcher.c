@@ -21,6 +21,7 @@
 static void send_btn_notify (KeyCode_t btn);
 static void notify_arming (bool arming);
 static void notify_audio (AudioEvent_t event, AudioType_t type);
+static void notify_value (AudioEvent_t event, uint16_t value);
 
 static outputs_handler_t all_outputs_on_handler = NULL;
 static outputs_handler_t all_outputs_off_handler = NULL;
@@ -278,12 +279,13 @@ void handle_reset (UART_HandleTypeDef *huart)
  * @brief Handle Volume Up Command (*VOLnnn, nnn )
  * @param step - volume increase step
  */
-void volume_up_handler (int value)
+void volume_up_handler (uint16_t value)
 {
 //  system_set_volume(value);
 //  player.volume_value = value;
 
-  notify_audio(AUDIO_VOLUME, AUDIO_NONE);
+//  notify_audio(AUDIO_VOLUME, AUDIO_NONE);
+  notify_value(AUDIO_VOLUME_DAC, value);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "VOL UP: %d (now: %d)\r\n", value, system_get_volume());
@@ -298,12 +300,13 @@ void volume_up_handler (int value)
  * @brief Handle Volume Down Command (*VOLnnn, nnn >= 900)
  * @param step - volume decrease step (1..99 after conversion)
  */
-void volume_down_handler (int value)
+void volume_down_handler (uint16_t value)
 {
 //  system_set_volume(value);
 //  player.volume_value = value;
 
-  notify_audio(AUDIO_VOLUME, AUDIO_NONE);
+//  notify_audio(AUDIO_VOLUME, AUDIO_NONE);
+  notify_value(AUDIO_VOLUME_DAC, value);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "VOL DOWN: %d (now: %d)\r\n", value, system_get_volume());
@@ -581,6 +584,20 @@ static void notify_audio (AudioEvent_t event, AudioType_t type)
       .event = event,
       .priority = AUDIO_PRIORITY_HIGH,
       .sample = { .type = type } };
+
+  if (osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10) != osOK)
+  {
+    LOG_WARN("The event from MOTOROLA cannot be handled. The audio queue is full");
+  }
+}
+
+static void notify_value (AudioEvent_t event, uint16_t value)
+{
+  AudioNotify_t audio_notify = {
+      .event = event,
+      .priority = AUDIO_PRIORITY_HIGH,
+      .value = value
+  };
 
   if (osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10) != osOK)
   {

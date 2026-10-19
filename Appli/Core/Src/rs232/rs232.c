@@ -494,7 +494,8 @@ static void process_command (UART_HandleTypeDef *huart, char *cmd)
     if ((cmd[4] == ' ' || (cmd[4] >= '0' && cmd[4] <= '9')) && (cmd[5] >= '0' && cmd[5] <= '9') && (cmd[6] >= '0' && cmd[6] <= '9'))
     {
       volume_value = d1 * 100 + d2 * 10 + d3;
-      if (volume_value >= MIN_VOLUME && volume_value <= MAX_VOLUME && handler_volume_up)
+//      if (volume_value >= MIN_VOLUME && volume_value <= MAX_VOLUME && handler_volume_up)
+      if (volume_value >= MIN_VOLUME_PLAYBACK && volume_value <= MAX_VOLUME_PLAYBACK && handler_volume_up)
 	event = UART_EVENT_VOL_UP;
       else if (volume_value >= 900 && volume_value <= 999 && handler_volume_down)
 	event = UART_EVENT_VOL_DOWN;

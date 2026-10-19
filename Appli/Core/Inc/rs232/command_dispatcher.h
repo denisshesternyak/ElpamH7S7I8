@@ -18,8 +18,8 @@ void handle_reserve_3 (UART_HandleTypeDef *huart);
 void handle_remote_pa (UART_HandleTypeDef *huart);
 void handle_reset (UART_HandleTypeDef *huart);
 
-void volume_up_handler (int step);
-void volume_down_handler (int step);
+void volume_up_handler (uint16_t step);
+void volume_down_handler (uint16_t step);
 
 void system_fill_report (UART_HandleTypeDef *huart);
 

@@ -25,7 +25,8 @@ typedef enum
   AUDIO_PAUSE,
   AUDIO_TIMER,
   AUDIO_ARMIG,
-  AUDIO_VOLUME
+  AUDIO_VOLUME,
+  AUDIO_VOLUME_DAC
 } AudioEvent_t;
 
 typedef enum
@@ -168,6 +169,7 @@ typedef struct
   {
     AudioSample_t sample;
     AudioVolume_t volume;
+    uint16_t value;
     bool arming;
   };
 } AudioNotify_t;

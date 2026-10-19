@@ -58,5 +58,6 @@
 #define DOUBLE_CANCEL		200
 #define VOLUME_TIMER		10
 #define VOLUME_FADE_STEP	7
+#define VOLUME_75mV		120
 
 #endif /* INC_DEFINES_H_ */

@@ -70,7 +70,7 @@ typedef struct
 }UartMessage_t;
 
 typedef void (*rs232_cmd_handler_t) (UART_HandleTypeDef *huart);
-typedef void (*rs232_volume_handler_t) (int step);
+typedef void (*rs232_volume_handler_t) (uint16_t step);
 
 void rs232_init ();
 void rs232_process (UartMessage_t *msg);

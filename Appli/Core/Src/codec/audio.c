@@ -179,6 +179,11 @@ void audio_process (AudioNotify_t *audio_notify)
     case AUDIO_VOLUME:
       audio_volume(&audio_notify->volume);
       break;
+    case AUDIO_VOLUME_DAC:
+      player.volume_task = audio_notify->value;
+      player.volume_current = audio_notify->value;
+      audio_set_volume_playback(audio_notify->value);
+      break;
     default:
       audio_event(audio_notify);
       break;
@@ -812,7 +817,7 @@ static void audio_start_quiet (AudioNotify_t *audio_notify)
 //  LOG_INFO("Start playback quiet test");
 
 //  audio_start_amp_drv();
-  audio_set_volume_playback(120);
+  audio_set_volume_playback(VOLUME_75mV);
 
   init_generation(audio_notify->sample.sin_task);
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
