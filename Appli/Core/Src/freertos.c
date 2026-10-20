@@ -426,6 +426,7 @@ void StartDefaultTask(void *argument)
 
     HAL_IWDG_Refresh(&hiwdg);
 
+    system_status.ac_voltage = IS_POW_DET;
     system_status.door_sensor = IS_PPF_PD0_DOOR;
     system_status.flood_sensor = IS_PPF_PD1_FLOOD;
 

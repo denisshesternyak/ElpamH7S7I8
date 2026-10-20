@@ -138,8 +138,8 @@ void init_generation (SinTask_t sinus)
     case SINUS_400HZ_800HZ_3S_60S:
       init_tone(TONE_MODE_CYCLE_NORAMP, PHASE_INC_400, PHASE_INC_800, 0, 3000, 54000);
       break;
-    case SINUS_420HZ_20MS:
-      init_tone(TONE_MODE_CONSTANT, PHASE_INC_420, PHASE_INC_420, 0, 20, 0);
+    case SINUS_420HZ_1S:
+      init_tone(TONE_MODE_CONSTANT, PHASE_INC_420, PHASE_INC_420, 0, 1000, 0);
       fade_in_sample = FADE_IN_SAMPLE_TEST;
       fade_in_step = FADE_IN_STEP_TEST;
     default:

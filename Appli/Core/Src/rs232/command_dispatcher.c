@@ -264,7 +264,7 @@ void handle_reset (UART_HandleTypeDef *huart)
   system_status_reset();
   LOG_INFO("'*_VOICE' - got the command");
 
-  //system_status_set_mode(SYSTEM_MODE_RESET);
+  system_status_set_mode(SYSTEM_MODE_RESET);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
     //sprintf(debug_msg, "CMD: RESET\r\n");
@@ -324,6 +324,8 @@ void volume_down_handler (uint16_t value)
 void system_fill_report (UART_HandleTypeDef *huart)
 {
   LOG_INFO("'*REPORT' - got the command");
+
+//  system_status_set_mode(SYSTEM_MODE_REPORT);
 
   char response_22[22] = { 0 };
 

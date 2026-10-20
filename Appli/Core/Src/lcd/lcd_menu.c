@@ -641,8 +641,8 @@ void RunAmplifiresTest (void)
     tester_amp_turn_on(i);
     osDelay(10);
 
-    lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_20MS, NULL);
-    osDelay(10);
+    lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_1S, NULL);
+    osDelay(900);
 
     bool is_amp = check_voltage(ADC_AMPLIFIER_MEAS, ADC_AMP_DIV, ADC_TASK_AMP, 20);
     bool is_cur = check_voltage(ADC_CURRENT_MEAS, ADC_CUR_DIV, ADC_TASK_CUR, 100);
@@ -666,6 +666,7 @@ void RunAmplifiresTest (void)
 void RunDriversTest (void)
 {
   LOG_INFO("Start drivers test");
+  system_status_set_mode(SYSTEM_MODE_QUIET_TEST);
 
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
   osDelay(10);
@@ -679,11 +680,12 @@ void RunDriversTest (void)
     OSC_ON;
     osDelay(5);
 
-    lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_20MS, NULL);
-    osDelay(10);
+    lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_1S, NULL);
+    osDelay(900);
 
     bool is_drv = check_voltage(ADC_DRIVER_MEAS, ADC_DRV_DIV, ADC_TASK_DRV, 100);
     bool is_cur = check_voltage(ADC_CURRENT_MEAS, ADC_CUR_DIV, ADC_TASK_CUR, 100);
+    system_status.amplifier_driver[i] = is_drv;
     osDelay(10);
 
     lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
@@ -1340,6 +1342,7 @@ bool hot_key_handle_button (KeyEvent_t event)
     case BTN_ANNOUNCEMENT:
       if (currentMenu == announcementMenu)
 	return true;
+      system_status_set_mode(SYSTEM_MODE_VOICE);
 //      player.is_fade_stoped = true;
       check_playing_and_stop();
       prepare_announcement();
@@ -1369,6 +1372,7 @@ bool hot_key_handle_button (KeyEvent_t event)
       return true;
 
     case BTN_ARM:
+      system_status_set_mode(SYSTEM_MODE_ARMING);
       lcd_notify_arming(true);
 //      tester_all_on();
       return true;
@@ -1381,21 +1385,25 @@ bool hot_key_handle_button (KeyEvent_t event)
 
     case BTN_CHEMICAL:
       if (!lcd_get_arming || !lcd_get_arming()) return true;
+      system_status_set_mode(SYSTEM_MODE_CHEMICAL);
       run_hot_playback(SINUS_ALARM_90S);
       return true;
 
     case BTN_ALL_CLEAR_60:
       if (!lcd_get_arming || !lcd_get_arming()) return true;
+      system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_1);
       run_hot_playback(SINUS_ALL_CLEAR_60S);
       return true;
 
     case BTN_ALL_CLEAR_120:
       if (!lcd_get_arming || !lcd_get_arming()) return true;
+      system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_2);
       run_hot_playback(SINUS_ALL_CLEAR_120S);
       return true;
 
     case BTN_ABC:
       if (!lcd_get_arming || !lcd_get_arming()) return true;
+      system_status_set_mode(SYSTEM_MODE_ALARM_WAIL);
       run_hot_playback(SINUS_ABC_120S);
       return true;
 
@@ -1548,8 +1556,10 @@ static void alarm_info_menu_handler (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_CXL:
+      system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
       lcd_notify_arming(false);
     case BTN_ESC:
+      system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
       if (!is_double_cancel)
       {
 	is_double_cancel = true;
@@ -1562,6 +1572,7 @@ static void alarm_info_menu_handler (KeyEvent_t event)
       break;
 
     case BTN_RETURN_MENU:
+      system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
       lcd_esc(alarm_info_menu);
       break;
 
@@ -1578,8 +1589,10 @@ static void message_info_menu_handler (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_CXL:
+      system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
       lcd_notify_arming(false);
     case BTN_ESC:
+      system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
       if (!is_double_cancel)
       {
 	is_double_cancel = true;
@@ -1592,6 +1605,7 @@ static void message_info_menu_handler (KeyEvent_t event)
       break;
 
     case BTN_RETURN_MENU:
+      system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
       lcd_esc(messagePlayMenu);
 
     default:
@@ -1607,8 +1621,10 @@ static void sinus_info_menu_handler (KeyEvent_t event)
   switch (event.button)
   {
     case BTN_CXL:
+      system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
       lcd_notify_arming(false);
     case BTN_ESC:
+      system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
       if (!is_double_cancel)
       {
 	is_double_cancel = true;
@@ -1621,6 +1637,7 @@ static void sinus_info_menu_handler (KeyEvent_t event)
       break;
 
     case BTN_RETURN_MENU:
+      system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
       lcd_esc(sinusInfoMenu);
 
     default:
@@ -1770,6 +1787,7 @@ static void volume_control_handler (KeyEvent_t event)
       osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
       break;
     case BTN_ESC:
+      system_status_set_mode(SYSTEM_MODE_CANCEL_IMMEDIATE);
       lcd_audio_notify(AUDIO_STOP, AUDIO_MIC);
       currentMenu = currentMenu->parent;
       draw_menuScreen(true);

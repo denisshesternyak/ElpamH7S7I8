@@ -1,4 +1,4 @@
-#include <audio.h>
+#include "audio.h"
 #include "lcd_types.h"
 #include "math.h"
 #include "FreeRTOS.h"
@@ -353,9 +353,13 @@ static void audio_arming (bool arming)
   player.is_arming = arming;
 
   if(player.is_arming)
+  {
     osTimerStart(ArmTimerHandle, ARMING_TIME);
+  }
   else
+  {
     osTimerStop(ArmTimerHandle);
+  }
 }
 
 static void audio_timer (void)
@@ -455,6 +459,7 @@ uint8_t audio_get_volume_task()
 
 void audio_arm_timeout (void)
 {
+  system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
   player.is_arming = false;
   LOG_DEBUG("ARM time's up");
 }
@@ -501,6 +506,7 @@ static void audio_start_sinus (AudioNotify_t *audio_notify)
     return;
 
   audio_start_amp_drv();
+  system_status.main_tone = true;
 
   LOG_INFO("Start playback sinus");
 
@@ -537,6 +543,7 @@ static void audio_stop_sinus (void)
   if (!player.is_playing)
     return;
 
+  system_status.main_tone = false;
   stop_playback();
   audio_cmd_playback_disable();
 
@@ -557,6 +564,8 @@ static void audio_start_sd (AudioNotify_t *audio_notify)
 {
   if (!audio_notify->sample.filename || !player.is_arming)
     return;
+
+  system_status.main_tone = true;
 
   audio_start_amp_drv();
 
@@ -610,6 +619,8 @@ static void audio_stop_sd (void)
   if (!player.is_playing)
     return;
 
+  system_status.main_tone = false;
+
   stop_playback();
   audio_cmd_playback_disable();
 
@@ -638,6 +649,7 @@ static void audio_prepare_stop_sd (void)
 static void audio_start_mic (void)
 {
   LOG_INFO("Start playback announcement");
+  system_status.main_tone = true;
 
   audio_start_amp_drv();
 
@@ -656,6 +668,8 @@ static void audio_stop_mic (void)
 {
   if (!player.is_announcement)
     return;
+
+  system_status.main_tone = false;
 
   audio_stop_amp_drv();
 
@@ -678,6 +692,8 @@ static void audio_start_motorola (void)
   if(player.is_motorola || !player.is_arming)
     return;
 
+  system_status.main_tone = true;
+
   audio_start_amp_drv();
 
   player.is_motorola = true;
@@ -695,6 +711,8 @@ static void audio_play_motorola (void)
 
 static void audio_stop_motorola (void)
 {
+  system_status.main_tone = false;
+
   audio_stop_amp_drv();
 
   player.is_motorola = false;
@@ -713,6 +731,8 @@ static void audio_prepare_stop_motorola (void)
 // DTMF
 static void audio_start_dtmf (void)
 {
+  system_status.main_tone = true;
+
   audio_start_amp_drv();
 
   LOG_INFO("Start record DTMF");
@@ -788,7 +808,8 @@ static void audio_play_dtmf (void)
 
 static void audio_stop_dtmf (void)
 {
-  LOG_INFO("Stop record DTMF");
+//  LOG_INFO("Stop record DTMF");
+  system_status.main_tone = false;
 
   if (!player.is_recording)
     return;
@@ -817,6 +838,7 @@ static void audio_start_quiet (AudioNotify_t *audio_notify)
 //  LOG_INFO("Start playback quiet test");
 
 //  audio_start_amp_drv();
+  system_status.secondary_tone = true;
   audio_set_volume_playback(VOLUME_75mV);
 
   init_generation(audio_notify->sample.sin_task);
@@ -832,7 +854,7 @@ static void audio_stop_quiet (void)
     return;
 
 //  audio_stop_amp_drv();
-
+  system_status.secondary_tone = false;
   audio_cmd_quiet_disable();
   stop_playback();
   audio_set_volume_playback(player.volume_task);
@@ -847,7 +869,7 @@ static void audio_start_test (AudioNotify_t *audio_notify)
     return;
 
 //  LOG_INFO("Start playback test");
-  audio_set_volume_playback(120);
+  audio_set_volume_playback(VOLUME_75mV);
 
   init_generation(audio_notify->sample.sin_task);
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
