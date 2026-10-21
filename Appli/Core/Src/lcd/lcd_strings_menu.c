@@ -20,6 +20,7 @@ static const char* menu_header_str[][LANG_COUNT] = {
   { "### Language ###", "### ™”„ ###" },
   { "### SW update ###", "### ’ƒ‹… „š…‹„ ###" },
   { "### Volume ###", "### ”‡ ###" },
+  { "### Driver ###", "### ƒ˜‰‰˜ ###" },
   { "### Logging ###", "### ˜‰™… ###" },
   { "### Motorola ###", "### Ž…ˆ…˜…Œ„ ###" },
   { "### Confirming ###", "### Ž€™˜ ###" }
@@ -50,6 +51,7 @@ static const char* maintenance_menu_items_str[][LANG_COUNT] = {
   { "Language select", "‡‰˜š ™”„" },
   { "Software update", "’ƒ‹… „š…‹„" },
   { "Volume level", "’…–Žš —…Œ" },
+  { "Driver type", "‘…‚ ƒ˜‰‰˜" },
   { "Logging", "˜‰™…" }
 };
 const uint8_t MAINTENCE_MENU_ITEM_COUNT = ARRAY_SIZE(maintenance_menu_items_str);
@@ -80,6 +82,13 @@ static const char* sel_confirm_str[][LANG_COUNT] = {
   { "NO", "Œ€" }
 };
 const uint8_t SEL_CONFIRM_COUNT = ARRAY_SIZE(sel_confirm_str);
+
+static const char* sel_driver_str[][LANG_COUNT] = {
+  { "Kingstar", "Kingstar" },
+  { "Atlas", "Atlas" },
+  { "Jingsu", "Jingsu" }
+};
+const uint8_t SEL_DRIVER_COUNT = ARRAY_SIZE(sel_driver_str);
 
 const char* get_menu_header_str(uint8_t task, Language lang)
 {
@@ -121,6 +130,12 @@ const char* get_sel_confirm_str(uint8_t task, Language lang)
 {
   if (task >= SEL_CONFIRM_COUNT) return "";
   return sel_confirm_str[task][lang];
+}
+
+const char* get_sel_driver_str(uint8_t task, Language lang)
+{
+  if (task >= SEL_DRIVER_COUNT) return "";
+  return sel_driver_str[task][lang];
 }
 
 //char* get_menu_items_str(uint8_t task, Language lang)

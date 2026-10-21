@@ -24,8 +24,8 @@ typedef enum
   ADC_12V,
   ADC_24V,
   ADC_CURRENT_MEAS,
-  ADC_AMPLIFIER_MEAS,
-  ADC_DRIVER_MEAS
+  ADC_DRIVER_MEAS,
+  ADC_AMPLIFIER_MEAS
 } ADC_channel;
 
 void analog_init (void);

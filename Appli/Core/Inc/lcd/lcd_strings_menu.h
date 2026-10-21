@@ -28,6 +28,7 @@ typedef enum {
 	STR_HEADER_LANGUAGES,
 	STR_HEADER_SOFTWARE,
 	STR_HEADER_VOLUME,
+	STR_HEADER_DRIVER,
 	STR_HEADER_LOG,
 	STR_HEADER_MOTOROLA,
 	STR_HEADER_CONFIRM
@@ -49,6 +50,7 @@ typedef enum {
 	STR_LANGUAGES,
 	STR_SOFTWARE_UPDATE,
 	STR_VOLUME_UPDATE,
+	STR_DRIVER_UPDATE,
 	STR_LOGGING,
 	STR_SINUS_420HZ_120S = 0,
 	STR_SINUS_1000HZ_120S,
@@ -72,7 +74,7 @@ const char* get_maintenance_menu_items_str(uint8_t task, Language lang);
 const char* get_sinus_menu_items_str(uint8_t task, Language lang);
 const char* get_service_str(uint8_t task, Language lang);
 const char* get_sel_confirm_str(uint8_t task, Language lang);
-
+const char* get_sel_driver_str(uint8_t task, Language lang);
 //const char* get_menu_items_str(uint8_t task, Language lang);
 
 extern const uint8_t MENU_HEADER_ITEM_COUNT;
@@ -82,6 +84,7 @@ extern const uint8_t MAINTENCE_MENU_ITEM_COUNT;
 extern const uint8_t SINUS_ITEM_COUNT;
 extern const uint8_t SERVICE_COUNT;
 extern const uint8_t SEL_CONFIRM_COUNT;
+extern const uint8_t SEL_DRIVER_COUNT;
 
 //extern const uint8_t MENU_ITEMS_COUNT;
 

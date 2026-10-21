@@ -20,6 +20,7 @@
 #include "lcd_widget_report_indicator.h"
 #include "lcd_widget_motorola.h"
 #include "lcd_widget_volume.h"
+#include "lcd_widget_driver.h"
 #include "lcd_widget_logging.h"
 #include "app_freertos.h"
 #include "rtc.h"
@@ -66,6 +67,7 @@ Menu *sinusInfoMenu = NULL;
 Menu *motorolaInfoMenu = NULL;
 Menu* passwordMenu = NULL;
 Menu* volumeMenu = NULL;
+Menu* driverMenu = NULL;
 Menu* confirmMenu = NULL;
 Menu* loggingMenu = NULL;
 //static uint8_t volumeValue = 10;
@@ -129,6 +131,7 @@ static void lcd_notify_start_task_low (AudioType_t type,
 				  const char *name);
 static void lcd_notify_arming (bool arming);
 static void menu_init_language (void);
+static void menu_init_driver (void);
 
 static bool hot_key_handle_button (KeyEvent_t event);
 static void passwordMenu_handle_button_press(KeyEvent_t event);
@@ -143,6 +146,7 @@ static void idle_menu_handler (KeyEvent_t event);
 static void volume_control_handler (KeyEvent_t event);
 static void maintenance_handle_button_press (KeyEvent_t event);
 static void volumeMenu_handle_button_press (KeyEvent_t event);
+static void driverMenu_handle_button_press (KeyEvent_t event);
 static void confirmMenu_handle_button_press (KeyEvent_t event);
 static void loggingMenu_handle_button_press (KeyEvent_t event);
 ///////////////////////////////////////////////////////////////////
@@ -292,6 +296,7 @@ void menu_init (void)
   motorolaInfoMenu = &menuPool[menuPoolIndex++];
   passwordMenu = &menuPool[menuPoolIndex++];
   volumeMenu = &menuPool[menuPoolIndex++];
+  driverMenu = &menuPool[menuPoolIndex++];
   confirmMenu = &menuPool[menuPoolIndex++];
   loggingMenu = &menuPool[menuPoolIndex++];
 
@@ -492,6 +497,12 @@ void menu_init (void)
 	  .submenu = volumeMenu };
   maintenanceMenu->items[4] = (MenuItem ) {
 	  .name = {
+	      get_maintenance_menu_items_str(STR_DRIVER_UPDATE, LANG_EN),
+	      get_maintenance_menu_items_str(STR_DRIVER_UPDATE, LANG_HE) },
+	  .prepareAction = &menu_init_driver,
+	  .submenu = driverMenu };
+  maintenanceMenu->items[5] = (MenuItem ) {
+	  .name = {
 	      get_maintenance_menu_items_str(STR_LOGGING, LANG_EN),
 	      get_maintenance_menu_items_str(STR_LOGGING, LANG_HE) },
 	  .prepareAction = &Logging_Init,
@@ -531,6 +542,12 @@ void menu_init (void)
   volumeMenu->type = MENU_TYPE_VOLUME;
   volumeMenu->buttonHandler = volumeMenu_handle_button_press;
 
+  driverMenu->parent = maintenanceMenu;
+  driverMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_DRIVER, LANG_EN);
+  driverMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_DRIVER, LANG_HE);
+  driverMenu->type = MENU_TYPE_LIST;
+  driverMenu->buttonHandler = driverMenu_handle_button_press;
+
   loggingMenu->parent = maintenanceMenu;
   loggingMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_LOG, LANG_EN);
   loggingMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_LOG, LANG_HE);
@@ -563,6 +580,8 @@ void menu_init (void)
   draw_status_bar();
   update_date_time();
   draw_menuScreen(true);
+
+  Read_Current_Driver();
 }
 
 static void menu_draw_image (Menu *menu)
@@ -642,10 +661,12 @@ void RunAmplifiresTest (void)
     osDelay(10);
 
     lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_1S, NULL);
-    osDelay(900);
+    osDelay(990);
 
     bool is_amp = check_voltage(ADC_AMPLIFIER_MEAS, ADC_AMP_DIV, ADC_TASK_AMP, 20);
     bool is_cur = check_voltage(ADC_CURRENT_MEAS, ADC_CUR_DIV, ADC_TASK_CUR, 100);
+    bool is_drv = check_voltage(ADC_DRIVER_MEAS, ADC_DRV_DIV, ADC_TASK_DRV, 100);
+
     osDelay(10);
 
     lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
@@ -856,6 +877,27 @@ void menu_init_language (void)
   }
 
   languageMenu->itemCount = LANG_COUNT;
+}
+
+void menu_init_driver (void)
+{
+  if (!driverMenu)
+    return;
+
+  clear_menu(driverMenu);
+
+  for (uint8_t i = 0; i < SEL_DRIVER_COUNT && i < MAX_MENU_ITEMS; ++i)
+  {
+    char langSel = (Get_Current_Driver() == i) ? '*' : ' ';
+    sprintf(listFilenames[i], "%s %c", get_sel_driver_str(i, GetLanguage()), langSel);
+
+    for (uint8_t j = 0; j < LANG_COUNT; j++)
+    {
+      driverMenu->items[i].name[j] = listFilenames[i];
+    }
+  }
+
+  driverMenu->itemCount = SEL_DRIVER_COUNT;
 }
 
 static void siren_info_prepare_action (void)
@@ -1745,6 +1787,24 @@ static void volumeMenu_handle_button_press (KeyEvent_t event)
     default:
       break;
   }
+}
+
+static void driverMenu_handle_button_press (KeyEvent_t event)
+{
+  if (!driverMenu || driverMenu->itemCount == 0)
+    return;
+
+  switch (event.button)
+  {
+    case BTN_ENTER:
+      Set_Current_Driver(driverMenu->currentSelection);
+      menu_init_driver();
+      draw_menuScreen(false);
+      return;
+    default:
+      break;
+  }
+  handle_button_press(event);
 }
 
 //void sinus_info_menu_handler(KeyEvent_t event)
