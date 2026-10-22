@@ -16,8 +16,8 @@
 #define ADC_TASK_12V 		12000U
 #define ADC_TASK_24V 		24000U
 #define ADC_TASK_CUR 		1000U
-#define ADC_TASK_AMP 		100U
-#define ADC_TASK_DRV 		1000U
+#define ADC_TASK_AMP 		150U
+#define ADC_TASK_DRV 		3000U
 
 typedef enum
 {

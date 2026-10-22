@@ -43,12 +43,12 @@ bool check_voltage (ADC_channel n_ch, uint16_t vDiv, uint16_t task_mv, uint16_t 
   uint16_t val_adc = get_adc_value(n_ch);
   uint16_t val_mv = getRDataD(vDiv, val_adc);
 
-  printf("%d, %d, %d, %d, %d\r\n",
-	    adc_buff[0],
-	    adc_buff[1],
-	    adc_buff[2],
-	    adc_buff[3],
-	    adc_buff[4]);
+//  printf("%d, %d, %d, %d, %d\r\n",
+//	    adc_buff[0],
+//	    adc_buff[1],
+//	    adc_buff[2],
+//	    adc_buff[3],
+//	    adc_buff[4]);
 
 //  printf("ch %d, adc %d, mv %d\r\n", n_ch, val_adc, val_mv);
 

@@ -663,8 +663,14 @@ void RunAmplifiresTest (void)
     lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_1S, NULL);
     osDelay(990);
 
-    bool is_amp = check_voltage(ADC_AMPLIFIER_MEAS, ADC_AMP_DIV, ADC_TASK_AMP, 20);
-    bool is_cur = check_voltage(ADC_CURRENT_MEAS, ADC_CUR_DIV, ADC_TASK_CUR, 100);
+    uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
+    uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
+    bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 100);
+    LOG_INFO("Amp %d: ADC %d, %dmV, res %d", i, val_adc, val_mv, res);
+
+    val_adc = get_adc_value(ADC_CURRENT_MEAS);
+    val_mv = getRDataD(ADC_CUR_DIV, val_adc);
+    LOG_INFO("Cur %d: ADC %d, %dmV", i, val_adc, val_mv);
 
     osDelay(10);
 
@@ -672,8 +678,9 @@ void RunAmplifiresTest (void)
     osDelay(10);
 
     tester_amp_turn_off(i);
+    TestAmplDisplay_SetStatus(i, res);
+    system_status.amplifier_driver[i] = res;
 
-    TestAmplDisplay_SetStatus(i, is_amp);
     osDelay(10);
   }
 
@@ -701,11 +708,17 @@ void RunDriversTest (void)
     osDelay(5);
 
     lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_1S, NULL);
-    osDelay(900);
+    osDelay(990);
 
-    bool is_drv = check_voltage(ADC_DRIVER_MEAS, ADC_DRV_DIV, ADC_TASK_DRV, 100);
-    bool is_cur = check_voltage(ADC_CURRENT_MEAS, ADC_CUR_DIV, ADC_TASK_CUR, 100);
-    system_status.amplifier_driver[i] = is_drv;
+    uint16_t val_adc = get_adc_value(ADC_DRIVER_MEAS);
+    uint16_t val_mv = getRDataD(ADC_DRV_DIV, val_adc);
+    bool res = cmp_with_delta(ADC_TASK_DRV, val_mv, 100);
+    LOG_INFO("Drv %d: ADC %d, %dmV, res %d", i, val_adc, val_mv, res);
+
+    val_adc = get_adc_value(ADC_CURRENT_MEAS);
+    val_mv = getRDataD(ADC_CUR_DIV, val_adc);
+    LOG_INFO("Cur %d: ADC %d, %dmV", i, val_adc, val_mv);
+
     osDelay(10);
 
     lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
@@ -715,7 +728,8 @@ void RunDriversTest (void)
     osDelay(5);
     tester_amp_turn_off(i);
 
-    TestDrvDisplay_SetStatus(i, is_drv);
+    TestDrvDisplay_SetStatus(i, res);
+    system_status.amplifier_driver[i] = res;
     osDelay(10);
   }
 
