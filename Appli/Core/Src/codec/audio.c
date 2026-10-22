@@ -869,7 +869,7 @@ static void audio_start_test (AudioNotify_t *audio_notify)
     return;
 
 //  LOG_INFO("Start playback test");
-  audio_set_volume_playback(VOLUME_75mV);
+//  audio_set_volume_playback(VOLUME_75mV);
 
   init_generation(audio_notify->sample.sin_task);
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);

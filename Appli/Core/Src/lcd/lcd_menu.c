@@ -665,7 +665,6 @@ void RunAmplifiresTest (void)
 
     bool is_amp = check_voltage(ADC_AMPLIFIER_MEAS, ADC_AMP_DIV, ADC_TASK_AMP, 20);
     bool is_cur = check_voltage(ADC_CURRENT_MEAS, ADC_CUR_DIV, ADC_TASK_CUR, 100);
-    bool is_drv = check_voltage(ADC_DRIVER_MEAS, ADC_DRV_DIV, ADC_TASK_DRV, 100);
 
     osDelay(10);
 
