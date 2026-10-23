@@ -635,10 +635,12 @@ void RunSilentTest (void)
 
 void RunBatteriesTest (void)
 {
-//  bool is_12v = check_voltage(ADC_12V, ADC_12V_DIV, ADC_TASK_12V, 500);
-  bool is_24v = check_voltage(ADC_24V, ADC_24V_DIV, ADC_TASK_24V, 1000);
+  uint16_t val_adc = get_adc_value(ADC_24V);
+  uint16_t val_mv = getRDataD(ADC_24V_DIV, val_adc);
+  bool res = cmp_with_delta(ADC_TASK_24V, val_mv, 1000);
+  LOG_INFO("Batt 24V: ADC %d, %dmV, res %d", val_adc, val_mv, res);
 
-  system_status.battery_voltage = is_24v;
+  system_status.battery_voltage = res;
 
 //  BatteriesDisplay_SetStatus(SYSTEM_MAINS, is_12v && is_24v);
   BatteriesDisplay_SetStatus(SYSTEM_MAINS, IS_POW_DET);
@@ -666,11 +668,11 @@ void RunAmplifiresTest (void)
     uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
     uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
     bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 100);
-    LOG_INFO("Amp %d: ADC %d, %dmV, res %d", i, val_adc, val_mv, res);
+    LOG_INFO("Amp %d: ADC %d, %dmV, res %d", i+1, val_adc, val_mv, res);
 
     val_adc = get_adc_value(ADC_CURRENT_MEAS);
     val_mv = getRDataD(ADC_CUR_DIV, val_adc);
-    LOG_INFO("Cur %d: ADC %d, %dmV", i, val_adc, val_mv);
+    LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
 
     osDelay(10);
 
@@ -713,11 +715,11 @@ void RunDriversTest (void)
     uint16_t val_adc = get_adc_value(ADC_DRIVER_MEAS);
     uint16_t val_mv = getRDataD(ADC_DRV_DIV, val_adc);
     bool res = cmp_with_delta(ADC_TASK_DRV, val_mv, 100);
-    LOG_INFO("Drv %d: ADC %d, %dmV, res %d", i, val_adc, val_mv, res);
+    LOG_INFO("Drv %d: ADC %d, %dmV, res %d", i+1, val_adc, val_mv, res);
 
     val_adc = get_adc_value(ADC_CURRENT_MEAS);
     val_mv = getRDataD(ADC_CUR_DIV, val_adc);
-    LOG_INFO("Cur %d: ADC %d, %dmV", i, val_adc, val_mv);
+    LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
 
     osDelay(10);
 
