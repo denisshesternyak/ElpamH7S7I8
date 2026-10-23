@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 //static uint16_t adc_buff[ADC_BUFF_SIZE];
-static uint16_t adc_buff[ADC_BUFF_SIZE] __attribute__((section(".adc_dma_buffer"), aligned(32)));
+static uint16_t adc_buff[ADC_BUFF_SIZE] __attribute__((section("noncacheable_buffer"), aligned(32)));
 
 void analog_init (void)
 {
@@ -17,7 +17,6 @@ void analog_init (void)
   {
     Error_Handler();
   }
-  volatile uintptr_t adc_buff_addr = (uintptr_t)adc_buff;
 }
 
 bool cmp_with_delta (uint16_t v1, uint16_t v2, uint16_t delta)

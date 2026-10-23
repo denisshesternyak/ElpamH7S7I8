@@ -140,7 +140,7 @@ void HAL_I2S_MspInit(I2S_HandleTypeDef* i2sHandle)
     handle_GPDMA1_Channel4.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
     handle_GPDMA1_Channel4.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel4.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel4.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel4.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT1;
     handle_GPDMA1_Channel4.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel4.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel4) != HAL_OK)
@@ -166,7 +166,7 @@ void HAL_I2S_MspInit(I2S_HandleTypeDef* i2sHandle)
     NodeConfig.Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
     NodeConfig.Init.SrcBurstLength = 1;
     NodeConfig.Init.DestBurstLength = 1;
-    NodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
+    NodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT1|DMA_DEST_ALLOCATED_PORT0;
     NodeConfig.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     NodeConfig.Init.Mode = DMA_NORMAL;
     NodeConfig.TriggerConfig.TriggerPolarity = DMA_TRIG_POLARITY_MASKED;

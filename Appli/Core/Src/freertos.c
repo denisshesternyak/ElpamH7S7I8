@@ -425,9 +425,12 @@ void StartDefaultTask(void *argument)
     }
 
     HAL_IWDG_Refresh(&hiwdg);
-    LOG_DEBUG("12v %d, 24v %d",
-		getRData(1, get_adc_value(ADC_12V)),
-		getRData(1, get_adc_value(ADC_24V)));
+//    printf("%d, %d, %d, %d, %d\r\n",
+//    	  get_adc_value(ADC_12V),
+//    	  get_adc_value(ADC_24V),
+//    	  get_adc_value(ADC_CURRENT_MEAS),
+//    	  get_adc_value(ADC_AMPLIFIER_MEAS),
+//    	  get_adc_value(ADC_DRIVER_MEAS));
 
     system_status.ac_voltage = IS_POW_DET;
     system_status.door_sensor = IS_PPF_PD0_DOOR;

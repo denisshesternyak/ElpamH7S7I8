@@ -181,12 +181,12 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM
 
-  .adc_dma_buffer (NOLOAD) :
-{
-    . = ALIGN(32);
-    KEEP(*(.adc_dma_buffer))
-    . = ALIGN(32);
-} > RAM_NONCACHEABLEBUFFER
+  RW_NONCACHEABLE :
+  {
+    __NONCACHEABLEBUFFER_BEGIN = .;/* create symbol for start of section */
+    KEEP(*(noncacheable_buffer))
+    __NONCACHEABLEBUFFER_END = .;  /* create symbol for start of section */
+  } > RAM_NONCACHEABLEBUFFER
   
    .extram (NOLOAD) :
   {
