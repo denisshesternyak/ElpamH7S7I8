@@ -68,7 +68,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-//#define SELFTEST
+#define SELFTEST
 #ifdef SELFTEST
 __IO bool is_selftest = false;
 osThreadId_t TestsTaskHandle;
@@ -241,6 +241,8 @@ void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef *hrtc)
   osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
   osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 0);
 }
+
+void CreateAppTasks();
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -330,7 +332,8 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
 #ifdef SELFTEST
   TestsTaskHandle = osThreadNew(StartTestsTask, NULL, &testsTask_attributes);
-#endif
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+#else
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -359,7 +362,7 @@ void MX_FREERTOS_Init(void) {
   DTMFTaskHandle = osThreadNew(StartDTMFTask, NULL, &DTMFTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-
+#endif
   /* USER CODE END RTOS_THREADS */
 
   /* creation of KeyboardEvent */
@@ -378,6 +381,16 @@ void MX_FREERTOS_Init(void) {
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
+void CreateAppTasks()
+{
+  UartTaskHandle = osThreadNew(StartUartTask, NULL, &UartTask_attributes);
+  AudioTaskHandle = osThreadNew(StartAudioTask, NULL, &AudioTask_attributes);
+  LcdTaskHandle = osThreadNew(StartLcdTask, NULL, &LcdTask_attributes);
+  KeyboardTaskHandle = osThreadNew(StartKeyboardTask, NULL, &KeyboardTask_attributes);
+  LoggerTaskHandle = osThreadNew(StartLoggerTask, NULL, &LoggerTask_attributes);
+  SDTaskHandle = osThreadNew(StartSDTask, NULL, &SDTask_attributes);
+  DTMFTaskHandle = osThreadNew(StartDTMFTask, NULL, &DTMFTask_attributes);
+}
 /**
  * @brief  Function implementing the defaultTask thread.
  * @param  argument: Not used
@@ -813,18 +826,7 @@ void VolumeCallback(void *argument)
 #ifdef SELFTEST
 void StartTestsTask (void *argument)
 {
-  vTaskSuspendAll();
-
   is_selftest = true;
-
-  osThreadTerminate(UartTaskHandle);
-  osThreadTerminate(AudioTaskHandle);
-  osThreadTerminate(LcdTaskHandle);
-  osThreadTerminate(KeyboardTaskHandle);
-  osThreadTerminate(LoggerTaskHandle);
-  osThreadTerminate(SDTaskHandle);
-
-  xTaskResumeAll();
 
   HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_SET);
 
@@ -832,12 +834,9 @@ void StartTestsTask (void *argument)
 
   test_board();
 
-  UartTaskHandle = osThreadNew(StartUartTask, NULL, &UartTask_attributes);
-  AudioTaskHandle = osThreadNew(StartAudioTask, NULL, &AudioTask_attributes);
-  LcdTaskHandle = osThreadNew(StartLcdTask, NULL, &LcdTask_attributes);
-  KeyboardTaskHandle = osThreadNew(StartKeyboardTask, NULL, &KeyboardTask_attributes);
-  LoggerTaskHandle = osThreadNew(StartLoggerTask, NULL, &LoggerTask_attributes);
-  SDTaskHandle = osThreadNew(StartSDTask, NULL, &SDTask_attributes);
+  HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_RESET);
+
+  CreateAppTasks();
 
   is_selftest = false;
   osThreadTerminate(TestsTaskHandle);

@@ -81,7 +81,7 @@ static bool test_i2c3()
 
   while (res == HAL_OK && HAL_I2C_IsDeviceReady(&hi2c3, 0xA0, 3, 100) != HAL_OK);
 
-  res = HAL_I2C_Mem_Read(&hi2c3, 0xA0, 0x0000, I2C_MEMADD_SIZE_16BIT, data_rx, len, 100);
+  res = HAL_I2C_Mem_Read(&hi2c3, 0xA0, reg, I2C_MEMADD_SIZE_16BIT, data_rx, len, 100);
   if(res != HAL_OK)
       return false;
 
@@ -305,8 +305,6 @@ bool test_board(void)
   osDelay(10000);
 
   hx8357_fill_screen(COLOR_BLACK);
-
-  HAL_GPIO_WritePin(LCD_PWM_GPIO_Port, LCD_PWM_Pin, GPIO_PIN_RESET);
 
   return true;
 }
