@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 //static uint16_t adc_buff[ADC_BUFF_SIZE];
-static uint16_t adc_buff[ADC_BUFF_SIZE] __attribute__((section("noncacheable_buffer"), aligned(32)));
+static uint16_t adc_buff[ADC_BUFF_SIZE] __attribute__((section(".noncacheable_buffer"), aligned(32)));
 
 void analog_init (void)
 {
