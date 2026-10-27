@@ -124,11 +124,11 @@ static void dtmf_check (DTMFMessage_t *msg)
 //    fl = true;
 //  }
 
-  for(uint8_t j = 0; j < 30; j++)
-  {
-    printf("%04x ", msg->data[j]);
-  }
-  printf("\r\n\r\n");
+//  for(uint8_t j = 0; j < 30; j++)
+//  {
+//    printf("%04x ", msg->data[j]);
+//  }
+//  printf("\r\n\r\n");
 
 
 

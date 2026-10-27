@@ -282,12 +282,7 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 //	osEventFlagsSet(DTMFEventHandle, LOCAL_EVENT);
 
 	printf("EXT_LOCAL\r\n");
-
-	DTMFMessage_t msg;
-	msg.event = DTMF_START;
-	msg.data = NULL;
-
-	osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+	goto dtmf;
       }
       break;
     case RING_Pin:
@@ -297,14 +292,18 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 //	osEventFlagsSet(DTMFEventHandle, RING_EVENT);
 
 	printf("EXT_RING\r\n");
-
-	DTMFMessage_t msg;
-	msg.event = DTMF_START;
-	msg.data = NULL;
-
-	osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+	goto dtmf;
       }
       break;
   }
+
+  return;
+
+dtmf:
+  DTMFMessage_t msg;
+  msg.event = DTMF_START;
+  msg.data = NULL;
+
+  osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
 }
 /* USER CODE END 2 */
