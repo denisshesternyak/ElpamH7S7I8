@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 void Init_Current_Driver (void);
+void Read_Current_Driver (void);
 uint8_t Get_Current_Driver(void);
 void Set_Current_Driver (uint8_t value);
 uint8_t get_min_ohm (void);

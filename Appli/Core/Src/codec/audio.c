@@ -87,6 +87,7 @@ static void audio_prepare_stop_dtmf (void);
 
 // QUIET
 static void audio_start_quiet (AudioNotify_t *audio_notify);
+static void audio_play_quiet (void);
 static void audio_stop_quiet (void);
 
 // TEST
@@ -274,6 +275,9 @@ static void audio_play (AudioNotify_t *audio_notify)
       break;
     case AUDIO_DTMF:
       audio_play_dtmf();
+      break;
+    case AUDIO_QUIET:
+      audio_play_quiet();
       break;
     case AUDIO_TEST:
       audio_play_test();
@@ -846,6 +850,24 @@ static void audio_start_quiet (AudioNotify_t *audio_notify)
 
   audio_cmd_quiet_enable();
   start_playback();
+}
+
+static void audio_play_quiet (void)
+{
+  if (player.is_prepare_stoped)
+  {
+    player.is_stoped = true;
+    return;
+  }
+
+  uint32_t offset =
+      (player.buff_state == BUFFER_HALF) ? 0 : AUDIO_HALF_BUFFER_SIZE;
+  uint8_t *buf_ptr = dma_buffer_tx + offset;
+
+  audio_generate_sine(&player, buf_ptr, AUDIO_STEREO_PAIRS_HALF);
+
+  player.buff_state = BUFFER_IDLE;
+  player.event = AUDIO_PLAY;
 }
 
 static void audio_stop_quiet (void)

@@ -14,9 +14,15 @@
 #define INDICATOR_START_Y           0
 #define INDICATOR_SPACING_Y         25
 
+typedef enum {
+  STATUS_LIST_IDLE,
+  STATUS_LIST_OK,
+  STATUS_LIST_BAD
+} StatusIndTest_t;
+
 typedef struct {
     const char* label;
-    bool status;
+    StatusIndTest_t status;
 } IndicatorList;
 
 typedef struct {

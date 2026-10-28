@@ -263,8 +263,10 @@ void logger_process (LogMessage_t *msg)
 static void logger_format_message (char *temp, LogMessage_t *msg)
 {
   RTC_TimeTypeDef sTime = { 0 };
+  RTC_DateTypeDef sDate = { 0 };
 
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
   uint32_t milliseconds = 1000 * (sTime.SecondFraction - sTime.SubSeconds) / (sTime.SecondFraction + 1);
 

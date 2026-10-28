@@ -12,18 +12,27 @@
 #define STATUS_BOX_SPACING_Y      35
 #define STATUS_LABEL_OFFSET_Y     15
 
+typedef enum {
+  STATUS_IDLE,
+  STATUS_OK,
+  STATUS_BAD_M,
+  STATUS_BAD_P,
+  STATUS_BAD_1
+} StatusTest_t;
+
 typedef struct {
     const char* label;
-    bool status;
-} IndicatorList;
+    StatusTest_t status;
+} Indicator;
 
 typedef struct {
 	uint16_t baseX;
 	uint16_t baseY;
 	const char* label;
-	IndicatorList items[STATUS_COUNT];
+	Indicator items[STATUS_COUNT];
 }BasicIndicatorStatus;
 
+const char* StatusToString (StatusTest_t status);
 void DrawStatusBox(uint8_t index, BasicIndicatorStatus *status);
 void TestBasicDisplay_DrawAll(BasicIndicatorStatus *status);
 

@@ -125,6 +125,10 @@ void RunSilentTest (void);
 void RunBatteriesTest (void);
 void RunAmplifiresTest (void);
 void RunDriversTest (void);
+void RunActionTest (MenuAction test);
+void RunBatteriesTest_single (void);
+void RunAmplifiresTest_single (void);
+void RunDriversTest_single (void);
 static void lcd_audio_notify(AudioEvent_t event, AudioType_t type);
 static void lcd_notify_start_task_low (AudioType_t type,
 				  SinTask_t task,
@@ -402,19 +406,19 @@ void menu_init (void)
 	  .name = {
 	      get_test_menu_items_str(STR_TEST_ITEM_BATTERIES_TEST, LANG_EN),
 	      get_test_menu_items_str(STR_TEST_ITEM_BATTERIES_TEST, LANG_HE) },
-	  .postAction = &RunBatteriesTest,
+	  .postAction = &RunBatteriesTest_single,
 	  .submenu = batteriesTestMenu };
   testMenu->items[2] = (MenuItem ) {
 	  .name = {
 	      get_test_menu_items_str(STR_TEST_ITEM_APLIFIERS_TEST, LANG_EN),
 	      get_test_menu_items_str(STR_TEST_ITEM_APLIFIERS_TEST, LANG_HE) },
-	  .postAction = &RunAmplifiresTest,
+	  .postAction = &RunAmplifiresTest_single,
 	  .submenu = apmplifiresTestMunu };
   testMenu->items[3] = (MenuItem ) {
 	  .name = {
 	      get_test_menu_items_str(STR_TEST_ITEM_DRIVERS_TEST, LANG_EN),
 	      get_test_menu_items_str(STR_TEST_ITEM_DRIVERS_TEST, LANG_HE) },
-	  .postAction = &RunDriversTest,
+	  .postAction = &RunDriversTest_single,
 	  .submenu = driversTestMenu };
   testMenu->items[4] = (MenuItem ) {
 	  .name = {
@@ -607,13 +611,6 @@ void RunSilentTest (void)
 //		  getRData(1, get_adc_value(ADC_AMPLIFIER_MEAS)),
 //		  getRData(1, get_adc_value(ADC_DRIVER_MEAS)));
 
-  currentMenu = batteriesTestMenu;
-  clear_position(currentMenu);
-  draw_menuScreen(true);
-  RunBatteriesTest();
-
-  osDelay(2000);
-
   currentMenu = apmplifiresTestMunu;
   clear_position(currentMenu);
   draw_menuScreen(true);
@@ -628,24 +625,46 @@ void RunSilentTest (void)
 
   osDelay(2000);
 
-  currentMenu = testMenu; //driversTestMenu->parent;
+  currentMenu = batteriesTestMenu;
+  clear_position(currentMenu);
+  draw_menuScreen(true);
+  RunBatteriesTest();
+
+  osDelay(2000);
+
+  currentMenu = testMenu;
   clear_position(currentMenu);
   draw_menuScreen(true);
 }
 
 void RunBatteriesTest (void)
 {
+  LOG_INFO("Start batteries test");
+
+  osDelay(5000);
+  bool res = IS_POW_DET;
+  BatteriesDisplay_SetStatus(SYSTEM_MAINS, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
+  LOG_INFO("POW_DET %d", res);
+
+  osDelay(5000);
+  res = IS_OVER_VO;
+  BatteriesDisplay_SetStatus(SYSTEM_UNDER_VO, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
+  LOG_INFO("OVER_VO %d", res);
+
+  osDelay(5000);
+  res = IS_UNDER_VO;
+  BatteriesDisplay_SetStatus(SYSTEM_OVER_VO, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
+  LOG_INFO("UNDER_VO %d", res);
+
   uint16_t val_adc = get_adc_value(ADC_24V);
   uint16_t val_mv = getRDataD(ADC_24V_DIV, val_adc);
-  bool res = cmp_with_delta(ADC_TASK_24V, val_mv, 1000);
-  LOG_INFO("Batt 24V: ADC %d, %dmV, res %d", val_adc, val_mv, res);
+  res = cmp_with_delta(ADC_TASK_24V, val_mv, 1000);
+  LOG_INFO("Batt 24V: ADC %d, %dmV", val_adc, val_mv);
 
   system_status.battery_voltage = res;
+  osDelay(1000);
 
-//  BatteriesDisplay_SetStatus(SYSTEM_MAINS, is_12v && is_24v);
-  BatteriesDisplay_SetStatus(SYSTEM_MAINS, IS_POW_DET);
-  BatteriesDisplay_SetStatus(SYSTEM_UNDER_VO, IS_OVER_VO);
-  BatteriesDisplay_SetStatus(SYSTEM_OVER_VO, IS_UNDER_VO);
+  LOG_INFO("Stop batteries test");
 }
 
 void RunAmplifiresTest (void)
@@ -668,7 +687,19 @@ void RunAmplifiresTest (void)
     uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
     uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
     bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 100);
-    LOG_INFO("Amp %d: ADC %d, %dmV, res %d", i+1, val_adc, val_mv, res);
+    StatusTest_t status;
+    const char *status_msg = "";
+
+    if(res)
+    {
+      status = STATUS_OK;
+      status_msg = StatusToString(STATUS_OK);
+    } else {
+      status = STATUS_BAD_M;
+      status_msg = StatusToString(STATUS_BAD_M);
+    }
+
+    LOG_INFO("Amp %d: ADC %d, %dmV, res %s", i+1, val_adc, val_mv, status_msg);
 
     val_adc = get_adc_value(ADC_CURRENT_MEAS);
     val_mv = getRDataD(ADC_CUR_DIV, val_adc);
@@ -680,7 +711,7 @@ void RunAmplifiresTest (void)
     osDelay(10);
 
     tester_amp_turn_off(i);
-    TestAmplDisplay_SetStatus(i, res);
+    TestAmplDisplay_SetStatus(i, status);
     system_status.amplifier_driver[i] = res;
 
     osDelay(10);
@@ -702,11 +733,12 @@ void RunDriversTest (void)
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_SET);
   osDelay(10);
 
+//  OSC_ON;
+  osDelay(5);
+
   for(uint8_t i = 0; i < DRV_COUNT; i++)
   {
     tester_amp_turn_on(i);
-    osDelay(5);
-    OSC_ON;
     osDelay(5);
 
     lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_1S, NULL);
@@ -715,7 +747,19 @@ void RunDriversTest (void)
     uint16_t val_adc = get_adc_value(ADC_DRIVER_MEAS);
     uint16_t val_mv = getRDataD(ADC_DRV_DIV, val_adc);
     bool res = cmp_with_delta(ADC_TASK_DRV, val_mv, 100);
-    LOG_INFO("Drv %d: ADC %d, %dmV, res %d", i+1, val_adc, val_mv, res);
+    StatusTest_t status;
+    const char *status_msg = "";
+
+    if(res)
+    {
+      status = STATUS_OK;
+      status_msg = StatusToString(STATUS_OK);
+    } else {
+      status = STATUS_BAD_1;
+      status_msg = StatusToString(STATUS_BAD_1);
+    }
+
+    LOG_INFO("Drv %d: ADC %d, %dmV, res %s", i+1, val_adc, val_mv, status_msg);
 
     val_adc = get_adc_value(ADC_CURRENT_MEAS);
     val_mv = getRDataD(ADC_CUR_DIV, val_adc);
@@ -723,22 +767,47 @@ void RunDriversTest (void)
 
     osDelay(10);
 
-    lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
-    osDelay(10);
+//    lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
+//    osDelay(10);
 
-    OSC_OFF;
-    osDelay(5);
     tester_amp_turn_off(i);
 
-    TestDrvDisplay_SetStatus(i, res);
+    TestDrvDisplay_SetStatus(i, status);
     system_status.amplifier_driver[i] = res;
     osDelay(10);
   }
+
+//  OSC_OFF;
+  osDelay(5);
 
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
   osDelay(10);
 
   LOG_INFO("Stop drivers test");
+}
+
+void RunActionTest (MenuAction test)
+{
+  test();
+
+  currentMenu = testMenu;
+  clear_position(currentMenu);
+  draw_menuScreen(true);
+}
+
+void RunBatteriesTest_single (void)
+{
+  RunActionTest(RunBatteriesTest);
+}
+
+void RunAmplifiresTest_single (void)
+{
+  RunActionTest(RunAmplifiresTest);
+}
+
+void RunDriversTest_single (void)
+{
+  RunActionTest(RunDriversTest);
 }
 
 void MenuLoadSDCardSirens (void)

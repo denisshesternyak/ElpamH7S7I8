@@ -302,7 +302,7 @@ bool test_board(void)
 //
 //  hx8357_draw_image(0, 0, menu_speaker_img.w, menu_speaker_img.h, menu_speaker_img.image);
 
-  osDelay(10000);
+  osDelay(5000);
 
   hx8357_fill_screen(COLOR_BLACK);
 

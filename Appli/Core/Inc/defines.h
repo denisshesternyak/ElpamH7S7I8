@@ -19,11 +19,11 @@
 #define LOG_BACKUP_DIR_PATH_U 	((const TCHAR *)u"/log/backup")
 #define LOG_FILE_PATH_U 	((const TCHAR *)u"/log/log.txt")
 
-#define USED_SD 		0
+#define USED_SD 		1
 #define MAINTENANCE_PASSWORD 	"9999"
 
 #define VER_MAJOR  		1
-#define VER_MINOR  		7
+#define VER_MINOR  		8
 
 #define LCD_USART_TEXT_Y        300
 #define LCD_USART_TEXT_X        5
