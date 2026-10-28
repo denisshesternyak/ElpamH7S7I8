@@ -72,6 +72,19 @@ static bool test_i2c3()
 
   HAL_StatusTypeDef res;
 
+  res = HAL_I2C_Mem_Read(&hi2c3, 0xA0, reg, I2C_MEMADD_SIZE_16BIT, data_rx, len, 100);
+  if(res != HAL_OK)
+      return false;
+
+  if(memcmp(data_tx, data_rx, len) == 0)
+  {
+    printf("Read from eeprom: %s\r\n", data_rx);
+    osDelay(10);
+    printf("Test eeprom completed: PASSED\r\n");
+    osDelay(10);
+    return true;
+  }
+
   printf("Write to eeprom: %s\r\n", data_tx);
   osDelay(10);
 
