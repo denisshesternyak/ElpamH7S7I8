@@ -315,10 +315,10 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of xLCDQueue */
-  xLCDQueueHandle = osMessageQueueNew (16, sizeof(LCDTaskEvent_t), &xLCDQueue_attributes);
+  xLCDQueueHandle = osMessageQueueNew (30, sizeof(LCDTaskEvent_t), &xLCDQueue_attributes);
 
   /* creation of xAudioQueue */
-  xAudioQueueHandle = osMessageQueueNew (16, sizeof(AudioNotify_t), &xAudioQueue_attributes);
+  xAudioQueueHandle = osMessageQueueNew (30, sizeof(AudioNotify_t), &xAudioQueue_attributes);
 
   /* creation of xUartQueue */
   xUartQueueHandle = osMessageQueueNew (16, sizeof(UartMessage_t), &xUartQueue_attributes);

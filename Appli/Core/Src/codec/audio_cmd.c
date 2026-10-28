@@ -78,8 +78,8 @@ void audio_cmd_init_playback (void)
 
   audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x08); 		// LDAC -> HPL
   audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x08);   	// RDAC -> HPR
-  audio_cmd_write_cmd(AIC32X4_HPLGAIN, 0x40);   	// HPL gain 0 dB
-  audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x40);		// HPR gain 0 dB
+  audio_cmd_write_cmd(AIC32X4_HPLGAIN, 0x00);   	// HPL gain 0 dB
+  audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x00);		// HPR gain 0 dB
 
 //	audio_cmd_write_cmd(AIC32X4_OUTPWRCTL, 0x30); 		// Power up HPL and HPR drivers
 
@@ -228,14 +228,14 @@ void audio_cmd_playback_enable (void)
 
   //	audio_cmd_playback_pwr_up();
   audio_cmd_unmute_LO();
-  audio_cmd_unmute_HP();
+//  audio_cmd_unmute_HP();
 }
 
 void audio_cmd_playback_disable (void)
 {
 //	audio_cmd_playback_pwr_down();
   audio_cmd_mute_LO();
-  audio_cmd_mute_HP();
+//  audio_cmd_mute_HP();
 }
 
 // MICROPHONE
@@ -313,8 +313,7 @@ void audio_cmd_IN1L_enable (void)
   audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x02); 		// MAL -> HPL
 //    audio_cmd_A2D_loopback();
   audio_cmd_unmute_LO();
-  audio_cmd_unmute_HP();
-
+//  audio_cmd_unmute_HP();
 }
 
 void audio_cmd_IN2L_enable (void)
@@ -351,7 +350,7 @@ void audio_cmd_IN1R_enable (void)
   audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x02);   	// MAR -> LOR
 
   audio_cmd_unmute_LO();
-  audio_cmd_unmute_HP();
+//  audio_cmd_unmute_HP();
 }
 
 void audio_cmd_IN1R_disable (void)
@@ -391,7 +390,7 @@ void audio_cmd_IN2R_enable (void)
   audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x02);   	// MAR -> LOR
 
   audio_cmd_unmute_LO();
-  audio_cmd_unmute_HP();
+//  audio_cmd_unmute_HP();
 }
 
 void audio_cmd_IN2R_disable (void)
@@ -415,13 +414,13 @@ void audio_cmd_IN2R_disable (void)
 
 void audio_cmd_quiet_enable (void)
 {
-  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);			// Page 1
+  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
   audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x08);   	// RDAC -> HPR
-  audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x00);		 // HPR gain 0 dB, driver is not unmuted
+  audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x00);		// HPR gain 0 dB, driver is unmuted
 }
 
 void audio_cmd_quiet_disable (void)
 {
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);		// Page 1
-  audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x40); 		// HPR gain 0 dB, driver is not muted
+  audio_cmd_write_cmd(AIC32X4_HPRGAIN, 0x40); 		// HPR gain 0 dB, driver is muted
 }

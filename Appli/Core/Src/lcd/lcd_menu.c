@@ -616,21 +616,21 @@ void RunSilentTest (void)
   draw_menuScreen(true);
   RunAmplifiresTest();
 
-  osDelay(2000);
+  osDelay(1000);
 
   currentMenu = driversTestMenu;
   clear_position(currentMenu);
   draw_menuScreen(true);
   RunDriversTest();
 
-  osDelay(2000);
+  osDelay(1000);
 
   currentMenu = batteriesTestMenu;
   clear_position(currentMenu);
   draw_menuScreen(true);
   RunBatteriesTest();
 
-  osDelay(2000);
+  osDelay(1000);
 
   currentMenu = testMenu;
   clear_position(currentMenu);
@@ -641,20 +641,27 @@ void RunBatteriesTest (void)
 {
   LOG_INFO("Start batteries test");
 
+  HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
+  osDelay(50);
+  HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_SET);
+  osDelay(50);
+
+  lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S, NULL);
   osDelay(5000);
+
   bool res = IS_POW_DET;
   BatteriesDisplay_SetStatus(SYSTEM_MAINS, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
   LOG_INFO("POW_DET %d", res);
 
   osDelay(5000);
-  res = IS_OVER_VO;
+  res = IS_UNDER_VO;
   BatteriesDisplay_SetStatus(SYSTEM_UNDER_VO, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
-  LOG_INFO("OVER_VO %d", res);
+  LOG_INFO("UNDER_VO %d", res);
 
   osDelay(5000);
-  res = IS_UNDER_VO;
+  res = IS_OVER_VO;
   BatteriesDisplay_SetStatus(SYSTEM_OVER_VO, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
-  LOG_INFO("UNDER_VO %d", res);
+  LOG_INFO("OVER_VO %d", res);
 
   uint16_t val_adc = get_adc_value(ADC_24V);
   uint16_t val_mv = getRDataD(ADC_24V_DIV, val_adc);
@@ -662,7 +669,11 @@ void RunBatteriesTest (void)
   LOG_INFO("Batt 24V: ADC %d, %dmV", val_adc, val_mv);
 
   system_status.battery_voltage = res;
-  osDelay(1000);
+
+  lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
+  osDelay(100);
+
+  HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
 
   LOG_INFO("Stop batteries test");
 }
@@ -672,17 +683,17 @@ void RunAmplifiresTest (void)
   LOG_INFO("Start amplifiers test");
 
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
-  osDelay(10);
+  osDelay(50);
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_SET);
-  osDelay(10);
+  osDelay(50);
+
+  lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S, NULL);
+  osDelay(50);
 
   for(uint8_t i = 0; i < AMP_COUNT; i++)
   {
     tester_amp_turn_on(i);
-    osDelay(10);
-
-    lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_1S, NULL);
-    osDelay(990);
+    osDelay(450);
 
     uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
     uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
@@ -705,20 +716,17 @@ void RunAmplifiresTest (void)
     val_mv = getRDataD(ADC_CUR_DIV, val_adc);
     LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
 
-    osDelay(10);
-
-    lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
-    osDelay(10);
-
     tester_amp_turn_off(i);
     TestAmplDisplay_SetStatus(i, status);
     system_status.amplifier_driver[i] = res;
 
-    osDelay(10);
+    osDelay(50);
   }
 
-  HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
+  lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
   osDelay(10);
+
+  HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
 
   LOG_INFO("Stop amplifiers test");
 }
@@ -729,20 +737,20 @@ void RunDriversTest (void)
   system_status_set_mode(SYSTEM_MODE_QUIET_TEST);
 
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
-  osDelay(10);
+  osDelay(50);
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_SET);
-  osDelay(10);
-
-//  OSC_ON;
-  osDelay(5);
+  osDelay(50);
 
   for(uint8_t i = 0; i < DRV_COUNT; i++)
   {
     tester_amp_turn_on(i);
-    osDelay(5);
+    osDelay(50);
 
-    lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_1S, NULL);
-    osDelay(990);
+    OSC_ON;
+    osDelay(50);
+
+    lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
+    osDelay(400);
 
     uint16_t val_adc = get_adc_value(ADC_DRIVER_MEAS);
     uint16_t val_mv = getRDataD(ADC_DRV_DIV, val_adc);
@@ -761,27 +769,28 @@ void RunDriversTest (void)
 
     LOG_INFO("Drv %d: ADC %d, %dmV, res %s", i+1, val_adc, val_mv, status_msg);
 
+    val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
+    val_mv = getRDataD(ADC_AMP_DIV, val_adc);
+    LOG_INFO("Amp %d: ADC %d, %dmV", i+1, val_adc, val_mv);
+
     val_adc = get_adc_value(ADC_CURRENT_MEAS);
     val_mv = getRDataD(ADC_CUR_DIV, val_adc);
     LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
 
-    osDelay(10);
+    lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
+    osDelay(200);
 
-//    lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
-//    osDelay(10);
+    OSC_OFF;
+    osDelay(50);
 
     tester_amp_turn_off(i);
 
     TestDrvDisplay_SetStatus(i, status);
     system_status.amplifier_driver[i] = res;
-    osDelay(10);
+    osDelay(50);
   }
 
-//  OSC_OFF;
-  osDelay(5);
-
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
-  osDelay(10);
 
   LOG_INFO("Stop drivers test");
 }

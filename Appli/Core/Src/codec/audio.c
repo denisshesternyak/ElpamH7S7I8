@@ -518,6 +518,7 @@ static void audio_start_sinus (AudioNotify_t *audio_notify)
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
 
   audio_cmd_playback_enable();
+  osDelay(1);
 
   start_playback();
 }
@@ -547,6 +548,7 @@ static void audio_stop_sinus (void)
   if (!player.is_playing)
     return;
 
+  audio_stop_amp_drv();
   system_status.main_tone = false;
   stop_playback();
   audio_cmd_playback_disable();
@@ -592,6 +594,7 @@ static void audio_start_sd (AudioNotify_t *audio_notify)
   }
 
   audio_cmd_playback_enable();
+  osDelay(1);
 
   start_playback();
 }
@@ -624,6 +627,7 @@ static void audio_stop_sd (void)
     return;
 
   system_status.main_tone = false;
+  audio_stop_amp_drv();
 
   stop_playback();
   audio_cmd_playback_disable();
@@ -660,6 +664,7 @@ static void audio_start_mic (void)
 //	audio_cmd_playback_enable();
   player.is_announcement = true;
   audio_cmd_IN1R_enable();
+  osDelay(1);
   osTimerStart(AnnouncementTimerHandle, ANNOUNCEMENT_TIME);
 }
 
@@ -702,6 +707,7 @@ static void audio_start_motorola (void)
 
   player.is_motorola = true;
   audio_cmd_IN2R_enable();
+  osDelay(1);
 
   LOG_INFO("Start playback motorola");
 
@@ -841,14 +847,15 @@ static void audio_start_quiet (AudioNotify_t *audio_notify)
 {
 //  LOG_INFO("Start playback quiet test");
 
-//  audio_start_amp_drv();
   system_status.secondary_tone = true;
-  audio_set_volume_playback(VOLUME_75mV);
+//  audio_set_volume_playback(VOLUME_75mV);
 
   init_generation(audio_notify->sample.sin_task);
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
 
   audio_cmd_quiet_enable();
+  osDelay(1);
+
   start_playback();
 }
 
@@ -875,7 +882,6 @@ static void audio_stop_quiet (void)
   if (!player.is_playing)
     return;
 
-//  audio_stop_amp_drv();
   system_status.secondary_tone = false;
   audio_cmd_quiet_disable();
   stop_playback();
@@ -897,6 +903,7 @@ static void audio_start_test (AudioNotify_t *audio_notify)
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
 
   audio_cmd_playback_enable();
+  osDelay(1);
 
   start_playback();
 }
@@ -960,7 +967,6 @@ static void stop_playback (void)
   player.is_stoped = true;
   player.duration = 0;
   player.buff_state = BUFFER_IDLE;
-  audio_stop_amp_drv();
 
 //  LOG_DEBUG("STOP");
 
