@@ -121,6 +121,7 @@ MenuImage menu_microfon_img = {
 #define SERIAL_NUMBER "123456"
 
 ///////////////////////////////////////////////////////////////////
+void updatedStatusFaults (void);
 void RunSilentTest (void);
 void RunBatteriesTest (void);
 void RunAmplifiresTest (void);
@@ -602,6 +603,33 @@ static void menu_draw_image (Menu *menu)
 //    NVIC_SystemReset();
 //}
 
+void updatedStatusFaults (void)
+{
+  system_status.ac_voltage = IS_POW_DET;
+  system_status.door_sensor = IS_PPF_PD0_DOOR;
+  system_status.flood_sensor = IS_PPF_PD1_FLOOD;
+
+  if(currentMenu == reportMenu) {
+    ReportIndicator_DrawOne(REPORT_LIST_AC, IS_POW_DET);
+    ReportIndicator_DrawOne(REPORT_LIST_DOOR, IS_PPF_PD0_DOOR);
+    ReportIndicator_DrawOne(REPORT_LIST_FLOOD, IS_PPF_PD1_FLOOD);
+  } else {
+    Report_SetStatus(REPORT_LIST_AC, IS_POW_DET);
+    Report_SetStatus(REPORT_LIST_DOOR, IS_PPF_PD0_DOOR);
+    Report_SetStatus(REPORT_LIST_FLOOD, IS_PPF_PD1_FLOOD);
+  }
+
+  if(currentMenu == idleMenu) {
+    FaultsDisplay_DrawOne(STATUS_LIST_AC_VOLTAGE, IS_POW_DET);
+    FaultsDisplay_DrawOne(STATUS_LIST_DOOR, IS_PPF_PD0_DOOR);
+    FaultsDisplay_DrawOne(STATUS_LIST_FLOOD, IS_PPF_PD1_FLOOD);
+  } else {
+    FaultsDisplay_SetStatus(STATUS_LIST_AC_VOLTAGE, IS_POW_DET);
+    FaultsDisplay_SetStatus(STATUS_LIST_DOOR, IS_PPF_PD0_DOOR);
+    FaultsDisplay_SetStatus(STATUS_LIST_FLOOD, IS_PPF_PD1_FLOOD);
+  }
+}
+
 void RunSilentTest (void)
 {
 //  LOG_DEBUG("12v %dmv, 24v %dmv, cur %d, amp %d, drv %d",
@@ -616,21 +644,21 @@ void RunSilentTest (void)
   draw_menuScreen(true);
   RunAmplifiresTest();
 
-  osDelay(1000);
+  osDelay(1666);
 
   currentMenu = driversTestMenu;
   clear_position(currentMenu);
   draw_menuScreen(true);
   RunDriversTest();
 
-  osDelay(1000);
+  osDelay(1666);
 
   currentMenu = batteriesTestMenu;
   clear_position(currentMenu);
   draw_menuScreen(true);
   RunBatteriesTest();
 
-  osDelay(1000);
+  osDelay(1666);
 
   currentMenu = testMenu;
   clear_position(currentMenu);
@@ -668,7 +696,12 @@ void RunBatteriesTest (void)
   res = cmp_with_delta(ADC_TASK_24V, val_mv, 1000);
   LOG_INFO("Batt 24V: ADC %d, %dmV", val_adc, val_mv);
 
+  res = IS_POW_DET && IS_UNDER_VO && IS_OVER_VO;
+  FaultsDisplay_SetStatus(STATUS_LIST_BATTERY, res);
+  Report_SetStatus(REPORT_LIST_BATT, res);
+
   system_status.battery_voltage = res;
+  osDelay(50);
 
   lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
   osDelay(100);
@@ -690,14 +723,16 @@ void RunAmplifiresTest (void)
   lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S, NULL);
   osDelay(50);
 
+  FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_OK);
+
   for(uint8_t i = 0; i < AMP_COUNT; i++)
   {
     tester_amp_turn_on(i);
-    osDelay(450);
+    osDelay(1425);
 
     uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
     uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
-    bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 100);
+    bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 20);
     StatusTest_t status;
     const char *status_msg = "";
 
@@ -708,7 +743,9 @@ void RunAmplifiresTest (void)
     } else {
       status = STATUS_BAD_M;
       status_msg = StatusToString(STATUS_BAD_M);
+      FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_BAD);
     }
+    Report_SetStatus(REPORT_LIST_AMP_DRV_1+i, res);
 
     LOG_INFO("Amp %d: ADC %d, %dmV, res %s", i+1, val_adc, val_mv, status_msg);
 
@@ -741,6 +778,8 @@ void RunDriversTest (void)
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_SET);
   osDelay(50);
 
+  FaultsDisplay_SetStatus(STATUS_LIST_DRV, STATUS_LIST_OK);
+
   for(uint8_t i = 0; i < DRV_COUNT; i++)
   {
     tester_amp_turn_on(i);
@@ -750,11 +789,11 @@ void RunDriversTest (void)
     osDelay(50);
 
     lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
-    osDelay(400);
+    osDelay(1295);
 
     uint16_t val_adc = get_adc_value(ADC_DRIVER_MEAS);
-    uint16_t val_mv = getRDataD(ADC_DRV_DIV, val_adc);
-    bool res = cmp_with_delta(ADC_TASK_DRV, val_mv, 100);
+    uint16_t drv_mv = getRDataD(ADC_DRV_DIV, val_adc);
+    bool res = cmp_with_delta(ADC_TASK_DRV, drv_mv, 100);
     StatusTest_t status;
     const char *status_msg = "";
 
@@ -765,20 +804,24 @@ void RunDriversTest (void)
     } else {
       status = STATUS_BAD_1;
       status_msg = StatusToString(STATUS_BAD_1);
+      FaultsDisplay_SetStatus(STATUS_LIST_DRV, STATUS_LIST_BAD);
     }
+    Report_SetStatus(REPORT_LIST_AMP_DRV_1+i, res);
 
-    LOG_INFO("Drv %d: ADC %d, %dmV, res %s", i+1, val_adc, val_mv, status_msg);
+    LOG_INFO("Drv %d: ADC %d, %dmV, res %s", i+1, val_adc, drv_mv, status_msg);
 
     val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
-    val_mv = getRDataD(ADC_AMP_DIV, val_adc);
+    uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
     LOG_INFO("Amp %d: ADC %d, %dmV", i+1, val_adc, val_mv);
 
     val_adc = get_adc_value(ADC_CURRENT_MEAS);
     val_mv = getRDataD(ADC_CUR_DIV, val_adc);
     LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
 
+    LOG_INFO("Ohm %d: ", drv_mv / val_mv);
+
     lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
-    osDelay(200);
+    osDelay(50);
 
     OSC_OFF;
     osDelay(50);

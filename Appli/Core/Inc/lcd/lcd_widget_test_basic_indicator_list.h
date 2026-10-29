@@ -14,23 +14,38 @@
 #define INDICATOR_START_Y           0
 #define INDICATOR_SPACING_Y         25
 
-typedef enum {
+typedef enum
+{
   STATUS_LIST_IDLE,
   STATUS_LIST_OK,
   STATUS_LIST_BAD
 } StatusIndTest_t;
 
-typedef struct {
-    const char* label;
-    StatusIndTest_t status;
+typedef enum
+{
+  STATUS_LIST_AC_VOLTAGE,
+  STATUS_LIST_BATTERY,
+  STATUS_LIST_CHARGER,
+  STATUS_LIST_AMP,
+  STATUS_LIST_DRV,
+  STATUS_LIST_CM_INTERFACE,
+  STATUS_LIST_DOOR,
+  STATUS_LIST_FLOOD
+} StatusIndName_t;
+
+typedef struct
+{
+  const char *label;
+  StatusIndTest_t status;
 } IndicatorList;
 
-typedef struct {
-	uint16_t baseX;
-	uint16_t baseY;
-	IndicatorList items[STATUS_MAX_INDICATOR];
-}BasicIndicatorList;
+typedef struct
+{
+  uint16_t baseX;
+  uint16_t baseY;
+  IndicatorList items[STATUS_MAX_INDICATOR];
+} BasicIndicatorList;
 
-void DrawStatusIndicatorList(int index, BasicIndicatorList *list);
+void DrawStatusIndicatorList (int index, BasicIndicatorList *list);
 
 #endif /* INC_LCD_LCD_WIDGET_TEST_BASIC_INDICATOR_LIST_H_ */

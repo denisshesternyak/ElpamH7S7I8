@@ -33,14 +33,14 @@ void system_status_init(void)
     system_status.mode = SYSTEM_MODE_IDLE;
 
     for (int i = 0; i < 10; i++) {
-        system_status.amplifier_driver[i] = true;
+        system_status.amplifier_driver[i] = false;
     }
 
     system_status.door_sensor = false;
     system_status.flood_sensor = false;
-    system_status.ac_voltage = true;
-    system_status.battery_voltage = true;
-    system_status.charger_unit = true;
+    system_status.ac_voltage = false;
+    system_status.battery_voltage = false;
+    system_status.charger_unit = false;
 }
 
 void system_status_reset(void)
@@ -68,12 +68,12 @@ void system_status_reset(void)
     system_status.flood_sensor = false;
     system_status.door_sensor = false;
 
-    system_status.max_volume = true;
-    system_status.main_tone = true;
-    system_status.secondary_tone = true;
+    system_status.max_volume = false;
+    system_status.main_tone = false;
+    system_status.secondary_tone = false;
     system_status.not_used = false;
 
-    system_status.door_sensor = true;
+    system_status.door_sensor = false;
 
     //system_set_volume(DEF_VALUE_VOLUME);
 }

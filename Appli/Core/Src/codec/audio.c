@@ -1102,10 +1102,7 @@ static void send_audio_notify_playing (BufferState_t buff_state)
   AudioNotify_t audio_notify;
   AudioEvent_t event = player.is_stoped ? AUDIO_STOP : AUDIO_PLAY;
 
-  if (send_audio_notify(&audio_notify, event, player.type, player.priority, 0) != osOK)
-  {
-    LOG_WARN("The audio queue is full");
-  }
+  send_audio_notify(&audio_notify, event, player.type, player.priority, 0);
 }
 
 static void audio_notify (AudioEvent_t event, AudioType_t type)

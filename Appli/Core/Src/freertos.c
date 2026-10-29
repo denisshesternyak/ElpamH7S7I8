@@ -401,6 +401,8 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   analog_init();
+  system_status_init();
+
 //  osDelay(1000);
 //  LOG_DEBUG("12v %d, 24v %d, cur %d, amp %d, drv %d",
 //		  getRData(1, get_adc_value(ADC_12V)),
@@ -411,6 +413,8 @@ void StartDefaultTask(void *argument)
 
   uint8_t check_version = 0;
   const uint32_t last_time = osKernelGetTickCount();
+//  uint8_t count = 0;
+
   /* Infinite loop */
   for (;;)
   {
@@ -437,6 +441,13 @@ void StartDefaultTask(void *argument)
 //      osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
     }
 
+//    count++;
+//    if(count > 10)
+//    {
+//      LOG_DEBUG("line %d", (HAL_GPIO_ReadPin(LINE_DISCONNECT_GPIO_Port, LINE_DISCONNECT_Pin) == GPIO_PIN_RESET));
+//      count = 0;
+//    }
+
     HAL_IWDG_Refresh(&hiwdg);
 //    printf("%d, %d, %d, %d, %d\r\n",
 //    	  get_adc_value(ADC_12V),
@@ -444,10 +455,8 @@ void StartDefaultTask(void *argument)
 //    	  get_adc_value(ADC_CURRENT_MEAS),
 //    	  get_adc_value(ADC_AMPLIFIER_MEAS),
 //    	  get_adc_value(ADC_DRIVER_MEAS));
-
-    system_status.ac_voltage = IS_POW_DET;
-    system_status.door_sensor = IS_PPF_PD0_DOOR;
-    system_status.flood_sensor = IS_PPF_PD1_FLOOD;
+    if(!is_selftest)
+      updatedStatusFaults();
 
     HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
 //    LOG_DEBUG("DefaultTask %d", count++);
@@ -524,7 +533,6 @@ void StartUartTask(void *argument)
   rs232_register_btn_hot_chem(handle_btn_hot_chem_command);
   rs232_register_btn_hot_abc(handle_btn_hot_abc_command);
 
-  system_status_init();
   UartMessage_t msg;
   /* Infinite loop */
   for (;;)
