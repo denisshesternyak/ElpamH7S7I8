@@ -143,6 +143,7 @@ uint8_t audio_read_volume (void)
   {
     LOG_ERROR("Failure to read volume from EEPROM");
     volume = MAX_VOLUME_PLAYBACK;
+    eeprom_write_object(EEPROM_SLOT_VOLUME, &volume, sizeof(volume));
   }
   else {
     LOG_INFO("Read volume from EEPROM: %d", volume);

@@ -20,6 +20,7 @@ void Read_Current_Driver (void)
   {
     LOG_ERROR("Failure to read driver from EEPROM");
     value = 0;
+    eeprom_write_object(EEPROM_SLOT_DRIVER, &value, sizeof(value));
   }
   else {
     LOG_INFO("Read driver from EEPROM: %d", value);
