@@ -615,6 +615,9 @@ void StartLcdTask(void *argument)
 	case LCD_EVENT_SCREEN:
 	  change_screen(lcd_event.screen);
 	  break;
+	case LCD_EVENT_TEST:
+	  test_amp_drv();
+	  break;
       }
     }
   }

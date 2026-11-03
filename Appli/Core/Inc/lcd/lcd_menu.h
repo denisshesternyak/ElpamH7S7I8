@@ -64,6 +64,7 @@ void menu_handle_button (KeyEvent_t event);
 void update_date_time (void);
 void update_progress_bar (uint8_t value);
 void change_screen (MenuType type);
+void test_amp_drv (void);
 void updatedStatusFaults (void);
 
 #endif /* INC_SCREENS_LCD_MENU_H_ */

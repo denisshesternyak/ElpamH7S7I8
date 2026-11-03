@@ -42,6 +42,8 @@ static bool is_double_cancel = false;
 static Menu menuPool[MAX_MENU_POOL];
 static uint8_t menuPoolIndex = 0;
 
+static uint8_t current_test_amp_drv;
+
 static char listFilenames[MAX_MENU_ITEMS][FF_MAX_LFN] __attribute__((section(".extram")));
 //const char *selectedFile = NULL;
 
@@ -135,6 +137,7 @@ static void lcd_notify_start_task_low (AudioType_t type,
 				  SinTask_t task,
 				  const char *name);
 static void lcd_notify_arming (bool arming);
+static void lcd_notify_volume (AudioType_t type, uint16_t volume);
 static void menu_init_language (void);
 static void menu_init_driver (void);
 
@@ -669,12 +672,14 @@ void RunBatteriesTest (void)
 {
   LOG_INFO("Start batteries test");
 
+  lcd_notify_volume(AUDIO_VOLUME_CURRENT, VOLUME_75mV);
+
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
   osDelay(50);
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_SET);
   osDelay(50);
 
-  lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S, NULL);
+  lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S, get_sinus_menu_items_str((uint8_t)SINUS_420HZ_120S, LANG_EN));
   osDelay(5000);
 
   bool res = IS_POW_DET;
@@ -707,6 +712,7 @@ void RunBatteriesTest (void)
   osDelay(100);
 
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
+  lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
 
   LOG_INFO("Stop batteries test");
 }
@@ -715,12 +721,14 @@ void RunAmplifiresTest (void)
 {
   LOG_INFO("Start amplifiers test");
 
+  lcd_notify_volume(AUDIO_VOLUME_CURRENT, VOLUME_75mV);
+
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
   osDelay(50);
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_SET);
   osDelay(50);
 
-  lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S, NULL);
+  lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S, get_sinus_menu_items_str((uint8_t)SINUS_420HZ_120S, LANG_EN));
   osDelay(50);
 
   FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_OK);
@@ -761,9 +769,10 @@ void RunAmplifiresTest (void)
   }
 
   lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
-  osDelay(10);
+  osDelay(50);
 
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
+  lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
 
   LOG_INFO("Stop amplifiers test");
 }
@@ -773,6 +782,8 @@ void RunDriversTest (void)
   LOG_INFO("Start drivers test");
   system_status_set_mode(SYSTEM_MODE_QUIET_TEST);
 
+//  lcd_notify_volume(AUDIO_VOLUME_CURRENT, VOLUME_75mV);
+
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
   osDelay(50);
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_SET);
@@ -780,16 +791,16 @@ void RunDriversTest (void)
 
   FaultsDisplay_SetStatus(STATUS_LIST_DRV, STATUS_LIST_OK);
 
+  lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
+  osDelay(50);
+
   for(uint8_t i = 0; i < DRV_COUNT; i++)
   {
     tester_amp_turn_on(i);
     osDelay(50);
 
     OSC_ON;
-    osDelay(50);
-
-    lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
-    osDelay(1295);
+    osDelay(1345);
 
     uint16_t val_adc = get_adc_value(ADC_DRIVER_MEAS);
     uint16_t drv_mv = getRDataD(ADC_DRV_DIV, val_adc);
@@ -820,9 +831,6 @@ void RunDriversTest (void)
 
     LOG_INFO("Ohm %d: ", drv_mv / val_mv);
 
-    lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
-    osDelay(50);
-
     OSC_OFF;
     osDelay(50);
 
@@ -833,7 +841,11 @@ void RunDriversTest (void)
     osDelay(50);
   }
 
+  lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
+  osDelay(50);
+
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
+//  lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
 
   LOG_INFO("Stop drivers test");
 }
@@ -1063,9 +1075,15 @@ static void sinus_info_prepare_action (void)
 
   item->submenu->textFilename = item->name[GetLanguage()];
 
+  MenuResetProgressBar();
+
+  lcd_notify_volume(AUDIO_VOLUME_CURRENT, VOLUME_75mV);
   lcd_notify_start_task_low(AUDIO_SIN, (SinTask_t) currentMenu->currentSelection, item->name[GetLanguage()]);
 
-  MenuResetProgressBar();
+  current_test_amp_drv = 0;
+
+  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_TEST };
+  xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
 }
 
 static void prepare_announcement (void)
@@ -1449,6 +1467,55 @@ void change_screen (MenuType type)
   }
 }
 
+void test_amp_drv (void)
+{
+  if (current_test_amp_drv >= AMP_COUNT) return;
+  if (currentMenu != sinusInfoMenu) return;
+
+  LOG_INFO("Start amp/drv %d test", current_test_amp_drv+1);
+
+  FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_OK);
+
+  tester_amp_turn_on(current_test_amp_drv);
+  osDelay(1425);
+
+  uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
+  uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
+  bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 20);
+  StatusTest_t status;
+  const char *status_msg = "";
+
+  if(res)
+  {
+    status = STATUS_OK;
+    status_msg = StatusToString(STATUS_OK);
+  } else {
+    status = STATUS_BAD_M;
+    status_msg = StatusToString(STATUS_BAD_M);
+    FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_BAD);
+  }
+  Report_SetStatus(REPORT_LIST_AMP_DRV_1+current_test_amp_drv, res);
+
+  LOG_INFO("Amp %d: ADC %d, %dmV, res %s", current_test_amp_drv+1, val_adc, val_mv, status_msg);
+
+  val_adc = get_adc_value(ADC_CURRENT_MEAS);
+  val_mv = getRDataD(ADC_CUR_DIV, val_adc);
+  LOG_INFO("Cur %d: ADC %d, %dmV", current_test_amp_drv+1, val_adc, val_mv);
+
+  tester_amp_turn_off(current_test_amp_drv);
+  system_status.amplifier_driver[current_test_amp_drv] = res;
+  TestAmplDisplay_SetStatus(current_test_amp_drv, status);
+
+  osDelay(50);
+
+  LOG_INFO("Stop amp/drv %d test", current_test_amp_drv+1);
+
+  current_test_amp_drv++;
+
+  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_TEST };
+  xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
+}
+
 //void ShowUartCommand(void)
 //{
 //	//LCD_FillRectangle(0, 0, LCD_GetWidth(), STATUS_BAR_LINE_Y_POS -1, COLOR_BLACK);
@@ -1811,11 +1878,13 @@ static void sinus_info_menu_handler (KeyEvent_t event)
 	return;
       }
       lcd_audio_notify(AUDIO_STOP, AUDIO_SIN);
+      lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
       lcd_esc(sinusInfoMenu);
       break;
 
     case BTN_RETURN_MENU:
       system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
+      lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
       lcd_esc(sinusInfoMenu);
 
     default:
@@ -2171,6 +2240,15 @@ static void lcd_notify_arming (bool arming)
         .event = AUDIO_ARMIG,
         .priority = AUDIO_PRIORITY_LOW,
         .arming = arming };
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
+}
+
+static void lcd_notify_volume (AudioType_t type, uint16_t volume)
+{
+  AudioNotify_t audio_notify = {
+        .event = type,
+        .priority = AUDIO_PRIORITY_LOW,
+        .value = volume };
   osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
 }
 

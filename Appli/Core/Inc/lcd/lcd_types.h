@@ -8,7 +8,8 @@ typedef enum
   LCD_EVENT_BTN,
   LCD_EVENT_PROGRESS,
   LCD_EVENT_RTC,
-  LCD_EVENT_SCREEN
+  LCD_EVENT_SCREEN,
+  LCD_EVENT_TEST
 } LCDEvent;
 
 typedef enum

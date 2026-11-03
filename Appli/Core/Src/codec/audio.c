@@ -96,7 +96,7 @@ static void audio_play_test (void);
 static void audio_stop_test (void);
 
 static void start_playback (void);
-static void stop_playback (void);
+static void stop_playback (bool is_return);
 static void check_progress (void);
 static void send_audio_notify_playing (BufferState_t buff_state);
 static osStatus_t send_audio_notify (AudioNotify_t *audio_notify,
@@ -185,6 +185,14 @@ void audio_process (AudioNotify_t *audio_notify)
       player.volume_task = audio_notify->value;
       player.volume_current = audio_notify->value;
       audio_set_volume_playback(audio_notify->value);
+      break;
+    case AUDIO_VOLUME_CURRENT:
+      player.volume_current = audio_notify->value;
+      audio_set_volume_playback(player.volume_current);
+      break;
+    case AUDIO_VOLUME_PREV_TASK:
+      player.volume_current = player.volume_task;
+      audio_set_volume_playback(player.volume_current);
       break;
     default:
       audio_event(audio_notify);
@@ -493,9 +501,9 @@ void audio_recording_timeout (void)
 static void audio_start_amp_drv ()
 {
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_SET);
-  osDelay(20);
+  osDelay(50);
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_SET);
-  osDelay(2);
+  osDelay(50);
 }
 
 static void audio_stop_amp_drv ()
@@ -513,7 +521,7 @@ static void audio_start_sinus (AudioNotify_t *audio_notify)
   audio_start_amp_drv();
   system_status.main_tone = true;
 
-  LOG_INFO("Start playback sinus");
+  LOG_INFO("Start playback sinus %s", audio_notify->sample.filename);
 
   init_generation(audio_notify->sample.sin_task);
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
@@ -522,6 +530,7 @@ static void audio_start_sinus (AudioNotify_t *audio_notify)
   osDelay(1);
 
   start_playback();
+  osDelay(50);
 }
 
 static void audio_play_sinus (void)
@@ -549,10 +558,10 @@ static void audio_stop_sinus (void)
   if (!player.is_playing)
     return;
 
-  audio_stop_amp_drv();
   system_status.main_tone = false;
-  stop_playback();
+  stop_playback(true);
   audio_cmd_playback_disable();
+  audio_stop_amp_drv();
 
   LOG_INFO("Stop playback sinus");
 }
@@ -628,15 +637,15 @@ static void audio_stop_sd (void)
     return;
 
   system_status.main_tone = false;
-  audio_stop_amp_drv();
 
-  stop_playback();
+  stop_playback(true);
   audio_cmd_playback_disable();
 
   sdfs_close_audiofile(&player.file_info);
   memset(&player.file_info, 0, sizeof(player.file_info));
 
-  osDelay(10);
+  audio_stop_amp_drv();
+
   player.volume_current = player.volume_task;
   audio_set_volume_playback(player.volume_current);
 
@@ -681,12 +690,11 @@ static void audio_stop_mic (void)
 
   system_status.main_tone = false;
 
-  audio_stop_amp_drv();
-
 //	audio_cmd_playback_disable();
   player.is_announcement = false;
   audio_cmd_IN1R_disable();
   osTimerStop(AnnouncementTimerHandle);
+  audio_stop_amp_drv();
 
   LOG_INFO("Stop playback announcement");
 }
@@ -724,11 +732,10 @@ static void audio_stop_motorola (void)
 {
   system_status.main_tone = false;
 
-  audio_stop_amp_drv();
-
   player.is_motorola = false;
 
   audio_cmd_IN2R_disable();
+  audio_stop_amp_drv();
 
   LOG_INFO("Stop playback motorola");
   send_screen_notify(MENU_TYPE_PREVIOUS);
@@ -825,8 +832,6 @@ static void audio_stop_dtmf (void)
   if (!player.is_recording)
     return;
 
-  audio_stop_amp_drv();
-
   player.is_recording = false;
   player.is_stoped = true;
   player.buff_state = BUFFER_IDLE;
@@ -836,6 +841,7 @@ static void audio_stop_dtmf (void)
   HAL_I2S_Init(CODEC_I2S_HANDLER);
 
   osTimerStop(RecordingTimerHandle);
+  audio_stop_amp_drv();
 }
 
 static void audio_prepare_stop_dtmf (void)
@@ -846,7 +852,7 @@ static void audio_prepare_stop_dtmf (void)
 // QUIET
 static void audio_start_quiet (AudioNotify_t *audio_notify)
 {
-//  LOG_INFO("Start playback quiet test");
+  LOG_INFO("Start playback quiet");
 
   system_status.secondary_tone = true;
 //  audio_set_volume_playback(VOLUME_75mV);
@@ -885,10 +891,10 @@ static void audio_stop_quiet (void)
 
   system_status.secondary_tone = false;
   audio_cmd_quiet_disable();
-  stop_playback();
-  audio_set_volume_playback(player.volume_task);
+  stop_playback(false);
+//  audio_set_volume_playback(player.volume_task);
 
-//  LOG_INFO("Stop playback quiet test");
+  LOG_INFO("Stop playback quiet");
 }
 
 // TEST
@@ -897,8 +903,10 @@ static void audio_start_test (AudioNotify_t *audio_notify)
   if(player.is_playing)
     return;
 
-//  LOG_INFO("Start playback test");
-  audio_set_volume_playback(VOLUME_75mV);
+  LOG_INFO("Start playback sinus %s", audio_notify->sample.filename);
+//  audio_set_volume_playback(VOLUME_75mV);
+
+  system_status.main_tone = true;
 
   init_generation(audio_notify->sample.sin_task);
   audio_generate_sine(&player, dma_buffer_tx, AUDIO_STEREO_PAIRS_FULL);
@@ -932,10 +940,11 @@ static void audio_stop_test (void)
   if (!player.is_playing)
     return;
 
-  stop_playback();
+  stop_playback(false);
   audio_cmd_playback_disable();
-  audio_set_volume_playback(player.volume_task);
-//  LOG_INFO("Stop playback test");
+//  audio_set_volume_playback(player.volume_task);
+  audio_stop_amp_drv();
+  LOG_INFO("Stop playback test");
 }
 
 ////
@@ -962,7 +971,7 @@ static void start_playback (void)
 //	audio_set_volume(player.volume);
 }
 
-static void stop_playback (void)
+static void stop_playback (bool is_return)
 {
   player.is_playing = false;
   player.is_stoped = true;
@@ -975,13 +984,13 @@ static void stop_playback (void)
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
   HAL_I2S_Init(CODEC_I2S_HANDLER);
 
-  //  if (!player.is_fade_stoped)
-  //  {
-      LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
-  	.button = BTN_RETURN_MENU,
-  	.pressed = true } };
-      xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
-  //  }
+  if (is_return)
+  {
+    LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_BTN, .btn = {
+      .button = BTN_RETURN_MENU,
+      .pressed = true } };
+    xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
+  }
 }
 
 static void check_progress (void)
