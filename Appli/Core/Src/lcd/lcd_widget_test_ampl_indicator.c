@@ -33,7 +33,7 @@ void TestAmplDisplay_DrawAll (uint16_t baseX, uint16_t baseY)
   TestBasicDisplay_DrawAll(&statusAmplifires);
 }
 
-void TestAmplDisplay_SetStatus (uint8_t index, StatusTest_t status)
+void TestAmplDisplay_DrawOne (uint8_t index, bool status)
 {
   if (index >= STATUS_COUNT)
     return;
@@ -42,5 +42,16 @@ void TestAmplDisplay_SetStatus (uint8_t index, StatusTest_t status)
   {
     statusAmplifires.items[index].status = status;
     DrawStatusBox(index, &statusAmplifires);
+  }
+}
+
+void TestAmplDisplay_SetStatus (uint8_t index, StatusTest_t status)
+{
+  if (index >= STATUS_COUNT)
+    return;
+
+  if (statusAmplifires.items[index].status != status)
+  {
+    statusAmplifires.items[index].status = status;
   }
 }

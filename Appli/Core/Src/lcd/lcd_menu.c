@@ -754,7 +754,7 @@ void RunAmplifiresTest (void)
     LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
 
     tester_amp_turn_off(i);
-    TestAmplDisplay_SetStatus(i, status);
+    TestAmplDisplay_DrawOne(i, status);
     system_status.amplifier_driver[i] = res;
 
     osDelay(50);
@@ -828,7 +828,7 @@ void RunDriversTest (void)
 
     tester_amp_turn_off(i);
 
-    TestDrvDisplay_SetStatus(i, status);
+    TestDrvDisplay_DrawOne(i, status);
     system_status.amplifier_driver[i] = res;
     osDelay(50);
   }
