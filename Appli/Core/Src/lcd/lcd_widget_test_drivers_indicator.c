@@ -33,7 +33,7 @@ void TestDrvDisplay_DrawAll (uint16_t baseX, uint16_t baseY)
   TestBasicDisplay_DrawAll(&statusDrivers);
 }
 
-void TestDrvDisplay_DrawOne (uint8_t index, bool status)
+void TestDrvDisplay_DrawOne (uint8_t index, StatusTest_t status)
 {
   if (index >= STATUS_COUNT)
     return;
