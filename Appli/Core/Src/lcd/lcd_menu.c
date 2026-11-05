@@ -755,7 +755,7 @@ void RunAmplifiresTest (void)
     }
     Report_SetStatus(REPORT_LIST_AMP_DRV_1+i, res);
 
-    LOG_INFO("Amp %d: ADC %d, %dmV, res %s", i+1, val_adc, val_mv, status_msg);
+    LOG_INFO("Amp %d: ADC %d, %dmV %s", i+1, val_adc, val_mv, status_msg);
 
     val_adc = get_adc_value(ADC_CURRENT_MEAS);
     val_mv = getRDataD(ADC_CUR_DIV, val_adc);
@@ -789,7 +789,7 @@ void RunDriversTest (void)
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_SET);
   osDelay(50);
 
-  FaultsDisplay_SetStatus(STATUS_LIST_DRV, STATUS_LIST_OK);
+  FaultsDisplay_SetStatus(STATUS_LIST_DRV, STATUS_LIST_BAD);
 
   lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
   osDelay(50);
@@ -804,22 +804,11 @@ void RunDriversTest (void)
 
     uint16_t val_adc = get_adc_value(ADC_DRIVER_MEAS);
     uint16_t drv_mv = getRDataD(ADC_DRV_DIV, val_adc);
-    bool res = cmp_with_delta(ADC_TASK_DRV, drv_mv, 100);
+    cmp_with_delta(ADC_TASK_DRV, drv_mv, 100);
     StatusTest_t status;
     const char *status_msg = "";
 
-    if(res)
-    {
-      status = STATUS_OK;
-      status_msg = StatusToString(STATUS_OK);
-    } else {
-      status = STATUS_BAD_1;
-      status_msg = StatusToString(STATUS_BAD_1);
-      FaultsDisplay_SetStatus(STATUS_LIST_DRV, STATUS_LIST_BAD);
-    }
-    Report_SetStatus(REPORT_LIST_AMP_DRV_1+i, res);
-
-    LOG_INFO("Drv %d: ADC %d, %dmV, res %s", i+1, val_adc, drv_mv, status_msg);
+    LOG_INFO("Drv %d: ADC %d, %dmV", i+1, val_adc, drv_mv);
 
     val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
     uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
@@ -829,7 +818,40 @@ void RunDriversTest (void)
     val_mv = getRDataD(ADC_CUR_DIV, val_adc);
     LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
 
-    LOG_INFO("Ohm %d: ", drv_mv / val_mv);
+    bool res = false;
+    if (val_mv == 0) {
+        LOG_INFO("Name: %s, Ohm: N/A (Cur=0)", get_name_drivers());
+    } else {
+      uint32_t ohm_milli = ((uint32_t)drv_mv * 1000) / val_mv;
+      uint16_t min = 0;
+      uint16_t max = 0;
+
+      if(ohm_milli <= get_min_ohm())
+      {
+	status = STATUS_BAD_M;
+	min = 0;
+	max = get_min_ohm();
+      } else if(ohm_milli > get_min_ohm() && ohm_milli <= get_mid_ohm()) {
+	status = STATUS_OK;
+	min = get_min_ohm();
+	max = get_mid_ohm();
+	res = true;
+	FaultsDisplay_SetStatus(STATUS_LIST_DRV, STATUS_LIST_OK);
+      } else if(ohm_milli > get_mid_ohm() && ohm_milli <= get_max_ohm()) {
+	status = STATUS_BAD_P;
+	min = get_mid_ohm();
+	max = get_max_ohm();
+      } else if(ohm_milli > get_max_ohm()) {
+	status = STATUS_BAD_1;
+	min = get_max_ohm();
+	max = 65535;
+      }
+      status_msg = StatusToString(status);
+
+      Report_SetStatus(REPORT_LIST_AMP_DRV_1+i, res);
+
+      LOG_INFO("'%s' %d<%d<%d(mOhm) %s", get_name_drivers(), min, ohm_milli, max, status_msg);
+    }
 
     OSC_OFF;
     osDelay(50);

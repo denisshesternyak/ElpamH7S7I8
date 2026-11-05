@@ -8,10 +8,11 @@
 
 static uint8_t current_driver = 0;
 
-static const uint8_t kingstar_drv[3] = {25, 55, 83};
-static const uint8_t atlas_drv[3] = {35, 70, 113};
-static const uint8_t jingsu_drv[3] = {5, 35, 43};
-static const uint8_t *drivers[3] = {kingstar_drv, atlas_drv, jingsu_drv};
+static const uint16_t kingstar_drv[3] = {2500, 5500, 8300};
+static const uint16_t atlas_drv[3] = {3500, 7000, 11300};
+static const uint16_t jingsu_drv[3] = {500, 3500, 4300};
+static const uint16_t *drivers[3] = {kingstar_drv, atlas_drv, jingsu_drv};
+static const char *drivers_name[3] = {"Kingstar", "Atlas", "Jingsu"};
 
 void Read_Current_Driver (void)
 {
@@ -45,18 +46,23 @@ void Set_Current_Driver (uint8_t value)
     LOG_ERROR("Failure to save driver to EEPROM");
 }
 
-uint8_t get_min_ohm (void)
+uint16_t get_min_ohm (void)
 {
   return drivers[current_driver][0];
 }
 
-uint8_t get_mid_ohm (void)
+uint16_t get_mid_ohm (void)
 {
   return drivers[current_driver][1];
 }
 
-uint8_t get_max_ohm (void)
+uint16_t get_max_ohm (void)
 {
   return drivers[current_driver][2];
+}
+
+const char* get_name_drivers (void)
+{
+  return drivers_name[current_driver];
 }
 

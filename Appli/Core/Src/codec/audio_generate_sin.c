@@ -117,8 +117,11 @@ void init_generation (SinTask_t sinus)
     case SINUS_20000HZ_120S:
       init_tone(TONE_MODE_CONSTANT, PHASE_INC_20000, PHASE_INC_20000, 0, 120000, 0);
       break;
+    case SINUS_856HZ_60S:
+      init_tone(TONE_MODE_CONSTANT, PHASE_INC_856, PHASE_INC_856, 0, 60000, 0);
+      break;
     case SINUS_836HZ_856HZ_60S:
-      init_tone(TONE_MODE_CONSTANT, PHASE_INC_836, PHASE_INC_836, 0, 60000, 0);
+      init_tone(TONE_MODE_CYCLE, PHASE_INC_836, PHASE_INC_856, PHASE_INC_836, 3000, 54000);
       break;
     case SINUS_ALARM_90S:
       init_tone(TONE_MODE_CYCLE, PHASE_INC_250, PHASE_INC_500, PHASE_INC_300, 3000, 84000);
