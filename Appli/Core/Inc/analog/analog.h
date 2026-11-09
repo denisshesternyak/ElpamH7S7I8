@@ -10,8 +10,8 @@
 #define ADC_12V_DIV 		4619U
 #define ADC_24V_DIV 		9218U
 #define ADC_CUR_DIV 		1665U
-#define ADC_AMP_DIV 		56U
-#define ADC_DRV_DIV 		2518U
+#define ADC_AMP_DIV 		46U
+#define ADC_DRV_DIV 		1422U
 
 #define ADC_TASK_12V 		12000U
 #define ADC_TASK_24V 		24000U
