@@ -4,8 +4,11 @@
 typedef enum
 {
   TEST_IDLE,
-  TEST_START,
-  TEST_STOP
+  TEST_START_SINUS,
+  TEST_START_SILENT,
+  TEST_START_BATT,
+  TEST_START_AMP,
+  TEST_START_DRV
 } TestEvent_t;
 
 typedef struct

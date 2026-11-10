@@ -8,7 +8,10 @@ typedef enum
   LCD_EVENT_BTN,
   LCD_EVENT_PROGRESS,
   LCD_EVENT_RTC,
-  LCD_EVENT_SCREEN
+  LCD_EVENT_SCREEN,
+  LCD_EVENT_AMP,
+  LCD_EVENT_DRV,
+  LCD_EVENT_BATT
 } LCDEvent;
 
 typedef enum
@@ -35,11 +38,18 @@ typedef enum
 
 typedef struct
 {
+  uint8_t status;
+  uint8_t ind;
+} TestMsg_t;
+
+typedef struct
+{
   LCDEvent event;
   union
   {
     KeyEvent_t btn;
     MenuType screen;
+    TestMsg_t testMsg;
     uint32_t value;
   };
 } LCDTaskEvent_t;

@@ -13,6 +13,7 @@
 #include <stdbool.h>
 //#include "audiofs.h"
 #include "logger.h"
+#include "test_types.h"
 
 #define MAX_MENU_ITEMS 		25
 
@@ -64,7 +65,14 @@ void menu_handle_button (KeyEvent_t event);
 void update_date_time (void);
 void update_progress_bar (uint8_t value);
 void change_screen (MenuType type);
+void change_amp_srtatus(TestMsg_t *testMsg);
+void change_drv_srtatus(TestMsg_t *testMsg);
+void change_batt_srtatus(TestMsg_t *testMsg);
 void test_amp_drv (void);
 void updatedStatusFaults (void);
+void RunSilentTest (void);
+void RunBatteriesTest (bool prev_menu);
+void RunAmplifiresTest (bool prev_menu);
+void RunDriversTest (bool prev_menu);
 
 #endif /* INC_SCREENS_LCD_MENU_H_ */

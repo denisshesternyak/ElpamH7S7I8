@@ -636,6 +636,15 @@ void StartLcdTask(void *argument)
 	case LCD_EVENT_SCREEN:
 	  change_screen(lcd_event.screen);
 	  break;
+	case LCD_EVENT_AMP:
+	  change_amp_srtatus(&lcd_event.testMsg);
+	  break;
+	case LCD_EVENT_DRV:
+	  change_drv_srtatus(&lcd_event.testMsg);
+	  break;
+	case LCD_EVENT_BATT:
+	  change_batt_srtatus(&lcd_event.testMsg);
+	  break;
       }
     }
   }
@@ -814,9 +823,21 @@ void StartTestADTask(void *argument)
     {
       switch (msg.event)
       {
-      case TEST_START:
+      case TEST_START_SINUS:
 	test_amp_drv();
 	break;
+      case TEST_START_SILENT:
+	RunSilentTest();
+      	break;
+      case TEST_START_BATT:
+	RunBatteriesTest(true);
+      	break;
+      case TEST_START_AMP:
+	RunAmplifiresTest(true);
+      	break;
+      case TEST_START_DRV:
+	RunDriversTest(true);
+      	break;
 
       default:
 	break;

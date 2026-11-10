@@ -30,7 +30,6 @@
 #include "metadata.h"
 #include "lcd_widget_password.h"
 #include "tester.h"
-#include "test_types.h"
 
 //bool isResetPasswordAfterIdle = false;
 
@@ -123,14 +122,12 @@ MenuImage menu_microfon_img = {
 
 ///////////////////////////////////////////////////////////////////
 void updatedStatusFaults (void);
-void RunSilentTest (void);
-void RunBatteriesTest (void);
-void RunAmplifiresTest (void);
-void RunDriversTest (void);
-void RunActionTest (MenuAction test);
-void RunBatteriesTest_single (void);
-void RunAmplifiresTest_single (void);
-void RunDriversTest_single (void);
+
+void RunSilentTest_lcd (void);
+void RunBatteriesTest_lcd (void);
+void RunAmplifiresTest_lcd (void);
+void RunDriversTest_lcd (void);
+
 static void lcd_audio_notify(AudioEvent_t event, AudioType_t type);
 static void lcd_notify_start_task_low (AudioType_t type,
 				  SinTask_t task,
@@ -404,24 +401,24 @@ void menu_init (void)
 	  .name = {
 	      get_test_menu_items_str(STR_TEST_ITEM_SILENT_TEST, LANG_EN),
 	      get_test_menu_items_str(STR_TEST_ITEM_SILENT_TEST, LANG_HE) },
-	  .postAction = &RunSilentTest };
+	  .postAction = &RunSilentTest_lcd };
   testMenu->items[1] = (MenuItem ) {
 	  .name = {
 	      get_test_menu_items_str(STR_TEST_ITEM_BATTERIES_TEST, LANG_EN),
 	      get_test_menu_items_str(STR_TEST_ITEM_BATTERIES_TEST, LANG_HE) },
-	  .postAction = &RunBatteriesTest_single,
+	  .postAction = &RunBatteriesTest_lcd,
 	  .submenu = batteriesTestMenu };
   testMenu->items[2] = (MenuItem ) {
 	  .name = {
 	      get_test_menu_items_str(STR_TEST_ITEM_APLIFIERS_TEST, LANG_EN),
 	      get_test_menu_items_str(STR_TEST_ITEM_APLIFIERS_TEST, LANG_HE) },
-	  .postAction = &RunAmplifiresTest_single,
+	  .postAction = &RunAmplifiresTest_lcd,
 	  .submenu = apmplifiresTestMunu };
   testMenu->items[3] = (MenuItem ) {
 	  .name = {
 	      get_test_menu_items_str(STR_TEST_ITEM_DRIVERS_TEST, LANG_EN),
 	      get_test_menu_items_str(STR_TEST_ITEM_DRIVERS_TEST, LANG_HE) },
-	  .postAction = &RunDriversTest_single,
+	  .postAction = &RunDriversTest_lcd,
 	  .submenu = driversTestMenu };
   testMenu->items[4] = (MenuItem ) {
 	  .name = {
@@ -632,6 +629,30 @@ void updatedStatusFaults (void)
   }
 }
 
+void RunSilentTest_lcd (void)
+{
+  TestADMessage_t test_msg = { .event = TEST_START_SILENT, .data = NULL };
+  xQueueSend(xTestADQueueHandle, &test_msg, portMAX_DELAY);
+}
+
+void RunBatteriesTest_lcd (void)
+{
+  TestADMessage_t test_msg = { .event = TEST_START_BATT, .data = NULL };
+  xQueueSend(xTestADQueueHandle, &test_msg, portMAX_DELAY);
+}
+
+void RunAmplifiresTest_lcd (void)
+{
+  TestADMessage_t test_msg = { .event = TEST_START_AMP, .data = NULL };
+  xQueueSend(xTestADQueueHandle, &test_msg, portMAX_DELAY);
+}
+
+void RunDriversTest_lcd (void)
+{
+  TestADMessage_t test_msg = { .event = TEST_START_DRV, .data = NULL };
+  xQueueSend(xTestADQueueHandle, &test_msg, portMAX_DELAY);
+}
+
 void RunSilentTest (void)
 {
 //  LOG_DEBUG("12v %dmv, 24v %dmv, cur %d, amp %d, drv %d",
@@ -644,31 +665,36 @@ void RunSilentTest (void)
   currentMenu = apmplifiresTestMunu;
   clear_position(currentMenu);
   draw_menuScreen(true);
-  RunAmplifiresTest();
+  RunAmplifiresTest(false);
 
   osDelay(1666);
+  if(currentMenu != apmplifiresTestMunu) return;
 
   currentMenu = driversTestMenu;
   clear_position(currentMenu);
   draw_menuScreen(true);
-  RunDriversTest();
+  RunDriversTest(false);
 
   osDelay(1666);
+  if(currentMenu != driversTestMenu) return;
 
   currentMenu = batteriesTestMenu;
   clear_position(currentMenu);
   draw_menuScreen(true);
-  RunBatteriesTest();
+  RunBatteriesTest(false);
 
   osDelay(1666);
+  if(currentMenu != batteriesTestMenu) return;
 
   currentMenu = testMenu;
   clear_position(currentMenu);
   draw_menuScreen(true);
 }
 
-void RunBatteriesTest (void)
+void RunBatteriesTest (bool prev_menu)
 {
+  if(currentMenu != batteriesTestMenu) return;
+
   LOG_INFO("Start batteries test");
 
   lcd_notify_volume(AUDIO_VOLUME_CURRENT, VOLUME_75mV);
@@ -680,19 +706,39 @@ void RunBatteriesTest (void)
 
   lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S, get_sinus_menu_items_str((uint8_t)SINUS_420HZ_120S, LANG_EN));
   osDelay(5000);
+  if(currentMenu != batteriesTestMenu) return;
 
   bool res = IS_POW_DET;
-  BatteriesDisplay_SetStatus(SYSTEM_MAINS, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
+//  BatteriesDisplay_SetStatus(SYSTEM_MAINS, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
+  LCDTaskEvent_t lcd_msg = {};
+  lcd_msg.event = LCD_EVENT_BATT;
+  lcd_msg.testMsg.status = res ? STATUS_LIST_OK : STATUS_LIST_BAD;
+  lcd_msg.testMsg.ind = SYSTEM_MAINS;
+
+  xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
   LOG_INFO("POW_DET %d", res);
 
   osDelay(5000);
+  if(currentMenu != batteriesTestMenu) return;
+
   res = IS_UNDER_VO;
-  BatteriesDisplay_SetStatus(SYSTEM_UNDER_VO, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
+//  BatteriesDisplay_SetStatus(SYSTEM_UNDER_VO, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
+  lcd_msg.event = LCD_EVENT_BATT;
+  lcd_msg.testMsg.status = res ? STATUS_LIST_OK : STATUS_LIST_BAD;
+  lcd_msg.testMsg.ind = SYSTEM_UNDER_VO;
+
+  xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
   LOG_INFO("UNDER_VO %d", res);
 
   osDelay(5000);
+  if(currentMenu != batteriesTestMenu) return;
+
   res = IS_OVER_VO;
-  BatteriesDisplay_SetStatus(SYSTEM_OVER_VO, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
+//  BatteriesDisplay_SetStatus(SYSTEM_OVER_VO, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
+  lcd_msg.event = LCD_EVENT_BATT;
+  lcd_msg.testMsg.status = res ? STATUS_LIST_OK : STATUS_LIST_BAD;
+  lcd_msg.testMsg.ind = SYSTEM_OVER_VO;
+  xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
   LOG_INFO("OVER_VO %d", res);
 
   uint16_t val_adc = get_adc_value(ADC_24V);
@@ -714,9 +760,18 @@ void RunBatteriesTest (void)
   lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
 
   LOG_INFO("Stop batteries test");
+
+  if(currentMenu != batteriesTestMenu) return;
+
+  if(prev_menu)
+  {
+    currentMenu = testMenu;
+    clear_position(currentMenu);
+    draw_menuScreen(true);
+  }
 }
 
-void RunAmplifiresTest (void)
+void RunAmplifiresTest (bool prev_menu)
 {
   LOG_INFO("Start amplifiers test");
 
@@ -734,6 +789,7 @@ void RunAmplifiresTest (void)
 
   for(uint8_t i = 0; i < AMP_COUNT; i++)
   {
+    if (currentMenu != apmplifiresTestMunu) break;
     tester_amp_turn_on(i);
     osDelay(1425);
 
@@ -761,8 +817,11 @@ void RunAmplifiresTest (void)
     LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
 
     tester_amp_turn_off(i);
-    TestAmplDisplay_DrawOne(i, status);
+//    TestAmplDisplay_DrawOne(i, status);
     system_status.amplifier_driver[i] = res;
+
+    LCDTaskEvent_t lcd_msg = { .event = LCD_EVENT_AMP, .testMsg = { .status = status, .ind = i }};
+    xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
 
     osDelay(50);
   }
@@ -774,9 +833,18 @@ void RunAmplifiresTest (void)
   lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
 
   LOG_INFO("Stop amplifiers test");
+
+  if (currentMenu != apmplifiresTestMunu) return;
+
+  if(prev_menu)
+  {
+    currentMenu = testMenu;
+    clear_position(currentMenu);
+    draw_menuScreen(true);
+  }
 }
 
-void RunDriversTest (void)
+void RunDriversTest (bool prev_menu)
 {
   LOG_INFO("Start drivers test");
   system_status_set_mode(SYSTEM_MODE_QUIET_TEST);
@@ -795,6 +863,8 @@ void RunDriversTest (void)
 
   for(uint8_t i = 0; i < DRV_COUNT; i++)
   {
+    if (currentMenu != driversTestMenu) break;
+
     tester_amp_turn_on(i);
     osDelay(50);
 
@@ -857,8 +927,11 @@ void RunDriversTest (void)
 
     tester_amp_turn_off(i);
 
-    TestDrvDisplay_DrawOne(i, status);
+//    TestDrvDisplay_DrawOne(i, status);
     system_status.amplifier_driver[i] = res;
+    LCDTaskEvent_t lcd_msg = { .event = LCD_EVENT_DRV, .testMsg = { .status = status, .ind = i }};
+    xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
+
     osDelay(50);
   }
 
@@ -869,30 +942,15 @@ void RunDriversTest (void)
 //  lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
 
   LOG_INFO("Stop drivers test");
-}
 
-void RunActionTest (MenuAction test)
-{
-  test();
+  if (currentMenu != driversTestMenu) return;
 
-  currentMenu = testMenu;
-  clear_position(currentMenu);
-  draw_menuScreen(true);
-}
-
-void RunBatteriesTest_single (void)
-{
-  RunActionTest(RunBatteriesTest);
-}
-
-void RunAmplifiresTest_single (void)
-{
-  RunActionTest(RunAmplifiresTest);
-}
-
-void RunDriversTest_single (void)
-{
-  RunActionTest(RunDriversTest);
+  if(prev_menu)
+  {
+    currentMenu = testMenu;
+    clear_position(currentMenu);
+    draw_menuScreen(true);
+  }
 }
 
 void MenuLoadSDCardSirens (void)
@@ -1101,7 +1159,7 @@ static void sinus_info_prepare_action (void)
   lcd_notify_volume(AUDIO_VOLUME_CURRENT, VOLUME_75mV);
   lcd_notify_start_task_low(AUDIO_SIN, (SinTask_t) currentMenu->currentSelection, item->name[GetLanguage()]);
 
-  TestADMessage_t test_msg = { .event = TEST_START, .data = NULL };
+  TestADMessage_t test_msg = { .event = TEST_START_SINUS, .data = NULL };
   xQueueSend(xTestADQueueHandle, &test_msg, portMAX_DELAY);
 }
 
@@ -1484,6 +1542,24 @@ void change_screen (MenuType type)
     default:
       break;
   }
+}
+
+void change_amp_srtatus(TestMsg_t *testMsg)
+{
+  if (currentMenu != apmplifiresTestMunu) return;
+  TestAmplDisplay_DrawOne(testMsg->ind, testMsg->status);
+}
+
+void change_drv_srtatus(TestMsg_t *testMsg)
+{
+  if (currentMenu != driversTestMenu) return;
+  TestDrvDisplay_DrawOne(testMsg->ind, testMsg->status);
+}
+
+void change_batt_srtatus(TestMsg_t *testMsg)
+{
+  if (currentMenu != batteriesTestMenu) return;
+  BatteriesDisplay_SetStatus(testMsg->ind, (StatusIndTest_t) testMsg->status ? STATUS_LIST_OK : STATUS_LIST_BAD);
 }
 
 void test_amp_drv (void)
