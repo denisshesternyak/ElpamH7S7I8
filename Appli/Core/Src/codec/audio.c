@@ -530,7 +530,7 @@ static void audio_start_sinus (AudioNotify_t *audio_notify)
   osDelay(1);
 
   start_playback();
-  osDelay(50);
+//  osDelay(50);
 }
 
 static void audio_play_sinus (void)
@@ -735,10 +735,10 @@ static void audio_stop_motorola (void)
   player.is_motorola = false;
 
   audio_cmd_IN2R_disable();
+  osDelay(1);
   audio_stop_amp_drv();
 
   LOG_INFO("Stop playback motorola");
-  send_screen_notify(MENU_TYPE_PREVIOUS);
 }
 
 static void audio_prepare_stop_motorola (void)

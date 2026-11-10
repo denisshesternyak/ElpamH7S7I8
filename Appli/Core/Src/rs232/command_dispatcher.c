@@ -15,6 +15,7 @@
 #include "logger.h"
 #include "app_freertos.h"
 #include "keyboard.h"
+#include "test_types.h"
 
 // Extern UART handler for debug output (optional)
 
@@ -67,6 +68,7 @@ void handle_all_clear_1 (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_1);
   LOG_INFO("'*A_CLR1' - got the command");
+  notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
   notify_audio(AUDIO_START, AUDIO_MOTOROLA);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -85,6 +87,7 @@ void handle_all_clear_2 (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_ALL_CLEAR_2);
   LOG_INFO("'*A_CLR2' - got the command");
+  notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
   notify_audio(AUDIO_START, AUDIO_MOTOROLA);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -104,6 +107,7 @@ void handle_alarm (UART_HandleTypeDef *huart)
   system_status_set_mode(SYSTEM_MODE_ALARM_WAIL);
 
     LOG_INFO("'*I_WAIL' - got the command");
+    notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
     notify_audio(AUDIO_START, AUDIO_MOTOROLA);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -122,6 +126,7 @@ void handle_chemical (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_CHEMICAL);
   LOG_INFO("'*CHEM_A' - got the command");
+  notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
   notify_audio(AUDIO_START, AUDIO_MOTOROLA);
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -160,6 +165,10 @@ void handle_cancel (UART_HandleTypeDef *huart)
     LOG_INFO("'*CANCEL' - got the command");
     system_status_set_mode(SYSTEM_MODE_CANCEL_DELAYED);
     notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
+
+    LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN, .screen = MENU_TYPE_PREVIOUS };
+    osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 10);
+
 //    all_outputs_off_handler();
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)
@@ -177,6 +186,14 @@ void handle_cancel (UART_HandleTypeDef *huart)
 void handle_quiet_test (UART_HandleTypeDef *huart)
 {
   system_status_set_mode(SYSTEM_MODE_QUIET_TEST);
+  notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
+
+//  TestADMessage_t test_msg = { .event = TEST_START_SILENT, .data = NULL };
+//  osMessageQueuePut(xTestADQueueHandle, &test_msg, 0, 10);
+
+  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN, .screen = MENU_TYPE_MOTOROLA };
+  osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 10);
+
   LOG_INFO("'*Q_TEST' - got the command");
 
 #if defined(USE_DEBUG_COMMAND_DISPATCHER)

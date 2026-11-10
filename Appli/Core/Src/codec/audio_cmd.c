@@ -343,8 +343,8 @@ void audio_cmd_IN1R_enable (void)
   audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x80);	// Route IN1R to RIGHT_P with 20K input impedance
   audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); 	// Route CM1 to RIGHT_N with 20K input impedance
 
-  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x01); 		// MAR -> HPL
-  audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x02); 		// MAR -> HPR
+//  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x01); 		// MAR -> HPL
+//  audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x02); 		// MAR -> HPR
 
   audio_cmd_write_cmd(AIC32X4_LOLROUTE, 0x02); 		// MAL -> LOL
   audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x02);   	// MAR -> LOR
@@ -362,14 +362,14 @@ void audio_cmd_IN1R_disable (void)
   audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x08); // Route IN3R to RIGHT_P with 20K input impedance
 //  audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); // Route CM1 to RIGHT_N with 20K input impedance
 
-  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x08); 		// LDAC -> HPL
-  audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x08);   	// RDAC -> HPR
+//  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x08); 		// LDAC -> HPL
+//  audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x08);   	// RDAC -> HPR
 
   audio_cmd_write_cmd(AIC32X4_LOLROUTE, 0x08); 		// LDAC -> LOL
   audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x08);   	// RDAC -> LOR
 
   audio_cmd_mute_LO();
-  audio_cmd_mute_HP();
+//  audio_cmd_mute_HP();
 }
 
 void audio_cmd_IN2R_enable (void)
@@ -383,8 +383,8 @@ void audio_cmd_IN2R_enable (void)
   audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x20);	// Route IN2R to RIGHT_P with 20K input impedance
   audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); 	// Route CM1 to RIGHT_N with 20K input impedance
 
-  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x01); 		// MAR -> HPL
-  audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x02); 		// MAR -> HPR
+//  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x01); 		// MAR -> HPL
+//  audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x02); 		// MAR -> HPR
 
   audio_cmd_write_cmd(AIC32X4_LOLROUTE, 0x02); 		// MAL -> LOL
   audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x02);   	// MAR -> LOR
@@ -402,14 +402,14 @@ void audio_cmd_IN2R_disable (void)
   audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x08); // Route IN3R to RIGHT_P with 20K input impedance
 //  audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); // Route CM1 to RIGHT_N with 20K input impedance
 
-  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x08); 		// LDAC -> HPL
-  audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x08);   	// RDAC -> HPR
+//  audio_cmd_write_cmd(AIC32X4_HPLROUTE, 0x08); 		// LDAC -> HPL
+//  audio_cmd_write_cmd(AIC32X4_HPRROUTE, 0x08);   	// RDAC -> HPR
 
   audio_cmd_write_cmd(AIC32X4_LOLROUTE, 0x08); 		// LDAC -> LOL
   audio_cmd_write_cmd(AIC32X4_LORROUTE, 0x08);   	// RDAC -> LOR
 
   audio_cmd_mute_LO();
-  audio_cmd_mute_HP();
+//  audio_cmd_mute_HP();
 }
 
 void audio_cmd_quiet_enable (void)
