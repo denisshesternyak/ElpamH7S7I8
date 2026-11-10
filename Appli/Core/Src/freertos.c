@@ -48,6 +48,7 @@
 #include "iwdg.h"
 #include "dtmf.h"
 #include "tester.h"
+#include "test_types.h"
 
 /* USER CODE END Includes */
 
@@ -136,6 +137,13 @@ const osThreadAttr_t DTMFTask_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
+/* Definitions for TestADTask */
+osThreadId_t TestADTaskHandle;
+const osThreadAttr_t TestADTask_attributes = {
+  .name = "TestADTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for xLCDQueue */
 osMessageQueueId_t xLCDQueueHandle;
 const osMessageQueueAttr_t xLCDQueue_attributes = {
@@ -160,6 +168,11 @@ const osMessageQueueAttr_t xLoggerQueue_attributes = {
 osMessageQueueId_t xDTMFQueueHandle;
 const osMessageQueueAttr_t xDTMFQueue_attributes = {
   .name = "xDTMFQueue"
+};
+/* Definitions for xTestADQueue */
+osMessageQueueId_t xTestADQueueHandle;
+const osMessageQueueAttr_t xTestADQueue_attributes = {
+  .name = "xTestADQueue"
 };
 /* Definitions for BacklightTimer */
 osTimerId_t BacklightTimerHandle;
@@ -253,6 +266,7 @@ void StartKeyboardTask(void *argument);
 void StartLoggerTask(void *argument);
 void StartSDTask(void *argument);
 void StartDTMFTask(void *argument);
+void StartTestADTask(void *argument);
 void BacklightCallback(void *argument);
 void ArmCallback(void *argument);
 void AnnouncementCallback(void *argument);
@@ -315,10 +329,10 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of xLCDQueue */
-  xLCDQueueHandle = osMessageQueueNew (30, sizeof(LCDTaskEvent_t), &xLCDQueue_attributes);
+  xLCDQueueHandle = osMessageQueueNew (16, sizeof(LCDTaskEvent_t), &xLCDQueue_attributes);
 
   /* creation of xAudioQueue */
-  xAudioQueueHandle = osMessageQueueNew (30, sizeof(AudioNotify_t), &xAudioQueue_attributes);
+  xAudioQueueHandle = osMessageQueueNew (16, sizeof(AudioNotify_t), &xAudioQueue_attributes);
 
   /* creation of xUartQueue */
   xUartQueueHandle = osMessageQueueNew (16, sizeof(UartMessage_t), &xUartQueue_attributes);
@@ -328,6 +342,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of xDTMFQueue */
   xDTMFQueueHandle = osMessageQueueNew (16, sizeof(DTMFMessage_t), &xDTMFQueue_attributes);
+
+  /* creation of xTestADQueue */
+  xTestADQueueHandle = osMessageQueueNew (16, sizeof(TestADMessage_t), &xTestADQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
 #ifdef SELFTEST
@@ -361,6 +378,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of DTMFTask */
   DTMFTaskHandle = osThreadNew(StartDTMFTask, NULL, &DTMFTask_attributes);
 
+  /* creation of TestADTask */
+  TestADTaskHandle = osThreadNew(StartTestADTask, NULL, &TestADTask_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
 #endif
   /* USER CODE END RTOS_THREADS */
@@ -390,6 +410,7 @@ void CreateAppTasks()
   LoggerTaskHandle = osThreadNew(StartLoggerTask, NULL, &LoggerTask_attributes);
   SDTaskHandle = osThreadNew(StartSDTask, NULL, &SDTask_attributes);
   DTMFTaskHandle = osThreadNew(StartDTMFTask, NULL, &DTMFTask_attributes);
+  TestADTaskHandle = osThreadNew(StartTestADTask, NULL, &TestADTask_attributes);
 }
 /**
  * @brief  Function implementing the defaultTask thread.
@@ -615,9 +636,6 @@ void StartLcdTask(void *argument)
 	case LCD_EVENT_SCREEN:
 	  change_screen(lcd_event.screen);
 	  break;
-	case LCD_EVENT_TEST:
-	  test_amp_drv();
-	  break;
       }
     }
   }
@@ -776,6 +794,36 @@ void StartDTMFTask(void *argument)
     }
   }
   /* USER CODE END StartDTMFTask */
+}
+
+/* USER CODE BEGIN Header_StartTestADTask */
+/**
+* @brief Function implementing the TestADTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTestADTask */
+void StartTestADTask(void *argument)
+{
+  /* USER CODE BEGIN StartTestADTask */
+  TestADMessage_t msg;
+  /* Infinite loop */
+  for(;;)
+  {
+    if (osMessageQueueGet(xTestADQueueHandle, &msg, NULL, osWaitForever) == osOK)
+    {
+      switch (msg.event)
+      {
+      case TEST_START:
+	test_amp_drv();
+	break;
+
+      default:
+	break;
+      }
+    }
+  }
+  /* USER CODE END StartTestADTask */
 }
 
 /* BacklightCallback function */

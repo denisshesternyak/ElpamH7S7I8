@@ -30,6 +30,7 @@
 #include "metadata.h"
 #include "lcd_widget_password.h"
 #include "tester.h"
+#include "test_types.h"
 
 //bool isResetPasswordAfterIdle = false;
 
@@ -41,8 +42,6 @@ static bool is_double_cancel = false;
 
 static Menu menuPool[MAX_MENU_POOL];
 static uint8_t menuPoolIndex = 0;
-
-static uint8_t current_test_amp_drv;
 
 static char listFilenames[MAX_MENU_ITEMS][FF_MAX_LFN] __attribute__((section(".extram")));
 //const char *selectedFile = NULL;
@@ -1102,10 +1101,8 @@ static void sinus_info_prepare_action (void)
   lcd_notify_volume(AUDIO_VOLUME_CURRENT, VOLUME_75mV);
   lcd_notify_start_task_low(AUDIO_SIN, (SinTask_t) currentMenu->currentSelection, item->name[GetLanguage()]);
 
-  current_test_amp_drv = 0;
-
-  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_TEST };
-  xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
+  TestADMessage_t test_msg = { .event = TEST_START, .data = NULL };
+  xQueueSend(xTestADQueueHandle, &test_msg, portMAX_DELAY);
 }
 
 static void prepare_announcement (void)
@@ -1491,51 +1488,50 @@ void change_screen (MenuType type)
 
 void test_amp_drv (void)
 {
-  if (current_test_amp_drv >= AMP_COUNT) return;
   if (currentMenu != sinusInfoMenu) return;
 
-  LOG_INFO("Start amp/drv %d test", current_test_amp_drv+1);
+  LOG_INFO("Start amp/drv tests");
 
-  FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_OK);
-
-  tester_amp_turn_on(current_test_amp_drv);
-  osDelay(1425);
-
-  uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
-  uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
-  bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 20);
-  StatusTest_t status;
-  const char *status_msg = "";
-
-  if(res)
+  for(uint8_t i=0; i < AMP_COUNT; i++)
   {
-    status = STATUS_OK;
-    status_msg = StatusToString(STATUS_OK);
-  } else {
-    status = STATUS_BAD_M;
-    status_msg = StatusToString(STATUS_BAD_M);
-    FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_BAD);
+    if (currentMenu != sinusInfoMenu) break;
+
+    FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_OK);
+
+    tester_amp_turn_on(i);
+    osDelay(1425);
+
+    uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
+    uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
+    bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 20);
+    StatusTest_t status;
+    const char *status_msg = "";
+
+    if(res)
+    {
+      status = STATUS_OK;
+      status_msg = StatusToString(STATUS_OK);
+    } else {
+      status = STATUS_BAD_M;
+      status_msg = StatusToString(STATUS_BAD_M);
+      FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_BAD);
+    }
+    Report_SetStatus(REPORT_LIST_AMP_DRV_1+i, res);
+
+    LOG_INFO("Amp %d: ADC %d, %dmV, res %s", i+1, val_adc, val_mv, status_msg);
+
+    val_adc = get_adc_value(ADC_CURRENT_MEAS);
+    val_mv = getRDataD(ADC_CUR_DIV, val_adc);
+    LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
+
+    tester_amp_turn_off(i);
+    system_status.amplifier_driver[i] = res;
+    TestAmplDisplay_SetStatus(i, status);
+
+    osDelay(50);
   }
-  Report_SetStatus(REPORT_LIST_AMP_DRV_1+current_test_amp_drv, res);
 
-  LOG_INFO("Amp %d: ADC %d, %dmV, res %s", current_test_amp_drv+1, val_adc, val_mv, status_msg);
-
-  val_adc = get_adc_value(ADC_CURRENT_MEAS);
-  val_mv = getRDataD(ADC_CUR_DIV, val_adc);
-  LOG_INFO("Cur %d: ADC %d, %dmV", current_test_amp_drv+1, val_adc, val_mv);
-
-  tester_amp_turn_off(current_test_amp_drv);
-  system_status.amplifier_driver[current_test_amp_drv] = res;
-  TestAmplDisplay_SetStatus(current_test_amp_drv, status);
-
-  osDelay(50);
-
-  LOG_INFO("Stop amp/drv %d test", current_test_amp_drv+1);
-
-  current_test_amp_drv++;
-
-  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_TEST };
-  xQueueSend(xLCDQueueHandle, &lcd_event, portMAX_DELAY);
+  LOG_INFO("Stop amp/drv tests");
 }
 
 //void ShowUartCommand(void)

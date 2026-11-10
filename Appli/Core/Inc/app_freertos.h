@@ -23,6 +23,8 @@ extern osMessageQueueId_t xAudioQueueHandle;
 
 extern osMessageQueueId_t xDTMFQueueHandle;
 
+extern osMessageQueueId_t xTestADQueueHandle;
+
 extern osEventFlagsId_t KeyboardEventHandle;
 extern osEventFlagsId_t SDEventHandle;
 extern osEventFlagsId_t DTMFEventHandle;
