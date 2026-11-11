@@ -188,11 +188,11 @@ void handle_quiet_test (UART_HandleTypeDef *huart)
   system_status_set_mode(SYSTEM_MODE_QUIET_TEST);
   notify_audio(AUDIO_STOP, AUDIO_CURRENT_TYPE);
 
-//  TestADMessage_t test_msg = { .event = TEST_START_SILENT, .data = NULL };
-//  osMessageQueuePut(xTestADQueueHandle, &test_msg, 0, 10);
-
   LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN, .screen = MENU_TYPE_MOTOROLA };
   osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 10);
+
+  TestADMessage_t test_msg = { .event = TEST_START_SILENT, .data = NULL };
+  osMessageQueuePut(xTestADQueueHandle, &test_msg, 0, 10);
 
   LOG_INFO("'*Q_TEST' - got the command");
 

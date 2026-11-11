@@ -35,6 +35,8 @@
 
 static bool isBacklightOn = false;
 static bool is_motorola = false;
+static bool is_tests_motorola_run = false;
+static bool is_tests_manual_run = false;
 static bool is_double_cancel = false;
 
 #define MAX_MENU_POOL 40
@@ -653,304 +655,317 @@ void RunDriversTest_lcd (void)
   xQueueSend(xTestADQueueHandle, &test_msg, portMAX_DELAY);
 }
 
-void RunSilentTest (void)
+static void test_mark_started(void)
 {
-//  LOG_DEBUG("12v %dmv, 24v %dmv, cur %d, amp %d, drv %d",
-//		  getRData(1, get_adc_value(ADC_12V)),
-//		  getRData(1, get_adc_value(ADC_24V)),
-//		  getRData(1, get_adc_value(ADC_CURRENT_MEAS)),
-//		  getRData(1, get_adc_value(ADC_AMPLIFIER_MEAS)),
-//		  getRData(1, get_adc_value(ADC_DRIVER_MEAS)));
+  if (is_motorola)
+    is_tests_motorola_run = true;
+  else
+    is_tests_manual_run  = true;
+}
 
-  currentMenu = apmplifiresTestMunu;
-  clear_position(currentMenu);
-  draw_menuScreen(true);
-  RunAmplifiresTest(false);
+static void test_mark_finished(void)
+{
+  if (is_motorola)
+    is_tests_motorola_run = false;
+  else
+    is_tests_manual_run  = false;
+}
 
-  osDelay(1666);
-  if(currentMenu != apmplifiresTestMunu) return;
-
-  currentMenu = driversTestMenu;
-  clear_position(currentMenu);
-  draw_menuScreen(true);
-  RunDriversTest(false);
-
-  osDelay(1666);
-  if(currentMenu != driversTestMenu) return;
-
-  currentMenu = batteriesTestMenu;
-  clear_position(currentMenu);
-  draw_menuScreen(true);
-  RunBatteriesTest(false);
-
-  osDelay(1666);
-  if(currentMenu != batteriesTestMenu) return;
-
+static void ui_return_to_test_menu(void)
+{
+  if (is_motorola) return;
+  if (currentMenu == testMenu) return;
   currentMenu = testMenu;
   clear_position(currentMenu);
   draw_menuScreen(true);
 }
 
-void RunBatteriesTest (bool prev_menu)
+static void ui_switch_to_menu(Menu* menu)
 {
-  if(currentMenu != batteriesTestMenu) return;
+  if (is_motorola) return;
+  if (currentMenu == menu) return;
+  currentMenu = menu;
+  clear_position(currentMenu);
+  draw_menuScreen(true);
+}
+
+static bool test_should_abort(Menu* expected_menu)
+{
+  if (is_tests_motorola_run)
+  {
+    if (currentMenu != motorolaInfoMenu || !is_motorola) {
+      is_tests_motorola_run = false;
+      return true;
+    }
+  }
+
+  if (is_tests_manual_run)
+  {
+    if (currentMenu != expected_menu) {
+      is_tests_manual_run = false;
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool test_cleanup_and_check_abort(Menu* expected_menu, bool prev_menu)
+{
+  if (test_should_abort(expected_menu)) return true;
+
+  if (prev_menu) {
+    ui_return_to_test_menu();
+    test_mark_finished();
+  }
+  return false;
+}
+
+static void send_batt_lcd_event(system_in_signals_t ind, bool ok)
+{
+  if (is_motorola) return;
+  LCDTaskEvent_t msg = { .event = LCD_EVENT_BATT,
+                         .testMsg = { .status = ok ? STATUS_LIST_OK : STATUS_LIST_BAD,
+                                      .ind = ind } };
+  xQueueSend(xLCDQueueHandle, &msg, portMAX_DELAY);
+}
+
+void RunSilentTest(void)
+{
+  osDelay(10);
+  test_mark_started();
+
+  const struct {
+    Menu* menu;
+    void (*run)(bool);
+    uint32_t delay_ms;
+  } steps[] = {
+    { apmplifiresTestMunu, RunAmplifiresTest, TIME_BETWEEN_SILENT_TEST },
+    { driversTestMenu,     RunDriversTest,     TIME_BETWEEN_SILENT_TEST },
+    { batteriesTestMenu,   RunBatteriesTest,   TIME_BETWEEN_SILENT_TEST },
+  };
+
+  for (size_t i = 0; i < ARRAY_SIZE(steps); i++) {
+    ui_switch_to_menu(steps[i].menu);
+    steps[i].run(false);
+    if (!is_tests_manual_run && !is_motorola) return;
+    osDelay(steps[i].delay_ms);
+    if (test_should_abort(steps[i].menu)) return;
+  }
+
+  ui_return_to_test_menu();
+  test_mark_finished();
+}
+
+void RunBatteriesTest(bool prev_menu)
+{
+  test_mark_started();
+  if (test_should_abort(batteriesTestMenu)) return;
 
   LOG_INFO("Start batteries test");
 
   lcd_notify_volume(AUDIO_VOLUME_CURRENT, VOLUME_75mV);
-
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
   osDelay(50);
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_SET);
   osDelay(50);
 
-  lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S, get_sinus_menu_items_str((uint8_t)SINUS_420HZ_120S, LANG_EN));
-  osDelay(5000);
-  if(currentMenu != batteriesTestMenu) return;
+  lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S,
+                            get_sinus_menu_items_str((uint8_t)SINUS_420HZ_120S, LANG_EN));
 
-  bool res = IS_POW_DET;
-//  BatteriesDisplay_SetStatus(SYSTEM_MAINS, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
-  LCDTaskEvent_t lcd_msg = {};
-  lcd_msg.event = LCD_EVENT_BATT;
-  lcd_msg.testMsg.status = res ? STATUS_LIST_OK : STATUS_LIST_BAD;
-  lcd_msg.testMsg.ind = SYSTEM_MAINS;
+  bool pow_det, under_vo, over_vo;
 
-  xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
-  LOG_INFO("POW_DET %d", res);
+  do {
+    osDelay(5000);
+    if (test_should_abort(batteriesTestMenu)) break;
 
-  osDelay(5000);
-  if(currentMenu != batteriesTestMenu) return;
+    pow_det = IS_POW_DET;
+    send_batt_lcd_event(SYSTEM_MAINS, pow_det);
+    LOG_INFO("POW_DET %d", pow_det);
 
-  res = IS_UNDER_VO;
-//  BatteriesDisplay_SetStatus(SYSTEM_UNDER_VO, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
-  lcd_msg.event = LCD_EVENT_BATT;
-  lcd_msg.testMsg.status = res ? STATUS_LIST_OK : STATUS_LIST_BAD;
-  lcd_msg.testMsg.ind = SYSTEM_UNDER_VO;
+    osDelay(5000);
+    if (test_should_abort(batteriesTestMenu)) break;
 
-  xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
-  LOG_INFO("UNDER_VO %d", res);
+    under_vo = IS_UNDER_VO;
+    send_batt_lcd_event(SYSTEM_UNDER_VO, under_vo);
+    LOG_INFO("UNDER_VO %d", under_vo);
 
-  osDelay(5000);
-  if(currentMenu != batteriesTestMenu) return;
+    osDelay(5000);
+    if (test_should_abort(batteriesTestMenu)) break;
 
-  res = IS_OVER_VO;
-//  BatteriesDisplay_SetStatus(SYSTEM_OVER_VO, res ? STATUS_LIST_OK : STATUS_LIST_BAD);
-  lcd_msg.event = LCD_EVENT_BATT;
-  lcd_msg.testMsg.status = res ? STATUS_LIST_OK : STATUS_LIST_BAD;
-  lcd_msg.testMsg.ind = SYSTEM_OVER_VO;
-  xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
-  LOG_INFO("OVER_VO %d", res);
+    over_vo = IS_OVER_VO;
+    send_batt_lcd_event(SYSTEM_OVER_VO, over_vo);
+    LOG_INFO("OVER_VO %d", over_vo);
 
-  uint16_t val_adc = get_adc_value(ADC_24V);
-  uint16_t val_mv = getRDataD(ADC_24V_DIV, val_adc);
-  res = cmp_with_delta(ADC_TASK_24V, val_mv, 1000);
-  LOG_INFO("Batt 24V: ADC %d, %dmV", val_adc, val_mv);
+    uint16_t val_adc = get_adc_value(ADC_24V);
+    uint16_t val_mv  = getRDataD(ADC_24V_DIV, val_adc);
+    cmp_with_delta(ADC_TASK_24V, val_mv, 1000);
+    LOG_INFO("Batt 24V: ADC %d, %dmV", val_adc, val_mv);
 
-  res = IS_POW_DET && IS_UNDER_VO && IS_OVER_VO;
-  FaultsDisplay_SetStatus(STATUS_LIST_BATTERY, res);
-  Report_SetStatus(REPORT_LIST_BATT, res);
-
-  system_status.battery_voltage = res;
-  osDelay(50);
+    bool res = pow_det && under_vo && over_vo;
+    FaultsDisplay_SetStatus(STATUS_LIST_BATTERY, res);
+    Report_SetStatus(REPORT_LIST_BATT, res);
+    system_status.battery_voltage = res;
+    osDelay(50);
+  } while (0);
 
   lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
   osDelay(100);
-
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
   lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
-
   LOG_INFO("Stop batteries test");
 
-  if(currentMenu != batteriesTestMenu) return;
-
-  if(prev_menu)
-  {
-    currentMenu = testMenu;
-    clear_position(currentMenu);
-    draw_menuScreen(true);
-  }
+  test_cleanup_and_check_abort(batteriesTestMenu, prev_menu);
 }
 
-void RunAmplifiresTest (bool prev_menu)
+void RunAmplifiresTest(bool prev_menu)
 {
+  test_mark_started();
+  if (test_should_abort(apmplifiresTestMunu)) return;
+
   LOG_INFO("Start amplifiers test");
 
   lcd_notify_volume(AUDIO_VOLUME_CURRENT, VOLUME_75mV);
-
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
   osDelay(50);
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_SET);
   osDelay(50);
 
-  lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S, get_sinus_menu_items_str((uint8_t)SINUS_420HZ_120S, LANG_EN));
+  lcd_notify_start_task_low(AUDIO_TEST, SINUS_420HZ_120S,
+                            get_sinus_menu_items_str((uint8_t)SINUS_420HZ_120S, LANG_EN));
   osDelay(50);
-
   FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_OK);
 
-  for(uint8_t i = 0; i < AMP_COUNT; i++)
-  {
-    if (currentMenu != apmplifiresTestMunu) break;
+  for (uint8_t i = 0; i < AMP_COUNT; i++) {
+    if (test_should_abort(apmplifiresTestMunu)) break;
+
     tester_amp_turn_on(i);
-    osDelay(1425);
+    osDelay(TIME_BETWEEN_AMP_TEST);
 
     uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
-    uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
+    uint16_t val_mv  = getRDataD(ADC_AMP_DIV, val_adc);
     bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 20);
-    StatusTest_t status;
-    const char *status_msg = "";
 
-    if(res)
-    {
-      status = STATUS_OK;
-      status_msg = StatusToString(STATUS_OK);
-    } else {
-      status = STATUS_BAD_M;
-      status_msg = StatusToString(STATUS_BAD_M);
-      FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_BAD);
-    }
-    Report_SetStatus(REPORT_LIST_AMP_DRV_1+i, res);
+    StatusTest_t status = res ? STATUS_OK : STATUS_BAD_M;
+    if (!res) FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_BAD);
+    Report_SetStatus(REPORT_LIST_AMP_DRV_1 + i, res);
 
-    LOG_INFO("Amp %d: ADC %d, %dmV %s", i+1, val_adc, val_mv, status_msg);
+    LOG_INFO("Amp %d: ADC %d, %dmV %s", i + 1, val_adc, val_mv, StatusToString(status));
 
     val_adc = get_adc_value(ADC_CURRENT_MEAS);
-    val_mv = getRDataD(ADC_CUR_DIV, val_adc);
-    LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
+    val_mv  = getRDataD(ADC_CUR_DIV, val_adc);
+    LOG_INFO("Cur %d: ADC %d, %dmV", i + 1, val_adc, val_mv);
 
     tester_amp_turn_off(i);
-//    TestAmplDisplay_DrawOne(i, status);
     system_status.amplifier_driver[i] = res;
 
-    LCDTaskEvent_t lcd_msg = { .event = LCD_EVENT_AMP, .testMsg = { .status = status, .ind = i }};
-    xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
-
+    if (!is_motorola) {
+      LCDTaskEvent_t lcd_msg = { .event = LCD_EVENT_AMP,
+                                 .testMsg = { .status = status, .ind = i } };
+      xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
+    }
     osDelay(50);
   }
 
   lcd_audio_notify(AUDIO_STOP, AUDIO_TEST);
   osDelay(50);
-
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
   lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
-
   LOG_INFO("Stop amplifiers test");
 
-  if (currentMenu != apmplifiresTestMunu) return;
-
-  if(prev_menu)
-  {
-    currentMenu = testMenu;
-    clear_position(currentMenu);
-    draw_menuScreen(true);
-  }
+  test_cleanup_and_check_abort(apmplifiresTestMunu, prev_menu);
 }
 
-void RunDriversTest (bool prev_menu)
+void RunDriversTest(bool prev_menu)
 {
+  test_mark_started();
+  if (test_should_abort(driversTestMenu)) return;
+
   LOG_INFO("Start drivers test");
   system_status_set_mode(SYSTEM_MODE_QUIET_TEST);
-
-//  lcd_notify_volume(AUDIO_VOLUME_CURRENT, VOLUME_75mV);
 
   HAL_GPIO_WritePin(AMP_ON_ACT_GPIO_Port, AMP_ON_ACT_Pin, GPIO_PIN_RESET);
   osDelay(50);
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_SET);
   osDelay(50);
-
   FaultsDisplay_SetStatus(STATUS_LIST_DRV, STATUS_LIST_BAD);
 
   lcd_notify_start_task_low(AUDIO_QUIET, SINUS_420HZ_120S, NULL);
   osDelay(50);
 
-  for(uint8_t i = 0; i < DRV_COUNT; i++)
-  {
-    if (currentMenu != driversTestMenu) break;
+  for (uint8_t i = 0; i < DRV_COUNT; i++) {
+    if (test_should_abort(driversTestMenu)) break;
 
     tester_amp_turn_on(i);
     osDelay(50);
-
     OSC_ON;
-    osDelay(1345);
+    osDelay(TIME_BETWEEN_DRV_TEST);
 
     uint16_t val_adc = get_adc_value(ADC_DRIVER_MEAS);
-    uint16_t drv_mv = getRDataD(ADC_DRV_DIV, val_adc);
+    uint16_t drv_mv  = getRDataD(ADC_DRV_DIV, val_adc);
     cmp_with_delta(ADC_TASK_DRV, drv_mv, 100);
-    StatusTest_t status;
-    const char *status_msg = "";
 
-    LOG_INFO("Drv %d: ADC %d, %dmV", i+1, val_adc, drv_mv);
+    LOG_INFO("Drv %d: ADC %d, %dmV", i + 1, val_adc, drv_mv);
 
     val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
-    uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
-    LOG_INFO("Amp %d: ADC %d, %dmV", i+1, val_adc, val_mv);
+    uint16_t amp_mv = getRDataD(ADC_AMP_DIV, val_adc);
+    LOG_INFO("Amp %d: ADC %d, %dmV", i + 1, val_adc, amp_mv);
 
     val_adc = get_adc_value(ADC_CURRENT_MEAS);
-    val_mv = getRDataD(ADC_CUR_DIV, val_adc);
-    LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
+    uint16_t cur_mv = getRDataD(ADC_CUR_DIV, val_adc);
+    LOG_INFO("Cur %d: ADC %d, %dmV", i + 1, val_adc, cur_mv);
 
     bool res = false;
-    if (val_mv == 0) {
-        LOG_INFO("Name: %s, Ohm: N/A (Cur=0)", get_name_drivers());
+    StatusTest_t status = STATUS_BAD_M;
+
+    if (amp_mv == 0) {
+      LOG_INFO("Name: %s, Ohm: N/A (Cur=0)", get_name_drivers());
     } else {
-      uint32_t ohm_milli = ((uint32_t)drv_mv * 1000) / val_mv;
-      uint16_t min = 0;
-      uint16_t max = 0;
+      uint32_t ohm_milli = ((uint32_t)drv_mv * 1000) / amp_mv;
+      uint16_t min = 0, max = 0;
 
-      if(ohm_milli <= get_min_ohm())
-      {
-	status = STATUS_BAD_M;
-	min = 0;
-	max = get_min_ohm();
-      } else if(ohm_milli > get_min_ohm() && ohm_milli <= get_mid_ohm()) {
-	status = STATUS_OK;
-	min = get_min_ohm();
-	max = get_mid_ohm();
-	res = true;
-	FaultsDisplay_SetStatus(STATUS_LIST_DRV, STATUS_LIST_OK);
-      } else if(ohm_milli > get_mid_ohm() && ohm_milli <= get_max_ohm()) {
-	status = STATUS_BAD_P;
-	min = get_mid_ohm();
-	max = get_max_ohm();
-      } else if(ohm_milli > get_max_ohm()) {
-	status = STATUS_BAD_1;
-	min = get_max_ohm();
-	max = 65535;
+      if (ohm_milli <= get_min_ohm()) {
+        status = STATUS_BAD_M;
+        max = get_min_ohm();
+      } else if (ohm_milli <= get_mid_ohm()) {
+        status = STATUS_OK;
+        min = get_min_ohm();
+        max = get_mid_ohm();
+        res = true;
+        FaultsDisplay_SetStatus(STATUS_LIST_DRV, STATUS_LIST_OK);
+      } else if (ohm_milli <= get_max_ohm()) {
+        status = STATUS_BAD_P;
+        min = get_mid_ohm();
+        max = get_max_ohm();
+      } else {
+        status = STATUS_BAD_1;
+        min = get_max_ohm();
+        max = 65535;
       }
-      status_msg = StatusToString(status);
 
-      Report_SetStatus(REPORT_LIST_AMP_DRV_1+i, res);
-
-      LOG_INFO("'%s' %d<%d<%d(mOhm) %s", get_name_drivers(), min, ohm_milli, max, status_msg);
+      Report_SetStatus(REPORT_LIST_AMP_DRV_1 + i, res);
+      LOG_INFO("'%s' %u<%lu<%u(mOhm) %s", get_name_drivers(),
+               min, (unsigned long)ohm_milli, max, StatusToString(status));
     }
 
     OSC_OFF;
     osDelay(50);
-
     tester_amp_turn_off(i);
-
-//    TestDrvDisplay_DrawOne(i, status);
     system_status.amplifier_driver[i] = res;
-    LCDTaskEvent_t lcd_msg = { .event = LCD_EVENT_DRV, .testMsg = { .status = status, .ind = i }};
-    xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
 
+    if (!is_motorola) {
+      LCDTaskEvent_t lcd_msg = { .event = LCD_EVENT_DRV,
+                                 .testMsg = { .status = status, .ind = i } };
+      xQueueSend(xLCDQueueHandle, &lcd_msg, portMAX_DELAY);
+    }
     osDelay(50);
   }
 
   lcd_audio_notify(AUDIO_STOP, AUDIO_QUIET);
   osDelay(50);
-
   HAL_GPIO_WritePin(DRV_ON_ACT_GPIO_Port, DRV_ON_ACT_Pin, GPIO_PIN_RESET);
-//  lcd_notify_volume(AUDIO_VOLUME_PREV_TASK, 0);
-
   LOG_INFO("Stop drivers test");
 
-  if (currentMenu != driversTestMenu) return;
-
-  if(prev_menu)
-  {
-    currentMenu = testMenu;
-    clear_position(currentMenu);
-    draw_menuScreen(true);
-  }
+  test_cleanup_and_check_abort(driversTestMenu, prev_menu);
 }
 
 void MenuLoadSDCardSirens (void)
