@@ -449,8 +449,36 @@ void audio_set_volume (uint8_t value)
   //VolumeIndicator_SetLevelSilent(&volumeIndicator, bar_index);
 }
 
+static uint8_t convert_level(uint8_t level)
+{
+  if(level >= 150) return 150;
+  else if(level >= 140) return 149;
+  else if(level >= 130) return 148;
+  else if(level >= 120) return 147;
+  else if(level >= 110) return 145;
+  else if(level >= 100) return 143;
+  else if(level >= 90) return 141;
+  else if(level >= 80) return 139;
+  else if(level >= 70) return 136;
+  else if(level >= 60) return 133;
+  else if(level >= 50) return 130;
+  else if(level >= 40) return 126;
+  else if(level >= 30) return 121;
+  else if(level >= 20) return 114;
+  else if(level >= 10) return 101;
+  else if(level >= 9) return 95;
+  else if(level >= 8) return 93;
+  else if(level >= 7) return 90;
+  else if(level >= 6) return 88;
+  else if(level >= 5) return 84;
+  else if(level >= 4) return 81;
+  else return 0;
+}
+
 void audio_set_volume_playback (uint8_t level)
 {
+  level = convert_level(level);
+
   uint8_t vol = 0;
   if (level == 0) vol = MAX_VOLUME_PLAYBACK;
   else if (level >= MAX_VOLUME_PLAYBACK) vol = MIN_VOLUME_PLAYBACK;
