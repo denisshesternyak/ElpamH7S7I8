@@ -6,6 +6,10 @@
 #include "app_freertos.h"
 #include "events.h"
 #include <stdio.h>
+#include "audio_types.h"
+
+#define FS 8000.0f
+#define PASS_COUNT 4
 
 //static int16_t samples[DTMF_BUFFER_RX_SIZE];
 static int32_t power_all[DTMF_COUNT_NUM];
@@ -19,15 +23,21 @@ static const char row_col[DTMF_HALF_COUNT_NUM][DTMF_HALF_COUNT_NUM] =
     {'*', '0', '#', 'D'}
 };
 
-#define FS 8000.0f
+static bool is_pass_confirm;
+static char passwordBuffer[PASS_COUNT] = { 0 };
+static uint8_t passwordIndex = 0;
+static const char correctPassword[] = MAINTENANCE_PASSWORD;
 
 static int32_t goertzel (const int16_t *sample, int32_t coeff);
 static void post_test (void);
+static void digit_handler(char digit);
 
 static void dtmf_start (void);
 static void dtmf_check (DTMFMessage_t *msg);
 static void dtmf_stop (void);
 static void audio_notify (AudioEvent_t event, AudioType_t type);
+static void notify_arming (bool arming);
+static void notify_audio_start_task_medium (AudioType_t type, SinTask_t task);
 
 //void sin_data (int f_row, int col)
 //{
@@ -141,6 +151,10 @@ static void dtmf_check (DTMFMessage_t *msg)
 static void dtmf_stop (void)
 {
   LOG_DEBUG("DTMF Stop");
+  is_pass_confirm = false;
+  passwordIndex = 0;
+  memset(passwordBuffer, 0, sizeof(passwordBuffer));
+
   audio_notify(AUDIO_STOP, AUDIO_DTMF);
 }
 
@@ -199,6 +213,48 @@ static void post_test (void)
 
   char digit = row_col[row][col];
   LOG_DEBUG("digit: %c (power: %u / %u)\n", digit, max_row, max_col);
+
+  digit_handler(digit);
+}
+
+static void digit_handler(char digit)
+{
+  if(!is_pass_confirm)
+  {
+    passwordBuffer[passwordIndex++] = digit;
+    if(passwordIndex >= PASS_COUNT-1)
+    {
+      bool match = (strncmp(passwordBuffer, correctPassword, PASS_COUNT) == 0);
+      if(match)
+	is_pass_confirm = true;
+    }
+  }
+  else
+  {
+    if(digit == '8')
+    {
+      notify_arming(true);
+    }
+    else if(digit == '5')
+    {
+      notify_arming(false);
+    }
+    else if(digit == '3')
+    {
+      LOG_INFO("'*A_CLR1' - got the command");
+      notify_audio_start_task_medium (AUDIO_DTMF, SINUS_ALL_CLEAR_60S);
+    }
+    else if(digit == '4')
+    {
+      LOG_INFO("'*A_CLR2' - got the command");
+      notify_audio_start_task_medium (AUDIO_DTMF, SINUS_ALL_CLEAR_120S);
+    }
+    else if(digit == '2')
+    {
+      LOG_INFO("'*CHEM_A' - got the command");
+      notify_audio_start_task_medium (AUDIO_DTMF, SINUS_ALARM_90S);
+    }
+  }
 }
 
 static void audio_notify(AudioEvent_t event, AudioType_t type)
@@ -207,6 +263,28 @@ static void audio_notify(AudioEvent_t event, AudioType_t type)
       .event = event,
       .priority = AUDIO_PRIORITY_MEDIUM,
       .sample = { .type = type } };
+
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
+}
+
+static void notify_arming (bool arming)
+{
+  AudioNotify_t audio_notify = {
+      .event = AUDIO_ARMIG,
+      .priority = AUDIO_PRIORITY_MEDIUM,
+      .arming = arming };
+  osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
+}
+
+static void notify_audio_start_task_medium (AudioType_t type, SinTask_t task)
+{
+  AudioNotify_t audio_notify = {
+      .event = AUDIO_START,
+      .priority = AUDIO_PRIORITY_MEDIUM,
+      .sample = {
+	  .type = type,
+	  .sin_task = task,
+	  .filename = NULL } };
 
   osMessageQueuePut(xAudioQueueHandle, &audio_notify, 0, 10);
 }

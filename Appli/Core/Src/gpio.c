@@ -25,6 +25,7 @@
 #include "app_freertos.h"
 #include "events.h"
 #include "dtmf_types.h"
+#include "lcd_types.h"
 #include <stdio.h>
 /* USER CODE END 0 */
 
@@ -33,8 +34,8 @@
 /*----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 #define DEBOUNCE_SD_TIME_MS    50
-#define DEBOUNCE_LOCAL_TIME_MS    50
-#define DEBOUNCE_RING_TIME_MS    50
+#define DEBOUNCE_LOCAL_TIME_MS    10
+#define DEBOUNCE_RING_TIME_MS    10
 
 static uint32_t last_sd_event_time = 0;
 static uint32_t last_local_event_time = 0;
@@ -300,10 +301,10 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
   return;
 
 dtmf:
-  DTMFMessage_t msg;
-  msg.event = DTMF_START;
-  msg.data = NULL;
-
+  DTMFMessage_t msg = {.event = DTMF_START, .data = NULL};
   osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+
+  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN, .screen = MENU_TYPE_DTMF };
+  osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
 }
 /* USER CODE END 2 */

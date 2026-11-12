@@ -882,6 +882,7 @@ void RecordingCallback(void *argument)
 {
   /* USER CODE BEGIN RecordingCallback */
   audio_recording_timeout();
+  change_screen(MENU_TYPE_PREVIOUS);
   /* USER CODE END RecordingCallback */
 }
 

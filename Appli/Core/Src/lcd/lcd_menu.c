@@ -19,6 +19,7 @@
 #include "lcd_widget_test_ampl_indicator.h"
 #include "lcd_widget_report_indicator.h"
 #include "lcd_widget_motorola.h"
+#include "lcd_widget_dtmf.h"
 #include "lcd_widget_volume.h"
 #include "lcd_widget_driver.h"
 #include "lcd_widget_logging.h"
@@ -35,7 +36,9 @@
 
 static bool isBacklightOn = false;
 static bool is_motorola = false;
+static bool is_dtmf = false;
 static bool is_tests_motorola_run = false;
+static bool is_tests_dtmf_run = false;
 static bool is_tests_manual_run = false;
 static bool is_double_cancel = false;
 
@@ -67,6 +70,7 @@ Menu *softwareMenu = NULL;
 Menu *sinusMenu = NULL;
 Menu *sinusInfoMenu = NULL;
 Menu *motorolaInfoMenu = NULL;
+Menu *dtmfInfoMenu = NULL;
 Menu* passwordMenu = NULL;
 Menu* volumeMenu = NULL;
 Menu* driverMenu = NULL;
@@ -180,6 +184,7 @@ static void MenuLoadSDCardSoftWare (void);
 static void prepare_announcement (void);
 static void prepare_sinuse_items (void);
 static void draw_menu_motorola (void);
+static void draw_menu_dtmf (void);
 static void lcd_inactivity_timeout ();
 
 static void siren_info_prepare_action (void);
@@ -300,6 +305,7 @@ void menu_init (void)
   sinusMenu = &menuPool[menuPoolIndex++];
   sinusInfoMenu = &menuPool[menuPoolIndex++];
   motorolaInfoMenu = &menuPool[menuPoolIndex++];
+  dtmfInfoMenu = &menuPool[menuPoolIndex++];
   passwordMenu = &menuPool[menuPoolIndex++];
   volumeMenu = &menuPool[menuPoolIndex++];
   driverMenu = &menuPool[menuPoolIndex++];
@@ -538,6 +544,11 @@ void menu_init (void)
   motorolaInfoMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_MOTOROLA, LANG_HE);
   motorolaInfoMenu->type = MENU_TYPE_MOTOROLA;
 
+  dtmfInfoMenu->parent = rootMenu;
+  dtmfInfoMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_DTMF, LANG_EN);
+  dtmfInfoMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_DTMF, LANG_HE);
+  dtmfInfoMenu->type = MENU_TYPE_DTMF;
+
   passwordMenu->parent = rootMenu;
   passwordMenu->type = MENU_TYPE_PASSWORD;
   passwordMenu->buttonHandler = passwordMenu_handle_button_press;
@@ -695,6 +706,14 @@ static bool test_should_abort(Menu* expected_menu)
   {
     if (currentMenu != motorolaInfoMenu || !is_motorola) {
       is_tests_motorola_run = false;
+      return true;
+    }
+  }
+
+  if (is_tests_dtmf_run)
+  {
+    if (currentMenu != dtmfInfoMenu || !is_dtmf) {
+      is_tests_dtmf_run = false;
       return true;
     }
   }
@@ -1259,6 +1278,13 @@ static void draw_menu_motorola (void)
 //	osDelay(3);
 }
 
+static void draw_menu_dtmf (void)
+{
+  dtmf_draw();
+
+//	osDelay(3);
+}
+
 static void display_menu_item (uint8_t visualIndex,
 			       uint8_t index,
 			       const MenuItem *item,
@@ -1464,6 +1490,10 @@ void draw_menuScreen (bool forceFullRedraw)
   {
     draw_menu_motorola();
   }
+  else if (currentMenu->type == MENU_TYPE_DTMF)
+  {
+    draw_menu_dtmf();
+  }
 
   prevMenu = currentMenu;
 
@@ -1520,6 +1550,9 @@ void update_date_time ()
   if (is_motorola)
     motorola_update();
 
+  if (is_dtmf)
+    dtmf_update();
+
   if (currentMenu == announcementMenu)
     volume_indicator_blink_bar();
 
@@ -1544,10 +1577,16 @@ void change_screen (MenuType type)
       currentMenu = motorolaInfoMenu;
       draw_menuScreen(true);
       break;
+    case MENU_TYPE_DTMF:
+      is_dtmf = true;
+      currentMenu = dtmfInfoMenu;
+      draw_menuScreen(true);
+      break;
     case MENU_TYPE_PREVIOUS:
       if (!currentMenu->parent)
 	return;
       is_motorola = false;
+      is_dtmf = false;
       currentMenu = currentMenu->parent;
       draw_menuScreen(true);
       break;
@@ -1641,6 +1680,12 @@ void menu_handle_button (KeyEvent_t event)
     if (is_motorola)
     {
       currentMenu = motorolaInfoMenu;
+      draw_menuScreen(true);
+    }
+
+    if (is_dtmf)
+    {
+      currentMenu = dtmfInfoMenu;
       draw_menuScreen(true);
     }
 
