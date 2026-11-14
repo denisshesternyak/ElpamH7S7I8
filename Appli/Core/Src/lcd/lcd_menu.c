@@ -1712,7 +1712,7 @@ static void run_hot_playback(SinTask_t task)
   if (currentMenu == sinusInfoMenu || currentMenu == alarm_info_menu || currentMenu == messagePlayMenu)
     return;
 
-  lcd_notify_start_task_low(AUDIO_SIN, task, NULL);
+  lcd_notify_start_task_low(AUDIO_SIN, task, get_sinus_menu_items_str(task, 0));
   currentMenu = sinusInfoMenu;
   currentMenu->parent = rootMenu;
   currentMenu->type = MENU_TYPE_SIREN_INFO;

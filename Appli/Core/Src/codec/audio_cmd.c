@@ -55,6 +55,7 @@ void audio_cmd_init_power (void)
   audio_cmd_write_cmd(AIC32X4_PWRCFG, 0x08);    // Disable weak AVDD connection
   audio_cmd_write_cmd(AIC32X4_LDOCTL, 0x00); // Master analog power control (LDO off if external supply)
   audio_cmd_write_cmd(AIC32X4_CMMODE, 0x00);	// Input common mode 0.9 V
+  audio_cmd_write_cmd(AIC32X4_INPWRCTRL, 0x32);
   audio_cmd_write_cmd(AIC32X4_REFPOWERUP, 0x01); // REF charging time 40 ms
 }
 
@@ -108,10 +109,10 @@ void audio_cmd_init_playback (void)
 void audio_cmd_init_record (void)
 {
   audio_cmd_write_cmd(AIC32X4_PSEL, 0x00);		// Page 0
-  audio_cmd_write_cmd(AIC32X4_NADC, 0x82);   		// NADC = 2, powered up
-  audio_cmd_write_cmd(AIC32X4_MADC, 0x86);     		// MADC = 6, powered up
+  audio_cmd_write_cmd(AIC32X4_NADC, 0x81);   		// NADC = 1, powered up
+  audio_cmd_write_cmd(AIC32X4_MADC, 0x82);     		// MADC = 2, powered up
   audio_cmd_write_cmd(AIC32X4_AOSR, 0x80);     		// AOSR = 128
-  audio_cmd_write_cmd(AIC32X4_ADCSPB, 0x04); // PRB_R4 for ADC (default recording)
+  audio_cmd_write_cmd(AIC32X4_ADCSPB, 0x01); // PRB_R1 for ADC (default recording)
 
 //	audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);			// Page 1
 //	audio_cmd_write_cmd(AIC32X4_ADCPWTUNE, 0x00);		// Select ADC PTM_R4
@@ -330,6 +331,28 @@ void audio_cmd_IN3L_enable (void)
   audio_cmd_write_cmd(AIC32X4_LMICPGAPIN, 0x08);// Route IN3L to LEFT_P with 20K input impedance
 
   audio_cmd_A2D_loopback();
+}
+
+void audio_cmd_IN3R_enable (void)
+{
+  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);			// Page 1
+
+  audio_cmd_write_cmd(AIC32X4_RMICPGAPIN, 0x08);	// Route IN3R to RIGHT_P with 20K input impedance
+  audio_cmd_write_cmd(AIC32X4_RMICPGANIN, 0x80); 	// Route CM1 to RIGHT_N with 20K input impedance
+
+  audio_cmd_write_cmd(AIC32X4_PSEL, 0x00);		// Page 0
+  audio_cmd_write_cmd(AIC32X4_ADCSETUP, 0x40); 	  // Right ADC powered up
+  audio_cmd_write_cmd(AIC32X4_ADCMUTE, 0x80);     // Unmute Right ADCs, gain 0 dB
+
+//  audio_cmd_A2D_loopback();
+}
+
+void audio_cmd_IN3R_disable (void)
+{
+  audio_cmd_write_cmd(AIC32X4_PSEL, 0x01);			// Page 1
+
+  audio_cmd_write_cmd(AIC32X4_ADCSETUP, 0x00); 	  // Right ADC powered down
+  audio_cmd_write_cmd(AIC32X4_ADCMUTE, 0x88);     // Mute both ADCs, gain 0 dB
 }
 
 void audio_cmd_IN1R_enable (void)

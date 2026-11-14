@@ -789,7 +789,6 @@ static void audio_start_dtmf (void)
 //  player.is_prepare_stoped = false;
 //  player.is_fade_stoped = false;
   player.event = AUDIO_PLAY;
-  osTimerStart(RecordingTimerHandle, RECORDING_TIME);
 
 //  int16_t amp = 512;
 //  for (int i = 0; i < DTMF_BUFFER_RX_SIZE; i++)
@@ -800,10 +799,18 @@ static void audio_start_dtmf (void)
 //
 //    dma_buffer_rx[i] = sinsum;
 //  }
+//
+//  DTMFMessage_t msg;
+//    msg.event = DTMF_CHECK;
+//    msg.data = dma_buffer_rx;
+//    osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+
+  audio_cmd_IN3R_enable();
+  osDelay(1);
 
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
   hi2s6.Init.Mode = I2S_MODE_MASTER_RX;
-  hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_8K;
+  hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_48K;
   HAL_I2S_Init(CODEC_I2S_HANDLER);
   HAL_I2S_Receive_DMA(CODEC_I2S_HANDLER, (uint16_t *)dma_buffer_rx, DTMF_BUFFER_RX_SIZE);
 }
@@ -846,7 +853,7 @@ static void audio_play_dtmf (void)
 
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
   hi2s6.Init.Mode = I2S_MODE_MASTER_RX;
-  hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_8K;
+  hi2s6.Init.AudioFreq = I2S_AUDIOFREQ_48K;
   HAL_I2S_Init(CODEC_I2S_HANDLER);
   HAL_I2S_Receive_DMA(CODEC_I2S_HANDLER, (uint16_t *)dma_buffer_rx, DTMF_BUFFER_RX_SIZE);
 
@@ -861,14 +868,12 @@ static void audio_stop_dtmf (void)
     return;
 
   player.is_recording = false;
-  player.is_stoped = true;
-  player.buff_state = BUFFER_IDLE;
 
   HAL_I2S_DMAStop(CODEC_I2S_HANDLER);
   hi2s6.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
   HAL_I2S_Init(CODEC_I2S_HANDLER);
 
-  osTimerStop(RecordingTimerHandle);
+  audio_cmd_IN3R_disable();
   audio_stop_amp_drv();
 }
 

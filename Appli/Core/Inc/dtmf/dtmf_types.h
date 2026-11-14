@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#define DTMF_BUFFER_RX_SIZE  			100
-
+#define DTMF_BUFFER_RX_SIZE  			1200
+#define DTMF_HALF_BUFFER_RX_SIZE  		(DTMF_BUFFER_RX_SIZE >> 1)
 #define DTMF_COUNT_NUM  			8
 #define DTMF_HALF_COUNT_NUM  			(DTMF_COUNT_NUM >> 1)
 

@@ -34,12 +34,12 @@
 /*----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 #define DEBOUNCE_SD_TIME_MS    50
-#define DEBOUNCE_LOCAL_TIME_MS    10
-#define DEBOUNCE_RING_TIME_MS    10
+//#define DEBOUNCE_LOCAL_TIME_MS    10
+//#define DEBOUNCE_RING_TIME_MS    10
 
 static uint32_t last_sd_event_time = 0;
-static uint32_t last_local_event_time = 0;
-static uint32_t last_ring_event_time = 0;
+//static uint32_t last_local_event_time = 0;
+//static uint32_t last_ring_event_time = 0;
 
 /* USER CODE END 1 */
 
@@ -277,34 +277,37 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
       }
       break;
     case LOCAL_OH_Pin:
-      if ((now - last_local_event_time) > DEBOUNCE_LOCAL_TIME_MS)
+//      if ((now - last_local_event_time) > DEBOUNCE_LOCAL_TIME_MS)
       {
-	last_local_event_time = now;
+//	last_local_event_time = now;
 //	osEventFlagsSet(DTMFEventHandle, LOCAL_EVENT);
+//	printf("EXT_LOCAL\r\n");
 
-	printf("EXT_LOCAL\r\n");
-	goto dtmf;
+	DTMFMessage_t msg = {.event = DTMF_START, .data = NULL};
+	osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+
+	LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN, .screen = MENU_TYPE_DTMF };
+	osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
       }
       break;
     case RING_Pin:
-      if ((now - last_ring_event_time) > DEBOUNCE_RING_TIME_MS)
+//      if ((now - last_ring_event_time) > DEBOUNCE_RING_TIME_MS)
       {
-	last_ring_event_time = now;
+//	last_ring_event_time = now;
 //	osEventFlagsSet(DTMFEventHandle, RING_EVENT);
+//	printf("EXT_RING\r\n");
 
-	printf("EXT_RING\r\n");
-	goto dtmf;
+	HAL_GPIO_WritePin(GEN_OFFHOOK_GPIO_Port, GEN_OFFHOOK_Pin, GPIO_PIN_SET);
+
+	DTMFMessage_t msg = {.event = DTMF_START, .data = NULL};
+	osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+
+	LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN, .screen = MENU_TYPE_DTMF };
+	osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
       }
       break;
   }
 
   return;
-
-dtmf:
-  DTMFMessage_t msg = {.event = DTMF_START, .data = NULL};
-  osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
-
-  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN, .screen = MENU_TYPE_DTMF };
-  osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
 }
 /* USER CODE END 2 */

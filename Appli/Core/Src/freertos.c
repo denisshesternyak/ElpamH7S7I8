@@ -792,6 +792,8 @@ void StartSDTask(void *argument)
 void StartDTMFTask(void *argument)
 {
   /* USER CODE BEGIN StartDTMFTask */
+  HAL_GPIO_WritePin(GEN_OFFHOOK_GPIO_Port, GEN_OFFHOOK_Pin, GPIO_PIN_RESET);
+
   dtmf_init();
   DTMFMessage_t msg;
   /* Infinite loop */
@@ -882,7 +884,9 @@ void RecordingCallback(void *argument)
 {
   /* USER CODE BEGIN RecordingCallback */
   audio_recording_timeout();
-  change_screen(MENU_TYPE_PREVIOUS);
+  if(!player.is_playing)
+    change_screen(MENU_TYPE_PREVIOUS);
+  HAL_GPIO_WritePin(GEN_OFFHOOK_GPIO_Port, GEN_OFFHOOK_Pin, GPIO_PIN_RESET);
   /* USER CODE END RecordingCallback */
 }
 

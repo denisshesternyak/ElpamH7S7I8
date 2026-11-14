@@ -19,7 +19,7 @@
 #define LOG_BACKUP_DIR_PATH_U 	((const TCHAR *)u"/log/backup")
 #define LOG_FILE_PATH_U 	((const TCHAR *)u"/log/log.txt")
 
-#define USED_SD 		1
+#define USED_SD 		0
 #define MAINTENANCE_PASSWORD 	"9999"
 
 #define VER_MAJOR  		1
@@ -54,7 +54,7 @@
 #define BACKLIGHT_TIMEOUT_MS 	10000
 #define ARMING_TIME  		10000
 #define ANNOUNCEMENT_TIME  	180000
-#define RECORDING_TIME		10000
+#define RECORDING_TIME		30000
 #define DOUBLE_CANCEL		200
 #define VOLUME_TIMER		10
 #define VOLUME_FADE_STEP	7
