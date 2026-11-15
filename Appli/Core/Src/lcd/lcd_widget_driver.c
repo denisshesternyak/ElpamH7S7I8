@@ -9,7 +9,7 @@
 static uint8_t current_driver = 0;
 
 static const uint16_t kingstar_drv[3] = {2500, 5500, 8300};
-static const uint16_t atlas_drv[3] = {3500, 7000, 11300};
+static const uint16_t atlas_drv[3] = {3500, 6500, 11300};
 static const uint16_t jingsu_drv[3] = {500, 3500, 4300};
 static const uint16_t *drivers[3] = {kingstar_drv, atlas_drv, jingsu_drv};
 static const char *drivers_name[3] = {"Kingstar", "Atlas", "Jingsu"};
