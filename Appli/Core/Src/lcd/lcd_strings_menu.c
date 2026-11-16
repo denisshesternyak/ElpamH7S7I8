@@ -64,10 +64,10 @@ static const char* sinus_menu_items_str[][LANG_COUNT] = {
   { "20000Hz 120s", "20000Hz 120s" },
   { "856Hz 60s", "856Hz 60s" },
   { "836Hz-856Hz 60s", "836Hz-856Hz 60s" },
-  { "ALARM 90s", "€†’—„ 90s" },
+  { "CHEMICAL 90s", "€†’—„ 90s" },
   { "ALL_CLEAR 60s", "‘‰…_€†’—„ 60s" },
   { "ALL_CLEAR 120s", "‘‰…_€†’—„ 120s" },
-  { "ABC 120s", "ABC 120s" },
+  { "REGULAR 120s", "ABC 120s" },
   { "400Hz-800Hz-1.5s, 60s", "400Hz-800Hz-1.5s, 60s" },
   { "400Hz-800Hz-3s, 60s", "400Hz-800Hz-3s, 60s" }
 };

@@ -347,7 +347,7 @@ static void digit_handler (char digit)
     {
       LOG_INFO("'*CHEM_A' - got the command");
       dtmf_stop();
-      notify_audio_start_task_medium(AUDIO_SIN, SINUS_ALARM_90S);
+      notify_audio_start_task_medium(AUDIO_SIN, SINUS_CHEMICAL_90S);
     }
   }
 }

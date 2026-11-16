@@ -1791,7 +1791,7 @@ bool hot_key_handle_button (KeyEvent_t event)
     case BTN_CHEMICAL:
       if (!lcd_get_arming || !lcd_get_arming()) return true;
       system_status_set_mode(SYSTEM_MODE_CHEMICAL);
-      run_hot_playback(SINUS_ALARM_90S);
+      run_hot_playback(SINUS_CHEMICAL_90S);
       return true;
 
     case BTN_ALL_CLEAR_60:
@@ -1806,10 +1806,10 @@ bool hot_key_handle_button (KeyEvent_t event)
       run_hot_playback(SINUS_ALL_CLEAR_120S);
       return true;
 
-    case BTN_ABC:
+    case BTN_REGULAR:
       if (!lcd_get_arming || !lcd_get_arming()) return true;
       system_status_set_mode(SYSTEM_MODE_ALARM_WAIL);
-      run_hot_playback(SINUS_ABC_120S);
+      run_hot_playback(SINUS_REGULAR_120S);
       return true;
 
     default:

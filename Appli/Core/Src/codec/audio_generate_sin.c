@@ -128,7 +128,7 @@ void init_generation (SinTask_t sinus)
       init_tone(TONE_MODE_CYCLE, PHASE_INC_836, PHASE_INC_856, PHASE_INC_836, 3000, 54000);
       break;
 
-    case SINUS_ALARM_90S:// CHEMICAL
+    case SINUS_CHEMICAL_90S:
       init_tone(TONE_MODE_CYCLE, PHASE_INC_480, PHASE_INC_1022, PHASE_INC_560, 1000, 88000);
       break;
     case SINUS_ALL_CLEAR_60S:
@@ -137,7 +137,7 @@ void init_generation (SinTask_t sinus)
     case SINUS_ALL_CLEAR_120S:
       init_tone(TONE_MODE_CYCLE, PHASE_INC_480, PHASE_INC_836, 0, 2700, 114600);
       break;
-    case SINUS_ABC_120S:
+    case SINUS_REGULAR_120S:
       init_tone(TONE_MODE_CYCLE, PHASE_INC_480, PHASE_INC_1022, PHASE_INC_580, 5400, 84600);
       break;
 
