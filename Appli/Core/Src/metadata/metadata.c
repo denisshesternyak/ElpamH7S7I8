@@ -39,12 +39,19 @@ static bool eeprom_write_raw (uint16_t mem_addr, const void *in, uint32_t size)
 
   HAL_GPIO_WritePin(EP_WP_GPIO_Port, EP_WP_Pin, GPIO_PIN_SET);
 
-  if (res == HAL_OK)
+  if (res != HAL_OK)
+    return false;
+
+  uint32_t start = HAL_GetTick();
+  while (HAL_I2C_IsDeviceReady(EEPROM_HANDLER, EEPROM_ADDR,
+			       EEPROM_READY_RETRY, EEPROM_I2C_TIMEOUT) != HAL_OK)
   {
-    while (HAL_I2C_IsDeviceReady(EEPROM_HANDLER, EEPROM_ADDR,
-                                 EEPROM_READY_RETRY, EEPROM_I2C_TIMEOUT) != HAL_OK);
+    if (HAL_GetTick() - start > EEPROM_I2C_TIMEOUT)
+    {
+      return false;
+    }
   }
-  return res == HAL_OK;
+  return true;
 }
 
 static uint32_t crc32_of(const void *data, uint32_t size)
