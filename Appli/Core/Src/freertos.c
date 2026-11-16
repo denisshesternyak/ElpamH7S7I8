@@ -883,6 +883,7 @@ void AnnouncementCallback(void *argument)
 void RecordingCallback(void *argument)
 {
   /* USER CODE BEGIN RecordingCallback */
+  LOG_DEBUG("DTMF listening time's up");
   audio_recording_timeout();
   change_screen(MENU_TYPE_PREVIOUS);
   /* USER CODE END RecordingCallback */

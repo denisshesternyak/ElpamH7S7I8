@@ -91,41 +91,44 @@ void dtmf_init (void)
   }
   release_btn = true;
 
-//  osDelay(1000);
-  DTMFMessage_t msg = { .event = DTMF_START, .data = NULL };
-  osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
+//  DTMFMessage_t msg = { .event = DTMF_START, .data = NULL };
+//  osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
 
 //  LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN, .screen = MENU_TYPE_DTMF };
 //  osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
-//
-//  sin_data(852, 1477);  // 9
-//  sin_data(852, 1477);  // 9
-//  sin_data(852, 1477);  // 9
-//  sin_data(852, 1477);  // 9
-//  sin_data(852, 1336);  // 8
-//  sin_data(697, 1477);  // 3
 
 #if DTMF_TEST_NUMBER
-  sin_data(697, 1209);  // 1
-  sin_data(697, 1336);  // 2
+  osDelay(1000);
+  dtmf_start();
+  osDelay(1000);
+
+  sin_data(852, 1477);  // 9
+  sin_data(852, 1477);  // 9
+  sin_data(852, 1477);  // 9
+  sin_data(852, 1477);  // 9
+  sin_data(852, 1336);  // 8
   sin_data(697, 1477);  // 3
 
-  sin_data(770, 1209);  // 4
-  sin_data(770, 1336);  // 5
-  sin_data(770, 1477);  // 6
-
-  sin_data(852, 1209);  // 7
-  sin_data(852, 1336);  // 8
-  sin_data(852, 1477);  // 9
-
-  sin_data(941, 1209);  // *
-  sin_data(941, 1336);  // 0
-  sin_data(941, 1477);  // #
-
-  sin_data(697, 1633);  // A
-  sin_data(770, 1633);  // B
-  sin_data(852, 1633);  // C
-  sin_data(941, 1633);  // D
+//  sin_data(697, 1209);  // 1
+//  sin_data(697, 1336);  // 2
+//  sin_data(697, 1477);  // 3
+//
+//  sin_data(770, 1209);  // 4
+//  sin_data(770, 1336);  // 5
+//  sin_data(770, 1477);  // 6
+//
+//  sin_data(852, 1209);  // 7
+//  sin_data(852, 1336);  // 8
+//  sin_data(852, 1477);  // 9
+//
+//  sin_data(941, 1209);  // *
+//  sin_data(941, 1336);  // 0
+//  sin_data(941, 1477);  // #
+//
+//  sin_data(697, 1633);  // A
+//  sin_data(770, 1633);  // B
+//  sin_data(852, 1633);  // C
+//  sin_data(941, 1633);  // D
 #endif
 }
 
@@ -171,6 +174,7 @@ static void dtmf_check (DTMFMessage_t *msg)
   if (!msg->data)
   {
     LOG_WARN("DTMFMessage_t is null");
+    return;
   }
 
   for (size_t i = 0; i < DTMF_HALF_BUFFER_RX_SIZE; i++)
@@ -192,6 +196,8 @@ static void dtmf_check (DTMFMessage_t *msg)
 //    fl = true;
 
   post_test();
+
+  if(!is_dtmf_running) return;
 
   osDelay(10);
   notify_audio(AUDIO_PLAY, AUDIO_DTMF);
@@ -289,9 +295,7 @@ static void post_test (void)
   char digit = row_col[row][col];
 //    LOG_DEBUG("digit: %c (power: %u / %u)\n", digit, max_row, max_col);
   LOG_DEBUG("digit: %c", digit);
-//    digit_handler(digit);
-  osDelay(1);
-  osTimerStart(RecordingTimerHandle, RECORDING_TIME);
+  digit_handler(digit);
 }
 
 static void digit_handler (char digit)
@@ -313,12 +317,14 @@ static void digit_handler (char digit)
 	dtmf_clear_pass();
       }
     }
+    osTimerStart(RecordingTimerHandle, RECORDING_TIME);
   }
   else
   {
     if (digit == '8')
     {
       notify_arming(true);
+      osTimerStart(RecordingTimerHandle, RECORDING_TIME);
     }
     else if (digit == '5')
     {

@@ -521,7 +521,6 @@ void audio_recording_timeout (void)
 {
   if(!player.is_recording) return;
   player.is_recording = false;
-  LOG_DEBUG("DTMF listening time's up");
 
   DTMFMessage_t msg = { .event = DTMF_STOP, .data = NULL };
   osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
@@ -799,8 +798,6 @@ static void audio_play_dtmf (void)
 
 static void audio_stop_dtmf (void)
 {
-//  LOG_INFO("Stop record DTMF");
-
   if (!player.is_recording) return;
 
   player.is_recording = false;
@@ -810,6 +807,7 @@ static void audio_stop_dtmf (void)
   HAL_I2S_Init(CODEC_I2S_HANDLER);
 
   audio_cmd_IN3R_disable();
+//  LOG_INFO("Stop record DTMF");
 }
 
 static void audio_prepare_stop_dtmf (void)
@@ -1048,8 +1046,10 @@ void HAL_I2S_RxCpltCallback (I2S_HandleTypeDef *hi2s)
   if (hi2s->Instance != SPI6)
     return;
 
-  if (!player.is_recording || player.event == AUDIO_STOP)
-      return;
+  if (!player.is_recording) {
+    player.priority = AUDIO_PRIORITY_IDLE;
+    return;
+  }
 
   DTMFMessage_t msg;
   msg.event = DTMF_CHECK;

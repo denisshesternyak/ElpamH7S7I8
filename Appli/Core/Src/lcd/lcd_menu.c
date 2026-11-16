@@ -144,6 +144,7 @@ static void menu_init_language (void);
 static void menu_init_driver (void);
 
 static bool hot_key_handle_button (KeyEvent_t event);
+static void dtmfMenu_handle_button_press (KeyEvent_t event);
 static void passwordMenu_handle_button_press(KeyEvent_t event);
 static void handle_button_press (KeyEvent_t event);
 static void clockMenu_handle_button_press (KeyEvent_t event);
@@ -548,6 +549,7 @@ void menu_init (void)
   dtmfInfoMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_DTMF, LANG_EN);
   dtmfInfoMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_DTMF, LANG_HE);
   dtmfInfoMenu->type = MENU_TYPE_DTMF;
+  dtmfInfoMenu->buttonHandler = dtmfMenu_handle_button_press;
 
   passwordMenu->parent = rootMenu;
   passwordMenu->type = MENU_TYPE_PASSWORD;
@@ -2063,6 +2065,25 @@ static void maintenance_handle_button_press (KeyEvent_t event)
       Password_Reset(false);
       currentMenu = maintenanceMenu->parent;
       draw_menuScreen(true);
+      return;
+
+    default:
+      break;
+  }
+  handle_button_press(event);
+}
+
+static void dtmfMenu_handle_button_press (KeyEvent_t event)
+{
+  if (!dtmfInfoMenu)
+    return;
+
+  switch (event.button)
+  {
+    case BTN_RETURN_MENU:
+      if (dtmfInfoMenu->parent == NULL)
+	return;
+      change_screen(MENU_TYPE_PREVIOUS);
       return;
 
     default:
