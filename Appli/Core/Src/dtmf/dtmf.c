@@ -323,31 +323,39 @@ static void digit_handler (char digit)
   {
     if (digit == '8')
     {
+      LOG_INFO("DTMF command '*_ARM__'");
       notify_arming(true);
       osTimerStart(RecordingTimerHandle, RECORDING_TIME);
     }
     else if (digit == '5')
     {
+      LOG_INFO("DTMF command '*DISARM'");
       notify_arming(false);
       dtmf_clear_pass();
     }
+    else if (digit == '1')
+    {
+      LOG_INFO("DTMF command '*I_WAIL'");
+      dtmf_stop();
+      notify_audio_start_task_medium(AUDIO_SIN, SINUS_REGULAR_120S);
+    }
+    else if (digit == '2')
+    {
+      LOG_INFO("DTMF command '*CHEM_A'");
+      dtmf_stop();
+      notify_audio_start_task_medium(AUDIO_SIN, SINUS_CHEMICAL_90S);
+    }
     else if (digit == '3')
     {
-      LOG_INFO("'*A_CLR1' - got the command");
+      LOG_INFO("DTMF command '*A_CLR1'");
       dtmf_stop();
       notify_audio_start_task_medium(AUDIO_SIN, SINUS_ALL_CLEAR_60S);
     }
     else if (digit == '4')
     {
-      LOG_INFO("'*A_CLR2' - got the command");
+      LOG_INFO("DTMF command '*A_CLR2'");
       dtmf_stop();
       notify_audio_start_task_medium(AUDIO_SIN, SINUS_ALL_CLEAR_120S);
-    }
-    else if (digit == '2')
-    {
-      LOG_INFO("'*CHEM_A' - got the command");
-      dtmf_stop();
-      notify_audio_start_task_medium(AUDIO_SIN, SINUS_CHEMICAL_90S);
     }
   }
 }
