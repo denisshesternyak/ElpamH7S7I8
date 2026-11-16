@@ -884,9 +884,7 @@ void RecordingCallback(void *argument)
 {
   /* USER CODE BEGIN RecordingCallback */
   audio_recording_timeout();
-  if(!player.is_playing)
-    change_screen(MENU_TYPE_PREVIOUS);
-  HAL_GPIO_WritePin(GEN_OFFHOOK_GPIO_Port, GEN_OFFHOOK_Pin, GPIO_PIN_RESET);
+  change_screen(MENU_TYPE_PREVIOUS);
   /* USER CODE END RecordingCallback */
 }
 

@@ -1577,19 +1577,24 @@ void change_screen (MenuType type)
       currentMenu = motorolaInfoMenu;
       draw_menuScreen(true);
       break;
+
     case MENU_TYPE_DTMF:
       is_dtmf = true;
       currentMenu = dtmfInfoMenu;
       draw_menuScreen(true);
       break;
+
     case MENU_TYPE_PREVIOUS:
-      if (!currentMenu->parent)
-	return;
+      if (!currentMenu->parent)	return;
+      if (is_dtmf) {
+	HAL_GPIO_WritePin(GEN_OFFHOOK_GPIO_Port, GEN_OFFHOOK_Pin, GPIO_PIN_RESET);
+      }
       is_motorola = false;
       is_dtmf = false;
       currentMenu = currentMenu->parent;
       draw_menuScreen(true);
       break;
+
     case MENU_TYPE_IDLE:
       lcd_inactivity_timeout();
     default:

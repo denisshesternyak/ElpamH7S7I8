@@ -285,9 +285,6 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 
 	DTMFMessage_t msg = {.event = DTMF_START, .data = NULL};
 	osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
-
-	LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN, .screen = MENU_TYPE_DTMF };
-	osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
       }
       break;
     case RING_Pin:
@@ -301,9 +298,6 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 
 	DTMFMessage_t msg = {.event = DTMF_START, .data = NULL};
 	osMessageQueuePut(xDTMFQueueHandle, &msg, 0, 0);
-
-	LCDTaskEvent_t lcd_event = { .event = LCD_EVENT_SCREEN, .screen = MENU_TYPE_DTMF };
-	osMessageQueuePut(xLCDQueueHandle, &lcd_event, 0, 0);
       }
       break;
   }
