@@ -20,6 +20,8 @@ static const char* menu_header_str[][LANG_COUNT] = {
   { "### Language ###", "### ™”„ ###" },
   { "### SW update ###", "### ’ƒ‹… „š…‹„ ###" },
   { "### Volume ###", "### ”‡ ###" },
+  { "### AMP Parameter ###", "### AMP Parameter ###" },
+  { "### DRV Parameter ###", "### DRV Parameter ###" },
   { "### Driver ###", "### ƒ˜‰‰˜ ###" },
   { "### Logging ###", "### ˜‰™… ###" },
   { "### Motorola ###", "### …ˆ…˜…Œ„ ###" },
@@ -52,6 +54,8 @@ static const char* maintenance_menu_items_str[][LANG_COUNT] = {
   { "Language select", "‡‰˜š ™”„" },
   { "Software update", "’ƒ‹… „š…‹„" },
   { "Volume level", "’…–š —…Œ" },
+  { "AMP param", "AMP param" },
+  { "DRV param", "DRV param" },
   { "Driver type", "‘…‚ ƒ˜‰‰˜" },
   { "Logging", "˜‰™…" }
 };

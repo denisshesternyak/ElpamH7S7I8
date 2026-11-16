@@ -80,8 +80,8 @@ bool eeprom_read_object (uint16_t mem_addr, void *out, uint32_t size)
   uint32_t calc_crc = crc32_of(out, size);
   if (calc_crc != stored_crc)
   {
-    LOG_ERROR("EEPROM[0x%04X] CRC error! Expected 0x%08lX, got 0x%08lX\r\n",
-             mem_addr, (unsigned long)stored_crc, (unsigned long)calc_crc);
+//    LOG_ERROR("EEPROM[0x%04X] CRC error! Expected 0x%08lX, got 0x%08lX\r\n",
+//             mem_addr, (unsigned long)stored_crc, (unsigned long)calc_crc);
     return false;
   }
   return true;

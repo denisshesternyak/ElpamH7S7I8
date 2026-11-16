@@ -39,6 +39,8 @@
 #define MIN_VOLUME_PLAYBACK    	0
 #define CUR_VOLUME_PLAYBACK    	150
 
+#define MAX_AMP_DRV_PARAMS    	9999
+
 #define MAX_VOLUME          	122
 #define MIN_VOLUME          	80
 #define VOLUME_STEP         	3
@@ -55,7 +57,7 @@
 #define ARMING_TIME  		10000
 #define ANNOUNCEMENT_TIME  	180000
 #define RECORDING_TIME		30000
-#define DOUBLE_CANCEL		200
+#define DOUBLE_CANCEL		2650
 #define VOLUME_TIMER		10
 #define VOLUME_FADE_STEP	7
 #define VOLUME_75mV		7

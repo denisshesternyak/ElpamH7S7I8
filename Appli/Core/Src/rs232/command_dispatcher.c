@@ -571,7 +571,7 @@ void handle_btn_hot_chem_command (UART_HandleTypeDef *huart)
 }
 void handle_btn_hot_abc_command (UART_HandleTypeDef *huart)
 {
-  send_btn_notify(BTN_ABC);
+  send_btn_notify(BTN_REGULAR);
 }
 
 static void send_btn_notify (KeyCode_t btn)

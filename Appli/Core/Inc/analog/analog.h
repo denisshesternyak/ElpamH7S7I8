@@ -19,6 +19,9 @@
 #define ADC_TASK_AMP 		100U
 #define ADC_TASK_DRV 		3000U
 
+#define ADC_AMP_PARAM 		146U
+#define ADC_DRV_PARAM 		6060U
+
 typedef enum
 {
   ADC_12V,
@@ -36,5 +39,8 @@ bool test_adc_value (ADC_channel n_ch, uint16_t value_adc);
 bool check_voltage (ADC_channel n_ch, uint16_t vDiv, uint16_t task_mv, uint16_t delta_mv);
 uint16_t getRData (uint16_t vDiv, uint16_t rawData);
 uint16_t getRDataD (uint16_t vDiv, uint16_t rawData);
+
+extern uint16_t amp_param;
+extern uint16_t drv_param;
 
 #endif /* INC_ANALOG_ANALOG_H_ */

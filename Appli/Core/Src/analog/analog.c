@@ -5,6 +5,8 @@
 
 //static uint16_t adc_buff[ADC_BUFF_SIZE];
 static uint16_t adc_buff[ADC_BUFF_SIZE] __attribute__((section(".noncacheable_buffer"), aligned(32)));
+uint16_t amp_param = ADC_AMP_PARAM;
+uint16_t drv_param = ADC_DRV_PARAM;
 
 void analog_init (void)
 {

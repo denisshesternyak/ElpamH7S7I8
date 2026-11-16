@@ -12,6 +12,8 @@
 #include "lcd_widget_progress_bar.h"
 #include "lcd_widget_volume_indicator.h"
 #include "lcd_widget_volume.h"
+#include "lcd_widget_amp_param.h"
+#include "lcd_widget_drv_param.h"
 #include "lcd_widget_date_time.h"
 #include "lcd_widget_faults_indicator.h"
 #include "lcd_widget_batteries_indicator.h"
@@ -73,6 +75,8 @@ Menu *motorolaInfoMenu = NULL;
 Menu *dtmfInfoMenu = NULL;
 Menu* passwordMenu = NULL;
 Menu* volumeMenu = NULL;
+Menu* ampParamMenu = NULL;
+Menu* drvParamMenu = NULL;
 Menu* driverMenu = NULL;
 Menu* confirmMenu = NULL;
 Menu* loggingMenu = NULL;
@@ -157,6 +161,8 @@ static void idle_menu_handler (KeyEvent_t event);
 static void volume_control_handler (KeyEvent_t event);
 static void maintenance_handle_button_press (KeyEvent_t event);
 static void volumeMenu_handle_button_press (KeyEvent_t event);
+static void ampParamMenu_handle_button_press (KeyEvent_t event);
+static void drvParamMenu_handle_button_press (KeyEvent_t event);
 static void driverMenu_handle_button_press (KeyEvent_t event);
 static void confirmMenu_handle_button_press (KeyEvent_t event);
 static void loggingMenu_handle_button_press (KeyEvent_t event);
@@ -309,6 +315,8 @@ void menu_init (void)
   dtmfInfoMenu = &menuPool[menuPoolIndex++];
   passwordMenu = &menuPool[menuPoolIndex++];
   volumeMenu = &menuPool[menuPoolIndex++];
+  ampParamMenu = &menuPool[menuPoolIndex++];
+  drvParamMenu = &menuPool[menuPoolIndex++];
   driverMenu = &menuPool[menuPoolIndex++];
   confirmMenu = &menuPool[menuPoolIndex++];
   loggingMenu = &menuPool[menuPoolIndex++];
@@ -510,11 +518,21 @@ void menu_init (void)
 	  .submenu = volumeMenu };
   maintenanceMenu->items[4] = (MenuItem ) {
 	  .name = {
+	      get_maintenance_menu_items_str(STR_AMP_PARAM_UPDATE, LANG_EN),
+	      get_maintenance_menu_items_str(STR_AMP_PARAM_UPDATE, LANG_HE) },
+	  .submenu = ampParamMenu };
+  maintenanceMenu->items[5] = (MenuItem ) {
+	  .name = {
+	      get_maintenance_menu_items_str(STR_DRV_PARAM_UPDATE, LANG_EN),
+	      get_maintenance_menu_items_str(STR_DRV_PARAM_UPDATE, LANG_HE) },
+	  .submenu = drvParamMenu };
+  maintenanceMenu->items[6] = (MenuItem ) {
+	  .name = {
 	      get_maintenance_menu_items_str(STR_DRIVER_UPDATE, LANG_EN),
 	      get_maintenance_menu_items_str(STR_DRIVER_UPDATE, LANG_HE) },
 	  .prepareAction = &menu_init_driver,
 	  .submenu = driverMenu };
-  maintenanceMenu->items[5] = (MenuItem ) {
+  maintenanceMenu->items[7] = (MenuItem ) {
 	  .name = {
 	      get_maintenance_menu_items_str(STR_LOGGING, LANG_EN),
 	      get_maintenance_menu_items_str(STR_LOGGING, LANG_HE) },
@@ -561,6 +579,18 @@ void menu_init (void)
   volumeMenu->type = MENU_TYPE_VOLUME;
   volumeMenu->buttonHandler = volumeMenu_handle_button_press;
 
+  ampParamMenu->parent = maintenanceMenu;
+  ampParamMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_AMP_PARAM, LANG_EN);
+  ampParamMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_AMP_PARAM, LANG_HE);
+  ampParamMenu->type = MENU_TYPE_AMP_PARAM;
+  ampParamMenu->buttonHandler = ampParamMenu_handle_button_press;
+
+  drvParamMenu->parent = maintenanceMenu;
+  drvParamMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_DRV_PARAM, LANG_EN);
+  drvParamMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_DRV_PARAM, LANG_HE);
+  drvParamMenu->type = MENU_TYPE_DRV_PARAM;
+  drvParamMenu->buttonHandler = drvParamMenu_handle_button_press;
+
   driverMenu->parent = maintenanceMenu;
   driverMenu->screenText[LANG_EN] = get_menu_header_str(STR_HEADER_DRIVER, LANG_EN);
   driverMenu->screenText[LANG_HE] = get_menu_header_str(STR_HEADER_DRIVER, LANG_HE);
@@ -596,6 +626,8 @@ void menu_init (void)
 
   tester_all_off();
   Volume_Init();
+  AmpParam_Init();
+  DrvParam_Init();
   draw_status_bar();
   update_date_time();
   draw_menuScreen(true);
@@ -863,8 +895,12 @@ void RunAmplifiresTest(bool prev_menu)
     osDelay(TIME_BETWEEN_AMP_TEST);
 
     uint16_t val_adc = get_adc_value_average(ADC_AMPLIFIER_MEAS);
-    uint16_t val_mv  = getRDataD(ADC_AMP_DIV, val_adc);
+    uint16_t val_mv = val_adc * amp_param / 4096;
+    LOG_INFO("AMP_PARAM %d", amp_param);
+
+//    uint16_t val_mv  = getRDataD(ADC_AMP_DIV, val_adc);
     bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 20);
+
 
     StatusTest_t status = res ? STATUS_OK : STATUS_BAD_M;
     if (!res) FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_BAD);
@@ -922,17 +958,22 @@ void RunDriversTest(bool prev_menu)
     osDelay(TIME_BETWEEN_DRV_TEST);
 
     uint16_t drv_adc = get_adc_value_average(ADC_DRIVER_MEAS);
-    uint16_t drv_mv  = getRDataD(ADC_DRV_DIV, drv_adc);
-    cmp_with_delta(ADC_TASK_DRV, drv_mv, 100);
-    LOG_INFO("Drv %d: ADC %d, %dmV", i + 1, drv_adc, drv_mv);
+    LOG_INFO("Drv %d: ADC %d", i + 1, drv_adc);
+
+//    uint16_t drv_mv  = getRDataD(ADC_DRV_DIV, drv_adc);
+//    cmp_with_delta(ADC_TASK_DRV, drv_mv, 100);
+//    LOG_INFO("Drv %d: ADC %d, %dmV", i + 1, drv_adc, drv_mv);
 
 //    uint16_t amp_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
 //    uint16_t amp_mv = getRDataD(ADC_AMP_DIV, amp_adc);
 //    LOG_INFO("Amp %d: ADC %d, %dmV", i + 1, amp_adc, amp_mv);
 
     uint16_t cur_adc = get_adc_value_average(ADC_CURRENT_MEAS);
-    uint16_t cur_mv = getRDataD(ADC_CUR_DIV, cur_adc);
-    LOG_INFO("Cur %d: ADC %d, %dmV", i + 1, cur_adc, cur_mv);
+    LOG_INFO("Cur %d: ADC %d", i + 1, cur_adc);
+    LOG_INFO("DRV_PARAM %d", drv_param);
+
+//    uint16_t cur_mv = getRDataD(ADC_CUR_DIV, cur_adc);
+//    LOG_INFO("Cur %d: ADC %d, %dmV", i + 1, cur_adc, cur_mv);
 
     bool res = false;
     StatusTest_t status = STATUS_BAD_M;
@@ -940,7 +981,7 @@ void RunDriversTest(bool prev_menu)
     if (cur_adc == 0) {
       LOG_INFO("Name: %s, Ohm: N/A (Cur=0)", get_name_drivers());
     } else {
-      uint32_t ohm_milli = ((uint32_t)drv_adc * 6060) / cur_adc;
+      uint32_t ohm_milli = ((uint32_t)drv_adc * drv_param) / cur_adc;
       uint16_t min = 0, max = 0;
 
       if (ohm_milli <= get_min_ohm()) {
@@ -1483,6 +1524,14 @@ void draw_menuScreen (bool forceFullRedraw)
   else if (currentMenu->type == MENU_TYPE_VOLUME)
   {
     Volume_UpdateValue();
+  }
+  else if (currentMenu->type == MENU_TYPE_AMP_PARAM)
+  {
+    AmpParam_UpdateValue();
+  }
+  else if (currentMenu->type == MENU_TYPE_DRV_PARAM)
+  {
+    DrvParam_UpdateValue();
   }
   else if (currentMenu->type == MENU_TYPE_LOG)
   {
@@ -2165,6 +2214,82 @@ static void volumeMenu_handle_button_press (KeyEvent_t event)
 	return;
 //      Password_Reset(false);
       currentMenu = volumeMenu->parent;
+      draw_menuScreen(true);
+      return;
+
+    default:
+      break;
+  }
+}
+
+static void ampParamMenu_handle_button_press (KeyEvent_t event)
+{
+  if (!ampParamMenu)
+    return;
+
+  switch (event.button)
+  {
+    case BTN_LEFT:
+      AmpParam_DecreaseIndex();
+      return;
+    case BTN_RIGHT:
+      AmpParam_IncreaseIndex();
+      return;
+    case BTN_1:        AmpParam_ChangeNumber(1); return;
+    case BTN_2:        AmpParam_ChangeNumber(2); return;
+    case BTN_3:        AmpParam_ChangeNumber(3); return;
+    case BTN_4:        AmpParam_ChangeNumber(4); return;
+    case BTN_5:        AmpParam_ChangeNumber(5); return;
+    case BTN_6:        AmpParam_ChangeNumber(6); return;
+    case BTN_7:        AmpParam_ChangeNumber(7); return;
+    case BTN_8:        AmpParam_ChangeNumber(8); return;
+    case BTN_9:        AmpParam_ChangeNumber(9); return;
+    case BTN_0:        AmpParam_ChangeNumber(0); return;
+    case BTN_ENTER:
+      AmpParam_SendAmpParam();
+      return;
+    case BTN_ESC:
+      if (ampParamMenu->parent == NULL)
+	return;
+      currentMenu = ampParamMenu->parent;
+      draw_menuScreen(true);
+      return;
+
+    default:
+      break;
+  }
+}
+
+static void drvParamMenu_handle_button_press (KeyEvent_t event)
+{
+  if (!drvParamMenu)
+      return;
+
+  switch (event.button)
+  {
+    case BTN_LEFT:
+      DrvParam_DecreaseIndex();
+      return;
+    case BTN_RIGHT:
+      DrvParam_IncreaseIndex();
+      return;
+    case BTN_1:        DrvParam_ChangeNumber(1); return;
+    case BTN_2:        DrvParam_ChangeNumber(2); return;
+    case BTN_3:        DrvParam_ChangeNumber(3); return;
+    case BTN_4:        DrvParam_ChangeNumber(4); return;
+    case BTN_5:        DrvParam_ChangeNumber(5); return;
+    case BTN_6:        DrvParam_ChangeNumber(6); return;
+    case BTN_7:        DrvParam_ChangeNumber(7); return;
+    case BTN_8:        DrvParam_ChangeNumber(8); return;
+    case BTN_9:        DrvParam_ChangeNumber(9); return;
+    case BTN_0:        DrvParam_ChangeNumber(0); return;
+    case BTN_ENTER:
+      DrvParam_SendDrvParam();
+      return;
+    case BTN_ESC:
+      if (drvParamMenu->parent == NULL)
+      return;
+      currentMenu = drvParamMenu->parent;
       draw_menuScreen(true);
       return;
 

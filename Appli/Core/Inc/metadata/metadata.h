@@ -9,6 +9,8 @@
 #define EEPROM_SLOT_METADATA    0x0000
 #define EEPROM_SLOT_VOLUME      0x0200
 #define EEPROM_SLOT_DRIVER      0x0210
+#define EEPROM_SLOT_AMP_PARAM   0x0220
+#define EEPROM_SLOT_DRV_PARAM   0x0230
 
 typedef struct
 {
