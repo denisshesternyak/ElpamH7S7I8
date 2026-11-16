@@ -31,6 +31,7 @@ typedef enum
 void analog_init (void);
 bool cmp_with_delta (uint16_t v1, uint16_t v2, uint16_t delta);
 uint16_t get_adc_value (ADC_channel n_ch);
+uint16_t get_adc_value_average (ADC_channel n_ch);
 bool test_adc_value (ADC_channel n_ch, uint16_t value_adc);
 bool check_voltage (ADC_channel n_ch, uint16_t vDiv, uint16_t task_mv, uint16_t delta_mv);
 uint16_t getRData (uint16_t vDiv, uint16_t rawData);

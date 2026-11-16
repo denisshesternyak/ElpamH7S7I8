@@ -815,7 +815,7 @@ void RunBatteriesTest(bool prev_menu)
     send_batt_lcd_event(SYSTEM_OVER_VO, over_vo);
     LOG_INFO("OVER_VO %d", over_vo);
 
-    uint16_t val_adc = get_adc_value(ADC_24V);
+    uint16_t val_adc = get_adc_value_average(ADC_24V);
     uint16_t val_mv  = getRDataD(ADC_24V_DIV, val_adc);
     cmp_with_delta(ADC_TASK_24V, val_mv, 1000);
     LOG_INFO("Batt 24V: ADC %d, %dmV", val_adc, val_mv);
@@ -860,7 +860,7 @@ void RunAmplifiresTest(bool prev_menu)
     tester_amp_turn_on(i);
     osDelay(TIME_BETWEEN_AMP_TEST);
 
-    uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
+    uint16_t val_adc = get_adc_value_average(ADC_AMPLIFIER_MEAS);
     uint16_t val_mv  = getRDataD(ADC_AMP_DIV, val_adc);
     bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 20);
 
@@ -870,7 +870,7 @@ void RunAmplifiresTest(bool prev_menu)
 
     LOG_INFO("Amp %d: ADC %d, %dmV %s", i + 1, val_adc, val_mv, StatusToString(status));
 
-    val_adc = get_adc_value(ADC_CURRENT_MEAS);
+    val_adc = get_adc_value_average(ADC_CURRENT_MEAS);
     val_mv  = getRDataD(ADC_CUR_DIV, val_adc);
     LOG_INFO("Cur %d: ADC %d, %dmV", i + 1, val_adc, val_mv);
 
@@ -919,16 +919,16 @@ void RunDriversTest(bool prev_menu)
     OSC_ON;
     osDelay(TIME_BETWEEN_DRV_TEST);
 
-    uint16_t drv_adc = get_adc_value(ADC_DRIVER_MEAS);
+    uint16_t drv_adc = get_adc_value_average(ADC_DRIVER_MEAS);
     uint16_t drv_mv  = getRDataD(ADC_DRV_DIV, drv_adc);
     cmp_with_delta(ADC_TASK_DRV, drv_mv, 100);
     LOG_INFO("Drv %d: ADC %d, %dmV", i + 1, drv_adc, drv_mv);
 
-    uint16_t amp_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
-    uint16_t amp_mv = getRDataD(ADC_AMP_DIV, amp_adc);
-    LOG_INFO("Amp %d: ADC %d, %dmV", i + 1, amp_adc, amp_mv);
+//    uint16_t amp_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
+//    uint16_t amp_mv = getRDataD(ADC_AMP_DIV, amp_adc);
+//    LOG_INFO("Amp %d: ADC %d, %dmV", i + 1, amp_adc, amp_mv);
 
-    uint16_t cur_adc = get_adc_value(ADC_CURRENT_MEAS);
+    uint16_t cur_adc = get_adc_value_average(ADC_CURRENT_MEAS);
     uint16_t cur_mv = getRDataD(ADC_CUR_DIV, cur_adc);
     LOG_INFO("Cur %d: ADC %d, %dmV", i + 1, cur_adc, cur_mv);
 
@@ -1635,7 +1635,7 @@ void test_amp_drv (void)
     tester_amp_turn_on(i);
     osDelay(1425);
 
-    uint16_t val_adc = get_adc_value(ADC_AMPLIFIER_MEAS);
+    uint16_t val_adc = get_adc_value_average(ADC_AMPLIFIER_MEAS);
     uint16_t val_mv = getRDataD(ADC_AMP_DIV, val_adc);
     bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 20);
     StatusTest_t status;
@@ -1654,7 +1654,7 @@ void test_amp_drv (void)
 
     LOG_INFO("Amp %d: ADC %d, %dmV, res %s", i+1, val_adc, val_mv, status_msg);
 
-    val_adc = get_adc_value(ADC_CURRENT_MEAS);
+    val_adc = get_adc_value_average(ADC_CURRENT_MEAS);
     val_mv = getRDataD(ADC_CUR_DIV, val_adc);
     LOG_INFO("Cur %d: ADC %d, %dmV", i+1, val_adc, val_mv);
 

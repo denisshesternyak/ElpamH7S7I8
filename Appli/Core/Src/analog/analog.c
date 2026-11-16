@@ -31,6 +31,19 @@ uint16_t get_adc_value (ADC_channel n_ch)
   return adc_buff[n_ch];
 }
 
+uint16_t get_adc_value_average (ADC_channel n_ch)
+{
+  if(n_ch >= ADC_BUFF_SIZE) return 0;
+
+  const uint16_t count = 128;
+  uint32_t acc_val = 0;
+  for (uint8_t i = 0; i < count; i++)
+  {
+    acc_val += get_adc_value(ADC_CURRENT_MEAS);
+  }
+  return acc_val/count;
+}
+
 bool test_adc_value (ADC_channel n_ch, uint16_t value_adc)
 {
   uint16_t val_adc = get_adc_value(n_ch);
