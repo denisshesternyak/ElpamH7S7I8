@@ -294,7 +294,7 @@ static void post_test (void)
 
   char digit = row_col[row][col];
 //    LOG_DEBUG("digit: %c (power: %u / %u)\n", digit, max_row, max_col);
-  LOG_DEBUG("digit: %c", digit);
+//  LOG_DEBUG("digit: %c", digit);
   digit_handler(digit);
 }
 

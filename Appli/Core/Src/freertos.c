@@ -724,7 +724,7 @@ void StartLoggerTask(void *argument)
 void StartSDTask(void *argument)
 {
   /* USER CODE BEGIN StartSDTask */
-  osDelay(2000);
+//  osDelay(2000);
   if (sdfs_is_detected())
   {
     osEventFlagsSet(SDEventHandle, SD_EVENT);
