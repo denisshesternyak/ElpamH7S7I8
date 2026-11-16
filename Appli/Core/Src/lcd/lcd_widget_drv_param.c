@@ -34,12 +34,15 @@ void DrvParam_Init (void)
   if (!eeprom_read_object(EEPROM_SLOT_DRV_PARAM, &value, sizeof(value)))
   {
     LOG_ERROR("Failure to read DRV_PARAM from EEPROM");
-    drv_param = ADC_DRV_PARAM;
+    value = ADC_DRV_PARAM;
     eeprom_write_object(EEPROM_SLOT_DRV_PARAM, &value, sizeof(value));
   }
   else {
     LOG_INFO("Read DRV_PARAM from EEPROM: %d", value);
   }
+
+//  value = ADC_DRV_PARAM;
+//  eeprom_write_object(EEPROM_SLOT_DRV_PARAM, &value, sizeof(value));
 
   paramBuffer[0] = value / 1000;
   paramBuffer[1] = (value / 100) % 10;
@@ -119,7 +122,7 @@ void DrvParam_UpdateValue (void)
   uint16_t field_bg = COLOR_BLUE;
   uint16_t field_offset = 0;
 
-  const uint8_t pos_in_str[MAX_DRV_PARAM_SIZE] = { 0, 2, 3 };
+  const uint8_t pos_in_str[MAX_DRV_PARAM_SIZE] = { 0, 1, 2, 3 };
   field_offset = pos_in_str[param_index] * font->width;
 
   char field_str[4];

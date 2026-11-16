@@ -209,6 +209,11 @@ osMutexId_t LoggerMutexHandle;
 const osMutexAttr_t LoggerMutex_attributes = {
   .name = "LoggerMutex"
 };
+/* Definitions for MetaMutex */
+osMutexId_t MetaMutexHandle;
+const osMutexAttr_t MetaMutex_attributes = {
+  .name = "MetaMutex"
+};
 /* Definitions for LoggerBinarySem */
 osSemaphoreId_t LoggerBinarySemHandle;
 const osSemaphoreAttr_t LoggerBinarySem_attributes = {
@@ -288,6 +293,9 @@ void MX_FREERTOS_Init(void) {
   /* Create the mutex(es) */
   /* creation of LoggerMutex */
   LoggerMutexHandle = osMutexNew(&LoggerMutex_attributes);
+
+  /* creation of MetaMutex */
+  MetaMutexHandle = osMutexNew(&MetaMutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */

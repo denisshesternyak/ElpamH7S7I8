@@ -14,6 +14,8 @@ extern osMessageQueueId_t xLoggerQueueHandle;
 extern osSemaphoreId_t LoggerBinarySemHandle;
 extern osMutexId_t LoggerMutexHandle;
 
+extern osMutexId_t MetaMutexHandle;
+
 extern osMessageQueueId_t xLCDQueueHandle;
 extern osSemaphoreId_t LcdBinarySemHandle;
 

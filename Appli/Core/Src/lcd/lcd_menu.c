@@ -896,11 +896,9 @@ void RunAmplifiresTest(bool prev_menu)
 
     uint16_t val_adc = get_adc_value_average(ADC_AMPLIFIER_MEAS);
     uint16_t val_mv = val_adc * amp_param / 4096;
-    LOG_INFO("AMP_PARAM %d", amp_param);
 
 //    uint16_t val_mv  = getRDataD(ADC_AMP_DIV, val_adc);
     bool res = cmp_with_delta(ADC_TASK_AMP, val_mv, 20);
-
 
     StatusTest_t status = res ? STATUS_OK : STATUS_BAD_M;
     if (!res) FaultsDisplay_SetStatus(STATUS_LIST_AMP, STATUS_LIST_BAD);
@@ -909,8 +907,7 @@ void RunAmplifiresTest(bool prev_menu)
     LOG_INFO("Amp %d: ADC %d, %dmV %s", i + 1, val_adc, val_mv, StatusToString(status));
 
     val_adc = get_adc_value_average(ADC_CURRENT_MEAS);
-    val_mv  = getRDataD(ADC_CUR_DIV, val_adc);
-    LOG_INFO("Cur %d: ADC %d, %dmV", i + 1, val_adc, val_mv);
+    LOG_INFO("Cur %d: ADC %d", i + 1, val_adc);
 
     tester_amp_turn_off(i);
     system_status.amplifier_driver[i] = res;
@@ -970,7 +967,6 @@ void RunDriversTest(bool prev_menu)
 
     uint16_t cur_adc = get_adc_value_average(ADC_CURRENT_MEAS);
     LOG_INFO("Cur %d: ADC %d", i + 1, cur_adc);
-    LOG_INFO("DRV_PARAM %d", drv_param);
 
 //    uint16_t cur_mv = getRDataD(ADC_CUR_DIV, cur_adc);
 //    LOG_INFO("Cur %d: ADC %d, %dmV", i + 1, cur_adc, cur_mv);
@@ -2168,6 +2164,7 @@ void passwordMenu_handle_button_press(KeyEvent_t event)
 		      {
 			      Password_Reset(false);
 			      currentMenu = maintenanceMenu;
+			      clear_position(currentMenu);
 			      draw_menuScreen(true);
 		      }
 		      return;
